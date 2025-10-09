@@ -1,7 +1,8 @@
 ## syntax=docker/dockerfile:1.7
 
 # 1) Builder stage: install deps and build backend + frontend
-FROM oven/bun:1.0.25 AS builder
+FROM oven/bun:latest AS builder
+
 WORKDIR /app
 
 # Copy only manifests first to maximize cache hits
@@ -22,11 +23,10 @@ RUN cd /app/backend && bun run build
 RUN cd /app/frontend && bun run build
 
 # 2) Runtime stage: minimal runtime with prod deps only
-FROM oven/bun:1.0.25 AS runtime
+FROM oven/bun:latest AS runtime
 
-# Create non-root user and group (UNRAID: UID 99, GID 100)
-RUN addgroup --gid 100 unraid && \
-    adduser --uid 99 --gid 100 --disabled-password --gecos "UNRAID User" unraid
+# Create non-root user with UNRAID compatible IDs (GID 100 already exists as 'users')
+RUN adduser --system --uid 99 --ingroup users bunuser
 
 ENV NODE_ENV=production
 WORKDIR /app
@@ -41,8 +41,8 @@ COPY --chown=99:100 --from=builder /app/backend/dist /app/backend/dist
 COPY --chown=99:100 --from=builder /app/frontend/dist /app/frontend/dist
 
 # Ensure writable data dir for SQLite sessions
-RUN mkdir -p /app/backend/data && chown -R 99:100 /app/backend/data
-VOLUME ["/app/backend/data"]
+RUN mkdir -p /data && chown -R 99:100 /data
+VOLUME ["/data"]
 
 # Run as non-root
 USER 99:100

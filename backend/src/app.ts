@@ -76,7 +76,8 @@ export function createApp() {
     const frontendPath = join(import.meta.dirname, '../../frontend/dist');
     app.use(express.static(frontendPath));
 
-    app.get('*', (req, res) => {
+    // Catch-all route for SPA - must be after static files
+    app.get(/^\/(?!api).*/, (req, res) => {
       res.sendFile(join(frontendPath, 'index.html'));
     });
   }

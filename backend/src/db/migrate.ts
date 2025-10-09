@@ -1,4 +1,4 @@
-import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
+import { migrate } from 'drizzle-orm/bun-sqlite/migrator';
 import { db, sqlite } from './index.js';
 import { settings } from './schema.js';
 import { eq } from 'drizzle-orm';

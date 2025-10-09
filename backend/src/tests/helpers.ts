@@ -1,12 +1,12 @@
-import Database from 'better-sqlite3';
-import { drizzle, BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import { Database } from 'bun:sqlite';
+import { drizzle, BunSQLiteDatabase } from 'drizzle-orm/bun-sqlite';
 import * as schema from '../db/schema.js';
-import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
+import { migrate } from 'drizzle-orm/bun-sqlite/migrator';
 import { eq } from 'drizzle-orm';
 import { settings, clients, projects } from '../db/schema.js';
 
-let testDb: BetterSQLite3Database<typeof schema> | null = null;
-let testSqlite: Database.Database | null = null;
+let testDb: BunSQLiteDatabase<typeof schema> | null = null;
+let testSqlite: Database | null = null;
 
 export function getTestDb() {
   if (!testDb) {
@@ -28,7 +28,7 @@ export function closeTestDb() {
   }
 }
 
-function seedTestDb(db: BetterSQLite3Database<typeof schema>) {
+function seedTestDb(db: BunSQLiteDatabase<typeof schema>) {
   db.insert(settings).values({
     id: 1,
     companyName: 'Test Business',

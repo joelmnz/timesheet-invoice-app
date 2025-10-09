@@ -14,6 +14,7 @@ import {
   Center,
   Text,
   ActionIcon,
+  TextInput,
   NumberInput,
   Textarea,
   Card,
@@ -38,7 +39,7 @@ import {
   expensesApi,
   invoicesApi,
 } from '../services/api';
-import type { TimeEntry, Expense, Invoice } from '../types';
+import type { TimeEntry, Expense, Project } from '../types';
 import { InvoiceList } from '../components/lists/InvoiceList';
 
 export default function ProjectDetail() {
@@ -53,6 +54,7 @@ export default function ProjectDetail() {
   const [invoiceModalOpened, { open: openInvoiceModal, close: closeInvoiceModal }] = useDisclosure(false);
   const [deleteTimeModalOpened, { open: openDeleteTimeModal, close: closeDeleteTimeModal }] = useDisclosure(false);
   const [deleteExpenseModalOpened, { open: openDeleteExpenseModal, close: closeDeleteExpenseModal }] = useDisclosure(false);
+  const [editProjectModalOpened, { open: openEditProjectModal, close: closeEditProjectModal }] = useDisclosure(false);
   
   const [editingTimeEntry, setEditingTimeEntry] = useState<TimeEntry | null>(null);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
@@ -77,6 +79,19 @@ export default function ProjectDetail() {
   const { data: invoices, isLoading: invoicesLoading } = useQuery({
     queryKey: ['invoices', { projectId }],
     queryFn: () => invoicesApi.list({ projectId }),
+  });
+
+  const projectForm = useForm({
+    initialValues: {
+      name: '',
+      hourlyRate: 0,
+      notes: '',
+      active: true,
+    },
+    validate: {
+      name: (value) => (value.trim().length === 0 ? 'Name is required' : null),
+      hourlyRate: (value) => (value <= 0 ? 'Hourly rate must be greater than 0' : null),
+    },
   });
 
   const timeForm = useForm({
@@ -273,6 +288,56 @@ export default function ProjectDetail() {
     },
   });
 
+  const handleCloseEditProjectModal = () => {
+    projectForm.reset();
+    closeEditProjectModal();
+  };
+
+  const updateProjectMutation = useMutation({
+    mutationFn: (data: Partial<Project>) => projectsApi.update(projectId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      notifications.show({
+        title: 'Success',
+        message: 'Project updated successfully',
+        color: 'green',
+      });
+      handleCloseEditProjectModal();
+    },
+    onError: (error: Error) => {
+      notifications.show({
+        title: 'Error',
+        message: error.message,
+        color: 'red',
+      });
+    },
+  });
+
+  const handleOpenEditProjectModal = () => {
+    if (!project) return;
+
+    projectForm.setValues({
+      name: project.name,
+      hourlyRate: project.hourlyRate,
+      notes: project.notes ?? '',
+      active: project.active,
+    });
+
+    openEditProjectModal();
+  };
+
+  const handleSubmitProject = projectForm.onSubmit((values) => {
+    const payload: Partial<Project> = {
+      name: values.name.trim(),
+      hourlyRate: Number(values.hourlyRate),
+      notes: values.notes.trim() ? values.notes : undefined,
+      active: values.active,
+    };
+
+    updateProjectMutation.mutate(payload);
+  });
+
   const handleOpenCreateTimeModal = () => {
     setEditingTimeEntry(null);
     timeForm.reset();
@@ -414,6 +479,52 @@ export default function ProjectDetail() {
 
   return (
     <Container size="xl">
+      {/* Edit Project Modal */}
+      <Modal
+        opened={editProjectModalOpened}
+        onClose={handleCloseEditProjectModal}
+        title="Edit Project"
+        size="lg"
+      >
+        <form onSubmit={handleSubmitProject}>
+          <Stack>
+            <TextInput
+              label="Name"
+              placeholder="Project name"
+              required
+              {...projectForm.getInputProps('name')}
+            />
+            <NumberInput
+              label="Hourly Rate (NZD)"
+              required
+              min={0}
+              decimalScale={2}
+              fixedDecimalScale
+              {...projectForm.getInputProps('hourlyRate')}
+            />
+            <Textarea
+              label="Notes"
+              placeholder="Project notes"
+              autosize
+              minRows={3}
+              {...projectForm.getInputProps('notes')}
+            />
+            <Switch
+              label="Active"
+              {...projectForm.getInputProps('active', { type: 'checkbox' })}
+            />
+            <Group justify="flex-end" mt="md">
+              <Button variant="default" onClick={handleCloseEditProjectModal}>
+                Cancel
+              </Button>
+              <Button type="submit" loading={updateProjectMutation.isPending}>
+                Save
+              </Button>
+            </Group>
+          </Stack>
+        </form>
+      </Modal>
+
       <Button
         variant="subtle"
         leftSection={<IconArrowLeft size={16} />}
@@ -431,14 +542,29 @@ export default function ProjectDetail() {
               {project.client?.name} • NZD {project.hourlyRate.toFixed(2)}/hr
             </Text>
           </div>
-          <Badge color={project.active ? 'green' : 'gray'} size="lg">
-            {project.active ? 'Active' : 'Inactive'}
-          </Badge>
+          <Group gap="xs">
+            <Badge color={project.active ? 'green' : 'gray'} size="lg">
+              {project.active ? 'Active' : 'Inactive'}
+            </Badge>
+            <Button
+              variant="light"
+              leftSection={<IconEdit size={16} />}
+              onClick={handleOpenEditProjectModal}
+            >
+              Edit
+            </Button>
+          </Group>
         </Group>
         {project.notes && (
-          <Text mt="md" c="dimmed">
-            {project.notes}
-          </Text>
+          <Textarea
+            mt="md"
+            label="Notes"
+            value={project.notes}
+            readOnly
+            autosize
+            minRows={3}
+            variant="filled"
+          />
         )}
       </Card>
 

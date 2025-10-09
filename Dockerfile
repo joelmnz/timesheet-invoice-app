@@ -1,7 +1,7 @@
 ## syntax=docker/dockerfile:1.7
 
 # 1) Builder stage: install deps and build backend + frontend
-FROM oven/bun:1.0.25 AS builder
+FROM oven/bun:latest AS builder
 
 WORKDIR /app
 
@@ -9,10 +9,11 @@ WORKDIR /app
 COPY backend/package.json backend/bun.lockb ./backend/
 COPY frontend/package.json frontend/bun.lock ./frontend/
 
-# Install dependencies
+# Install dependencies (split for better layer caching)
 RUN --mount=type=cache,target=/root/.bun \
-    cd /app/backend && bun install --frozen-lockfile && \
-    cd /app/frontend && bun install
+    cd /app/backend && bun install --frozen-lockfile
+RUN --mount=type=cache,target=/root/.bun \
+    cd /app/frontend && bun install --frozen-lockfile
 
 # Now copy source code
 COPY backend ./backend
@@ -23,7 +24,7 @@ RUN cd /app/backend && bun run build
 RUN cd /app/frontend && bun run build
 
 # 2) Runtime stage: minimal runtime with prod deps only
-FROM oven/bun:1.0.25 AS runtime
+FROM oven/bun:latest AS runtime
 
 # Create non-root user with UNRAID compatible IDs (GID 100 already exists as 'users')
 RUN adduser --system --uid 99 --ingroup users bunuser

@@ -206,7 +206,7 @@ export default function InvoiceDetail() {
       status: values.status,
       datePaid: values.datePaid
         ? DateTime.fromJSDate(values.datePaid).toISODate() || undefined
-        : undefined,
+        : null,
       notes: values.notes || undefined,
     };
     updateInvoiceMutation.mutate({ id: invoiceId, data });
@@ -474,6 +474,7 @@ export default function InvoiceDetail() {
             {invoiceForm.values.status === 'Paid' && (
               <DatePickerInput
                 label="Date Paid"
+                clearable
                 {...invoiceForm.getInputProps('datePaid')}
               />
             )}

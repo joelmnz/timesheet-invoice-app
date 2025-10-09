@@ -12,7 +12,9 @@ import {
   Card,
   Badge,
   ActionIcon,
+  Anchor
 } from '@mantine/core';
+import { Link } from 'react-router-dom';
 import {
   IconArrowLeft,
   IconDownload,
@@ -136,7 +138,11 @@ export default function ClientDetail() {
           <Table.Tbody>
             {projects.map((project) => (
               <Table.Tr key={project.id}>
-                <Table.Td>{project.name}</Table.Td>
+                <Table.Td>
+  <Anchor component={Link} to={`/projects/${project.id}`} fw={600}>
+    {project.name}
+  </Anchor>
+</Table.Td>
                 <Table.Td ta="right">NZD {project.hourlyRate.toFixed(2)}/hr</Table.Td>
                 <Table.Td ta="center">
                   <Badge color={project.active ? 'green' : 'gray'}>
@@ -184,7 +190,11 @@ export default function ClientDetail() {
           <Table.Tbody>
             {invoices.map((invoice) => (
               <Table.Tr key={invoice.id}>
-                <Table.Td>{invoice.number}</Table.Td>
+                <Table.Td>
+  <Anchor component={Link} to={`/invoices/${invoice.id}`} fw={600}>
+    {invoice.number}
+  </Anchor>
+</Table.Td>
                 <Table.Td>{invoice.dateInvoiced}</Table.Td>
                 <Table.Td>{invoice.dueDate}</Table.Td>
                 <Table.Td ta="right">NZD {invoice.total.toFixed(2)}</Table.Td>

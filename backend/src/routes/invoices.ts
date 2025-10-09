@@ -124,8 +124,12 @@ router.put('/:id', requireAuth, async (req, res, next) => {
     const id = parseInt(req.params.id);
     const data = updateInvoiceSchema.parse(req.body);
 
+    // If datePaid is being cleared (set to null), automatically set status to Unpaid
+    if (data.datePaid === null) {
+      data.status = 'Unpaid';
+    }
     // If status is being set to Paid and datePaid is not provided, set it to today
-    if (data.status === 'Paid' && !data.datePaid) {
+    else if (data.status === 'Paid' && data.datePaid === undefined) {
       data.datePaid = DateTime.now().toISODate()!;
     }
 

@@ -250,7 +250,11 @@ export default function Dashboard() {
                 <Table.Tbody>
                   {summary?.outstandingInvoices.map((invoice) => (
                     <Table.Tr key={invoice.id}>
-                      <Table.Td>{invoice.number}</Table.Td>
+                      <Table.Td>
+  <Anchor component={Link} to={`/invoices/${invoice.id}`} fw={600}>
+    {invoice.number}
+  </Anchor>
+</Table.Td>
                       <Table.Td>{invoice.dateInvoiced}</Table.Td>
                       <Table.Td>{invoice.dueDate}</Table.Td>
                       <Table.Td>{invoice.clientName}</Table.Td>

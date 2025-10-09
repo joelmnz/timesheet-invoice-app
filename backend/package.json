@@ -1,0 +1,42 @@
+{
+  "name": "backend",
+  "packageManager": "bun@1.0.25",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "better-sqlite3": "^12.4.1",
+    "connect-sqlite3": "^0.9.16",
+    "cors": "^2.8.5",
+    "drizzle-orm": "^0.44.6",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.1.0",
+    "express-session": "^1.18.2",
+    "helmet": "^8.1.0",
+    "html-to-pdfmake": "^2.5.31",
+    "luxon": "^3.7.2",
+    "markdown-it": "^14.1.0",
+    "pdfmake": "^0.2.20",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "@types/express-session": "^1.18.2",
+    "@types/luxon": "^3.7.1",
+    "@types/markdown-it": "^14.1.2",
+    "@types/node": "^24.7.0",
+    "@types/pdfmake": "^0.2.11",
+    "drizzle-kit": "^0.31.5",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  },
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx src/db/migrate.ts"
+  }
+}

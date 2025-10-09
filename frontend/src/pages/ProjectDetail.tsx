@@ -1,0 +1,837 @@
+import { useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  Container,
+  Title,
+  Tabs,
+  Button,
+  Table,
+  Group,
+  Modal,
+  Stack,
+  Loader,
+  Center,
+  Text,
+  ActionIcon,
+  NumberInput,
+  Textarea,
+  Card,
+  Badge,
+  Select,
+  Switch,
+} from '@mantine/core';
+import { DateTimePicker, DatePickerInput } from '@mantine/dates';
+import { useForm } from '@mantine/form';
+import { useDisclosure } from '@mantine/hooks';
+import { notifications } from '@mantine/notifications';
+import {
+  IconPlus,
+  IconEdit,
+  IconTrash,
+  IconArrowLeft,
+  IconFileInvoice,
+  IconDownload,
+} from '@tabler/icons-react';
+import { DateTime } from 'luxon';
+import {
+  projectsApi,
+  timeEntriesApi,
+  expensesApi,
+  invoicesApi,
+} from '../services/api';
+import type { TimeEntry, Expense, Invoice } from '../types';
+
+export default function ProjectDetail() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const projectId = parseInt(id || '0');
+
+  const [activeTab, setActiveTab] = useState<string | null>('time');
+  const [timeModalOpened, { open: openTimeModal, close: closeTimeModal }] = useDisclosure(false);
+  const [expenseModalOpened, { open: openExpenseModal, close: closeExpenseModal }] = useDisclosure(false);
+  const [invoiceModalOpened, { open: openInvoiceModal, close: closeInvoiceModal }] = useDisclosure(false);
+  const [deleteTimeModalOpened, { open: openDeleteTimeModal, close: closeDeleteTimeModal }] = useDisclosure(false);
+  const [deleteExpenseModalOpened, { open: openDeleteExpenseModal, close: closeDeleteExpenseModal }] = useDisclosure(false);
+  
+  const [editingTimeEntry, setEditingTimeEntry] = useState<TimeEntry | null>(null);
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [deletingTimeEntry, setDeletingTimeEntry] = useState<TimeEntry | null>(null);
+  const [deletingExpense, setDeletingExpense] = useState<Expense | null>(null);
+
+  const { data: project, isLoading: projectLoading } = useQuery({
+    queryKey: ['projects', projectId],
+    queryFn: () => projectsApi.get(projectId),
+  });
+
+  const { data: timeEntries, isLoading: timeEntriesLoading } = useQuery({
+    queryKey: ['time-entries', projectId],
+    queryFn: () => timeEntriesApi.list(projectId),
+  });
+
+  const { data: expenses, isLoading: expensesLoading } = useQuery({
+    queryKey: ['expenses', projectId],
+    queryFn: () => expensesApi.list(projectId),
+  });
+
+  const { data: invoices, isLoading: invoicesLoading } = useQuery({
+    queryKey: ['invoices', { projectId }],
+    queryFn: () => invoicesApi.list({ projectId }),
+  });
+
+  const timeForm = useForm({
+    initialValues: {
+      startAt: new Date(),
+      endAt: new Date(),
+      note: '',
+    },
+    validate: {
+      endAt: (value, values) =>
+        value <= values.startAt ? 'End time must be after start time' : null,
+    },
+  });
+
+  const expenseForm = useForm({
+    initialValues: {
+      expenseDate: new Date(),
+      description: '',
+      amount: 0,
+      isBillable: true,
+    },
+    validate: {
+      amount: (value) => (value <= 0 ? 'Amount must be greater than 0' : null),
+    },
+  });
+
+  const invoiceForm = useForm({
+    initialValues: {
+      dateInvoiced: new Date(),
+      upToDate: new Date(),
+      notes: '',
+      groupByDay: false,
+    },
+  });
+
+  const createTimeEntryMutation = useMutation({
+    mutationFn: (data: Partial<TimeEntry>) =>
+      timeEntriesApi.create(projectId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['time-entries', projectId] });
+      notifications.show({
+        title: 'Success',
+        message: 'Time entry created successfully',
+        color: 'green',
+      });
+      closeTimeModal();
+      timeForm.reset();
+    },
+    onError: (error: Error) => {
+      notifications.show({
+        title: 'Error',
+        message: error.message,
+        color: 'red',
+      });
+    },
+  });
+
+  const updateTimeEntryMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<TimeEntry> }) =>
+      timeEntriesApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['time-entries', projectId] });
+      notifications.show({
+        title: 'Success',
+        message: 'Time entry updated successfully',
+        color: 'green',
+      });
+      closeTimeModal();
+      timeForm.reset();
+      setEditingTimeEntry(null);
+    },
+    onError: (error: Error) => {
+      notifications.show({
+        title: 'Error',
+        message: error.message,
+        color: 'red',
+      });
+    },
+  });
+
+  const deleteTimeEntryMutation = useMutation({
+    mutationFn: timeEntriesApi.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['time-entries', projectId] });
+      notifications.show({
+        title: 'Success',
+        message: 'Time entry deleted successfully',
+        color: 'green',
+      });
+      closeDeleteTimeModal();
+      setDeletingTimeEntry(null);
+    },
+    onError: (error: Error) => {
+      notifications.show({
+        title: 'Error',
+        message: error.message,
+        color: 'red',
+      });
+    },
+  });
+
+  const createExpenseMutation = useMutation({
+    mutationFn: (data: Partial<Expense>) =>
+      expensesApi.create(projectId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses', projectId] });
+      notifications.show({
+        title: 'Success',
+        message: 'Expense created successfully',
+        color: 'green',
+      });
+      closeExpenseModal();
+      expenseForm.reset();
+    },
+    onError: (error: Error) => {
+      notifications.show({
+        title: 'Error',
+        message: error.message,
+        color: 'red',
+      });
+    },
+  });
+
+  const updateExpenseMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<Expense> }) =>
+      expensesApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses', projectId] });
+      notifications.show({
+        title: 'Success',
+        message: 'Expense updated successfully',
+        color: 'green',
+      });
+      closeExpenseModal();
+      expenseForm.reset();
+      setEditingExpense(null);
+    },
+    onError: (error: Error) => {
+      notifications.show({
+        title: 'Error',
+        message: error.message,
+        color: 'red',
+      });
+    },
+  });
+
+  const deleteExpenseMutation = useMutation({
+    mutationFn: expensesApi.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses', projectId] });
+      notifications.show({
+        title: 'Success',
+        message: 'Expense deleted successfully',
+        color: 'green',
+      });
+      closeDeleteExpenseModal();
+      setDeletingExpense(null);
+    },
+    onError: (error: Error) => {
+      notifications.show({
+        title: 'Error',
+        message: error.message,
+        color: 'red',
+      });
+    },
+  });
+
+  const createInvoiceMutation = useMutation({
+    mutationFn: (data: {
+      dateInvoiced: string;
+      upToDate: string;
+      notes?: string;
+      groupByDay?: boolean;
+    }) => invoicesApi.create(projectId, data),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['time-entries', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['expenses', projectId] });
+      notifications.show({
+        title: 'Success',
+        message: 'Invoice created successfully',
+        color: 'green',
+      });
+      closeInvoiceModal();
+      invoiceForm.reset();
+      navigate(`/invoices/${data.invoice.id}`);
+    },
+    onError: (error: Error) => {
+      notifications.show({
+        title: 'Error',
+        message: error.message,
+        color: 'red',
+      });
+    },
+  });
+
+  const handleOpenCreateTimeModal = () => {
+    setEditingTimeEntry(null);
+    timeForm.reset();
+    openTimeModal();
+  };
+
+  const handleOpenEditTimeModal = (timeEntry: TimeEntry) => {
+    setEditingTimeEntry(timeEntry);
+    timeForm.setValues({
+      startAt: new Date(timeEntry.startAt),
+      endAt: timeEntry.endAt ? new Date(timeEntry.endAt) : new Date(),
+      note: timeEntry.note || '',
+    });
+    openTimeModal();
+  };
+
+  const handleOpenDeleteTimeModal = (timeEntry: TimeEntry) => {
+    setDeletingTimeEntry(timeEntry);
+    openDeleteTimeModal();
+  };
+
+  const handleSubmitTime = timeForm.onSubmit((values) => {
+    const data = {
+      startAt: values.startAt.toISOString(),
+      endAt: values.endAt.toISOString(),
+      note: values.note || undefined,
+    };
+
+    if (editingTimeEntry) {
+      updateTimeEntryMutation.mutate({ id: editingTimeEntry.id, data });
+    } else {
+      createTimeEntryMutation.mutate(data);
+    }
+  });
+
+  const handleDeleteTime = () => {
+    if (deletingTimeEntry) {
+      deleteTimeEntryMutation.mutate(deletingTimeEntry.id);
+    }
+  };
+
+  const handleOpenCreateExpenseModal = () => {
+    setEditingExpense(null);
+    expenseForm.reset();
+    openExpenseModal();
+  };
+
+  const handleOpenEditExpenseModal = (expense: Expense) => {
+    setEditingExpense(expense);
+    expenseForm.setValues({
+      expenseDate: new Date(expense.expenseDate),
+      description: expense.description || '',
+      amount: expense.amount,
+      isBillable: expense.isBillable,
+    });
+    openExpenseModal();
+  };
+
+  const handleOpenDeleteExpenseModal = (expense: Expense) => {
+    setDeletingExpense(expense);
+    openDeleteExpenseModal();
+  };
+
+  const handleSubmitExpense = expenseForm.onSubmit((values) => {
+    const data = {
+      expenseDate: DateTime.fromJSDate(values.expenseDate).toISODate() || '',
+      description: values.description || undefined,
+      amount: values.amount,
+      isBillable: values.isBillable,
+    };
+
+    if (editingExpense) {
+      updateExpenseMutation.mutate({ id: editingExpense.id, data });
+    } else {
+      createExpenseMutation.mutate(data);
+    }
+  });
+
+  const handleDeleteExpense = () => {
+    if (deletingExpense) {
+      deleteExpenseMutation.mutate(deletingExpense.id);
+    }
+  };
+
+  const handleSubmitInvoice = invoiceForm.onSubmit((values) => {
+    const data = {
+      dateInvoiced: DateTime.fromJSDate(values.dateInvoiced).toISODate() || '',
+      upToDate: DateTime.fromJSDate(values.upToDate).toISODate() || '',
+      notes: values.notes || undefined,
+      groupByDay: values.groupByDay,
+    };
+    createInvoiceMutation.mutate(data);
+  });
+
+  if (projectLoading) {
+    return (
+      <Center h={400}>
+        <Loader size="lg" />
+      </Center>
+    );
+  }
+
+  if (!project) {
+    return (
+      <Container size="xl">
+        <Text c="red">Project not found</Text>
+      </Container>
+    );
+  }
+
+  const uninvoicedHours = timeEntries?.filter((t) => !t.isInvoiced).reduce((sum, t) => sum + t.totalHours, 0) || 0;
+  const uninvoicedExpenses = expenses?.filter((e) => !e.isInvoiced && e.isBillable).reduce((sum, e) => sum + e.amount, 0) || 0;
+
+  return (
+    <Container size="xl">
+      <Button
+        variant="subtle"
+        leftSection={<IconArrowLeft size={16} />}
+        onClick={() => navigate('/projects')}
+        mb="md"
+      >
+        Back to Projects
+      </Button>
+
+      <Card shadow="sm" padding="lg" mb="xl">
+        <Group justify="space-between">
+          <div>
+            <Title order={1}>{project.name}</Title>
+            <Text size="lg" c="dimmed" mt="xs">
+              {project.client?.name} • NZD {project.hourlyRate.toFixed(2)}/hr
+            </Text>
+          </div>
+          <Badge color={project.active ? 'green' : 'gray'} size="lg">
+            {project.active ? 'Active' : 'Inactive'}
+          </Badge>
+        </Group>
+        {project.notes && (
+          <Text mt="md" c="dimmed">
+            {project.notes}
+          </Text>
+        )}
+      </Card>
+
+      <Card shadow="sm" padding="lg" mb="xl">
+        <Group justify="space-between">
+          <div>
+            <Text size="sm" c="dimmed">Uninvoiced Hours</Text>
+            <Text size="xl" fw={700}>{uninvoicedHours.toFixed(1)} hrs</Text>
+          </div>
+          <div>
+            <Text size="sm" c="dimmed">Uninvoiced Expenses</Text>
+            <Text size="xl" fw={700}>NZD {uninvoicedExpenses.toFixed(2)}</Text>
+          </div>
+          <div>
+            <Text size="sm" c="dimmed">Potential Value</Text>
+            <Text size="xl" fw={700}>
+              NZD {((uninvoicedHours * project.hourlyRate) + uninvoicedExpenses).toFixed(2)}
+            </Text>
+          </div>
+          <Button
+            leftSection={<IconFileInvoice size={16} />}
+            onClick={() => openInvoiceModal()}
+            disabled={uninvoicedHours === 0 && uninvoicedExpenses === 0}
+          >
+            Create Invoice
+          </Button>
+        </Group>
+      </Card>
+
+      <Tabs value={activeTab} onChange={setActiveTab}>
+        <Tabs.List>
+          <Tabs.Tab value="time">Time Entries</Tabs.Tab>
+          <Tabs.Tab value="expenses">Expenses</Tabs.Tab>
+          <Tabs.Tab value="invoices">Invoices</Tabs.Tab>
+        </Tabs.List>
+
+        <Tabs.Panel value="time" pt="md">
+          <Group justify="flex-end" mb="md">
+            <Button
+              leftSection={<IconPlus size={16} />}
+              onClick={handleOpenCreateTimeModal}
+            >
+              Add Time Entry
+            </Button>
+          </Group>
+
+          {timeEntriesLoading ? (
+            <Center h={200}>
+              <Loader />
+            </Center>
+          ) : !timeEntries || timeEntries.length === 0 ? (
+            <Text c="dimmed" ta="center" mt="xl">
+              No time entries yet. Add your first time entry!
+            </Text>
+          ) : (
+            <Table striped highlightOnHover>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>Start</Table.Th>
+                  <Table.Th>End</Table.Th>
+                  <Table.Th ta="right">Hours</Table.Th>
+                  <Table.Th>Note</Table.Th>
+                  <Table.Th ta="center">Status</Table.Th>
+                  <Table.Th ta="right">Actions</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {timeEntries.map((entry) => (
+                  <Table.Tr key={entry.id}>
+                    <Table.Td>
+                      {DateTime.fromISO(entry.startAt).toFormat('yyyy-MM-dd HH:mm')}
+                    </Table.Td>
+                    <Table.Td>
+                      {entry.endAt
+                        ? DateTime.fromISO(entry.endAt).toFormat('yyyy-MM-dd HH:mm')
+                        : 'Running'}
+                    </Table.Td>
+                    <Table.Td ta="right">{entry.totalHours.toFixed(2)}</Table.Td>
+                    <Table.Td>{entry.note || '-'}</Table.Td>
+                    <Table.Td ta="center">
+                      <Badge color={entry.isInvoiced ? 'blue' : 'gray'}>
+                        {entry.isInvoiced ? 'Invoiced' : 'Uninvoiced'}
+                      </Badge>
+                    </Table.Td>
+                    <Table.Td>
+                      <Group justify="flex-end" gap="xs">
+                        <ActionIcon
+                          variant="light"
+                          color="blue"
+                          onClick={() => handleOpenEditTimeModal(entry)}
+                          disabled={entry.isInvoiced}
+                        >
+                          <IconEdit size={16} />
+                        </ActionIcon>
+                        <ActionIcon
+                          variant="light"
+                          color="red"
+                          onClick={() => handleOpenDeleteTimeModal(entry)}
+                          disabled={entry.isInvoiced}
+                        >
+                          <IconTrash size={16} />
+                        </ActionIcon>
+                      </Group>
+                    </Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
+          )}
+        </Tabs.Panel>
+
+        <Tabs.Panel value="expenses" pt="md">
+          <Group justify="flex-end" mb="md">
+            <Button
+              leftSection={<IconPlus size={16} />}
+              onClick={handleOpenCreateExpenseModal}
+            >
+              Add Expense
+            </Button>
+          </Group>
+
+          {expensesLoading ? (
+            <Center h={200}>
+              <Loader />
+            </Center>
+          ) : !expenses || expenses.length === 0 ? (
+            <Text c="dimmed" ta="center" mt="xl">
+              No expenses yet. Add your first expense!
+            </Text>
+          ) : (
+            <Table striped highlightOnHover>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>Date</Table.Th>
+                  <Table.Th>Description</Table.Th>
+                  <Table.Th ta="right">Amount</Table.Th>
+                  <Table.Th ta="center">Billable</Table.Th>
+                  <Table.Th ta="center">Status</Table.Th>
+                  <Table.Th ta="right">Actions</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {expenses.map((expense) => (
+                  <Table.Tr key={expense.id}>
+                    <Table.Td>{expense.expenseDate}</Table.Td>
+                    <Table.Td>{expense.description || '-'}</Table.Td>
+                    <Table.Td ta="right">NZD {expense.amount.toFixed(2)}</Table.Td>
+                    <Table.Td ta="center">
+                      <Badge color={expense.isBillable ? 'green' : 'gray'}>
+                        {expense.isBillable ? 'Yes' : 'No'}
+                      </Badge>
+                    </Table.Td>
+                    <Table.Td ta="center">
+                      <Badge color={expense.isInvoiced ? 'blue' : 'gray'}>
+                        {expense.isInvoiced ? 'Invoiced' : 'Uninvoiced'}
+                      </Badge>
+                    </Table.Td>
+                    <Table.Td>
+                      <Group justify="flex-end" gap="xs">
+                        <ActionIcon
+                          variant="light"
+                          color="blue"
+                          onClick={() => handleOpenEditExpenseModal(expense)}
+                          disabled={expense.isInvoiced}
+                        >
+                          <IconEdit size={16} />
+                        </ActionIcon>
+                        <ActionIcon
+                          variant="light"
+                          color="red"
+                          onClick={() => handleOpenDeleteExpenseModal(expense)}
+                          disabled={expense.isInvoiced}
+                        >
+                          <IconTrash size={16} />
+                        </ActionIcon>
+                      </Group>
+                    </Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
+          )}
+        </Tabs.Panel>
+
+        <Tabs.Panel value="invoices" pt="md">
+          {invoicesLoading ? (
+            <Center h={200}>
+              <Loader />
+            </Center>
+          ) : !invoices || invoices.length === 0 ? (
+            <Text c="dimmed" ta="center" mt="xl">
+              No invoices yet. Create your first invoice!
+            </Text>
+          ) : (
+            <Table striped highlightOnHover>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>Invoice #</Table.Th>
+                  <Table.Th>Date</Table.Th>
+                  <Table.Th>Due Date</Table.Th>
+                  <Table.Th ta="right">Total</Table.Th>
+                  <Table.Th ta="center">Status</Table.Th>
+                  <Table.Th ta="right">Actions</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {invoices.map((invoice) => (
+                  <Table.Tr key={invoice.id}>
+                    <Table.Td>{invoice.number}</Table.Td>
+                    <Table.Td>{invoice.dateInvoiced}</Table.Td>
+                    <Table.Td>{invoice.dueDate}</Table.Td>
+                    <Table.Td ta="right">NZD {invoice.total.toFixed(2)}</Table.Td>
+                    <Table.Td ta="center">
+                      <Badge color={invoice.status === 'Paid' ? 'green' : 'orange'}>
+                        {invoice.status}
+                      </Badge>
+                    </Table.Td>
+                    <Table.Td>
+                      <Group justify="flex-end" gap="xs">
+                        <ActionIcon
+                          variant="light"
+                          color="blue"
+                          onClick={() => navigate(`/invoices/${invoice.id}`)}
+                        >
+                          <IconEdit size={16} />
+                        </ActionIcon>
+                        <ActionIcon
+                          variant="light"
+                          color="gray"
+                          onClick={() => invoicesApi.downloadPdf(invoice.id, invoice.number)}
+                        >
+                          <IconDownload size={16} />
+                        </ActionIcon>
+                      </Group>
+                    </Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
+          )}
+        </Tabs.Panel>
+      </Tabs>
+
+      <Modal
+        opened={timeModalOpened}
+        onClose={closeTimeModal}
+        title={editingTimeEntry ? 'Edit Time Entry' : 'Add Time Entry'}
+        size="lg"
+      >
+        <form onSubmit={handleSubmitTime}>
+          <Stack>
+            <DateTimePicker
+              label="Start Time"
+              placeholder="Select start time"
+              required
+              {...timeForm.getInputProps('startAt')}
+            />
+            <DateTimePicker
+              label="End Time"
+              placeholder="Select end time"
+              required
+              {...timeForm.getInputProps('endAt')}
+            />
+            <Textarea
+              label="Note"
+              placeholder="Optional note"
+              {...timeForm.getInputProps('note')}
+            />
+            <Group justify="flex-end" mt="md">
+              <Button variant="default" onClick={closeTimeModal}>
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                loading={
+                  createTimeEntryMutation.isPending || updateTimeEntryMutation.isPending
+                }
+              >
+                {editingTimeEntry ? 'Update' : 'Create'}
+              </Button>
+            </Group>
+          </Stack>
+        </form>
+      </Modal>
+
+      <Modal
+        opened={deleteTimeModalOpened}
+        onClose={closeDeleteTimeModal}
+        title="Delete Time Entry"
+      >
+        <Text mb="md">
+          Are you sure you want to delete this time entry? This action cannot be undone.
+        </Text>
+        <Group justify="flex-end">
+          <Button variant="default" onClick={closeDeleteTimeModal}>
+            Cancel
+          </Button>
+          <Button
+            color="red"
+            onClick={handleDeleteTime}
+            loading={deleteTimeEntryMutation.isPending}
+          >
+            Delete
+          </Button>
+        </Group>
+      </Modal>
+
+      <Modal
+        opened={expenseModalOpened}
+        onClose={closeExpenseModal}
+        title={editingExpense ? 'Edit Expense' : 'Add Expense'}
+        size="lg"
+      >
+        <form onSubmit={handleSubmitExpense}>
+          <Stack>
+            <DatePickerInput
+              label="Expense Date"
+              placeholder="Select date"
+              required
+              {...expenseForm.getInputProps('expenseDate')}
+            />
+            <Textarea
+              label="Description"
+              placeholder="Expense description"
+              {...expenseForm.getInputProps('description')}
+            />
+            <NumberInput
+              label="Amount (NZD)"
+              placeholder="0.00"
+              required
+              min={0}
+              decimalScale={2}
+              fixedDecimalScale
+              {...expenseForm.getInputProps('amount')}
+            />
+            <Switch
+              label="Billable"
+              {...expenseForm.getInputProps('isBillable', { type: 'checkbox' })}
+            />
+            <Group justify="flex-end" mt="md">
+              <Button variant="default" onClick={closeExpenseModal}>
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                loading={
+                  createExpenseMutation.isPending || updateExpenseMutation.isPending
+                }
+              >
+                {editingExpense ? 'Update' : 'Create'}
+              </Button>
+            </Group>
+          </Stack>
+        </form>
+      </Modal>
+
+      <Modal
+        opened={deleteExpenseModalOpened}
+        onClose={closeDeleteExpenseModal}
+        title="Delete Expense"
+      >
+        <Text mb="md">
+          Are you sure you want to delete this expense? This action cannot be undone.
+        </Text>
+        <Group justify="flex-end">
+          <Button variant="default" onClick={closeDeleteExpenseModal}>
+            Cancel
+          </Button>
+          <Button
+            color="red"
+            onClick={handleDeleteExpense}
+            loading={deleteExpenseMutation.isPending}
+          >
+            Delete
+          </Button>
+        </Group>
+      </Modal>
+
+      <Modal
+        opened={invoiceModalOpened}
+        onClose={closeInvoiceModal}
+        title="Create Invoice"
+        size="lg"
+      >
+        <form onSubmit={handleSubmitInvoice}>
+          <Stack>
+            <DatePickerInput
+              label="Invoice Date"
+              placeholder="Select date"
+              required
+              {...invoiceForm.getInputProps('dateInvoiced')}
+            />
+            <DatePickerInput
+              label="Include items up to"
+              placeholder="Select date"
+              required
+              {...invoiceForm.getInputProps('upToDate')}
+            />
+            <Textarea
+              label="Notes"
+              placeholder="Additional notes"
+              {...invoiceForm.getInputProps('notes')}
+            />
+            <Switch
+              label="Group time entries by day"
+              {...invoiceForm.getInputProps('groupByDay', { type: 'checkbox' })}
+            />
+            <Group justify="flex-end" mt="md">
+              <Button variant="default" onClick={closeInvoiceModal}>
+                Cancel
+              </Button>
+              <Button type="submit" loading={createInvoiceMutation.isPending}>
+                Create Invoice
+              </Button>
+            </Group>
+          </Stack>
+        </form>
+      </Modal>
+    </Container>
+  );
+}

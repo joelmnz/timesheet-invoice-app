@@ -1,6 +1,6 @@
 {
   "name": "frontend",
-  "packageManager": "yarn@4.9.4",
+  "packageManager": "bun@1.0.25",
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
     "@mantine/core": "^8.3.3",

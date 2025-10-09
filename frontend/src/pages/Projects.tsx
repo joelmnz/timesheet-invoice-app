@@ -3,29 +3,25 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import {
   Container,
-  Title,
   Button,
-  Table,
   Group,
   Modal,
   Stack,
-  Loader,
-  Center,
   Text,
-  ActionIcon,
   NumberInput,
   Textarea,
   Select,
-  Badge,
   TextInput,
   Switch,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import { IconPlus, IconEdit, IconTrash, IconEye } from '@tabler/icons-react';
+import { IconPlus } from '@tabler/icons-react';
 import { clientsApi, projectsApi } from '../services/api';
 import type { Project } from '../types';
+import { ListHeader } from '../components/lists/ListHeader';
+import { ProjectList } from '../components/lists/ProjectList';
 
 export default function Projects() {
   const navigate = useNavigate();
@@ -172,14 +168,6 @@ export default function Projects() {
     navigate(`/projects/${projectId}`);
   };
 
-  if (projectsLoading || clientsLoading) {
-    return (
-      <Center h={400}>
-        <Loader size="lg" />
-      </Center>
-    );
-  }
-
   const clientOptions = clients?.map((client) => ({
     value: client.id.toString(),
     label: `${client.name} (NZD ${client.defaultHourlyRate}/hr)`,
@@ -187,90 +175,44 @@ export default function Projects() {
 
   return (
     <Container size="xl">
-      <Group justify="space-between" mb="xl">
-        <Title order={1}>Projects</Title>
-        <Button leftSection={<IconPlus size={16} />} onClick={handleOpenCreateModal}>
-          New Project
-        </Button>
-      </Group>
+      <ListHeader
+        title="Projects"
+        action={
+          <Button leftSection={<IconPlus size={16} />} onClick={handleOpenCreateModal}>
+            New Project
+          </Button>
+        }
+      >
+        <Group mb="md">
+          <Button
+            variant={activeFilter === 'all' ? 'filled' : 'light'}
+            onClick={() => setActiveFilter('all')}
+          >
+            All
+          </Button>
+          <Button
+            variant={activeFilter === 'true' ? 'filled' : 'light'}
+            onClick={() => setActiveFilter('true')}
+          >
+            Active
+          </Button>
+          <Button
+            variant={activeFilter === 'false' ? 'filled' : 'light'}
+            onClick={() => setActiveFilter('false')}
+          >
+            Inactive
+          </Button>
+        </Group>
+      </ListHeader>
 
-      <Group mb="md">
-        <Button
-          variant={activeFilter === 'all' ? 'filled' : 'light'}
-          onClick={() => setActiveFilter('all')}
-        >
-          All
-        </Button>
-        <Button
-          variant={activeFilter === 'true' ? 'filled' : 'light'}
-          onClick={() => setActiveFilter('true')}
-        >
-          Active
-        </Button>
-        <Button
-          variant={activeFilter === 'false' ? 'filled' : 'light'}
-          onClick={() => setActiveFilter('false')}
-        >
-          Inactive
-        </Button>
-      </Group>
-
-      {!projects || projects.length === 0 ? (
-        <Text c="dimmed" ta="center" mt="xl">
-          No projects found. Create your first project!
-        </Text>
-      ) : (
-        <Table striped highlightOnHover>
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>Name</Table.Th>
-              <Table.Th>Client</Table.Th>
-              <Table.Th ta="right">Hourly Rate</Table.Th>
-              <Table.Th ta="center">Status</Table.Th>
-              <Table.Th ta="right">Actions</Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {projects.map((project) => (
-              <Table.Tr key={project.id}>
-                <Table.Td>{project.name}</Table.Td>
-                <Table.Td>{project.client?.name || '-'}</Table.Td>
-                <Table.Td ta="right">NZD {project.hourlyRate.toFixed(2)}/hr</Table.Td>
-                <Table.Td ta="center">
-                  <Badge color={project.active ? 'green' : 'gray'}>
-                    {project.active ? 'Active' : 'Inactive'}
-                  </Badge>
-                </Table.Td>
-                <Table.Td>
-                  <Group justify="flex-end" gap="xs">
-                    <ActionIcon
-                      variant="light"
-                      color="gray"
-                      onClick={() => handleViewProject(project.id)}
-                    >
-                      <IconEye size={16} />
-                    </ActionIcon>
-                    <ActionIcon
-                      variant="light"
-                      color="blue"
-                      onClick={() => handleOpenEditModal(project)}
-                    >
-                      <IconEdit size={16} />
-                    </ActionIcon>
-                    <ActionIcon
-                      variant="light"
-                      color="red"
-                      onClick={() => handleOpenDeleteModal(project)}
-                    >
-                      <IconTrash size={16} />
-                    </ActionIcon>
-                  </Group>
-                </Table.Td>
-              </Table.Tr>
-            ))}
-          </Table.Tbody>
-        </Table>
-      )}
+      <ProjectList
+        projects={projects || []}
+        loading={projectsLoading || clientsLoading}
+        emptyState="No projects found. Create your first project!"
+        onView={handleViewProject}
+        onEdit={handleOpenEditModal}
+        onDelete={handleOpenDeleteModal}
+      />
 
       <Modal
         opened={modalOpened}

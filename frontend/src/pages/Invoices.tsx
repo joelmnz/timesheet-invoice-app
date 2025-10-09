@@ -3,23 +3,20 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import {
   Container,
-  Title,
   Button,
-  Table,
   Group,
   Stack,
-  Loader,
-  Center,
   Text,
-  ActionIcon,
-  Badge,
   Select,
   Card,
 } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
-import { IconEye, IconDownload, IconFilter, IconFilterOff } from '@tabler/icons-react';
+import { IconFilter, IconFilterOff } from '@tabler/icons-react';
 import { DateTime } from 'luxon';
 import { invoicesApi, clientsApi, projectsApi } from '../services/api';
+import { ListHeader } from '../components/lists/ListHeader';
+import { InvoiceList } from '../components/lists/InvoiceList';
+import { formatCurrency } from '../components/lists/format';
 
 export default function Invoices() {
   const navigate = useNavigate();
@@ -72,14 +69,6 @@ export default function Invoices() {
   const hasActiveFilters =
     statusFilter || clientFilter || projectFilter || fromDate || toDate;
 
-  if (invoicesLoading) {
-    return (
-      <Center h={400}>
-        <Loader size="lg" />
-      </Center>
-    );
-  }
-
   const clientOptions = clients?.map((client) => ({
     value: client.id.toString(),
     label: client.name,
@@ -96,16 +85,18 @@ export default function Invoices() {
 
   return (
     <Container size="xl">
-      <Group justify="space-between" mb="xl">
-        <Title order={1}>Invoices</Title>
-        <Button
-          variant="light"
-          leftSection={filtersExpanded ? <IconFilterOff size={16} /> : <IconFilter size={16} />}
-          onClick={() => setFiltersExpanded(!filtersExpanded)}
-        >
-          {filtersExpanded ? 'Hide Filters' : 'Show Filters'}
-        </Button>
-      </Group>
+      <ListHeader
+        title="Invoices"
+        action={
+          <Button
+            variant="light"
+            leftSection={filtersExpanded ? <IconFilterOff size={16} /> : <IconFilter size={16} />}
+            onClick={() => setFiltersExpanded(!filtersExpanded)}
+          >
+            {filtersExpanded ? 'Hide Filters' : 'Show Filters'}
+          </Button>
+        }
+      />
 
       {filtersExpanded && (
         <Card shadow="sm" padding="lg" mb="xl">
@@ -175,87 +166,27 @@ export default function Invoices() {
         <Group>
           <Card shadow="sm" padding="md">
             <Text size="sm" c="dimmed">Total</Text>
-            <Text size="lg" fw={700}>NZD {totalAmount.toFixed(2)}</Text>
+            <Text size="lg" fw={700}>{formatCurrency(totalAmount)}</Text>
           </Card>
           <Card shadow="sm" padding="md">
             <Text size="sm" c="dimmed">Paid</Text>
-            <Text size="lg" fw={700} c="green">NZD {paidAmount.toFixed(2)}</Text>
+            <Text size="lg" fw={700} c="green">{formatCurrency(paidAmount)}</Text>
           </Card>
           <Card shadow="sm" padding="md">
             <Text size="sm" c="dimmed">Unpaid</Text>
-            <Text size="lg" fw={700} c="orange">NZD {unpaidAmount.toFixed(2)}</Text>
+            <Text size="lg" fw={700} c="orange">{formatCurrency(unpaidAmount)}</Text>
           </Card>
         </Group>
       </Group>
 
-      {!invoices || invoices.length === 0 ? (
-        <Text c="dimmed" ta="center" mt="xl">
-          {hasActiveFilters ? 'No invoices found matching filters' : 'No invoices yet'}
-        </Text>
-      ) : (
-        <Table striped highlightOnHover>
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>Invoice #</Table.Th>
-              <Table.Th>Client</Table.Th>
-              <Table.Th>Project</Table.Th>
-              <Table.Th>Date</Table.Th>
-              <Table.Th>Due Date</Table.Th>
-              <Table.Th ta="right">Total</Table.Th>
-              <Table.Th ta="center">Status</Table.Th>
-              <Table.Th ta="right">Actions</Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {invoices.map((invoice) => {
-              const dueDate = DateTime.fromISO(invoice.dueDate);
-              const today = DateTime.now();
-              const isOverdue = invoice.status === 'Unpaid' && dueDate < today;
-
-              return (
-                <Table.Tr key={invoice.id}>
-                  <Table.Td>{invoice.number}</Table.Td>
-                  <Table.Td>{invoice.client?.name || '-'}</Table.Td>
-                  <Table.Td>{invoice.project?.name || '-'}</Table.Td>
-                  <Table.Td>{invoice.dateInvoiced}</Table.Td>
-                  <Table.Td>
-                    {invoice.dueDate}
-                    {isOverdue && (
-                      <Text size="xs" c="red" span> (Overdue)</Text>
-                    )}
-                  </Table.Td>
-                  <Table.Td ta="right">NZD {invoice.total.toFixed(2)}</Table.Td>
-                  <Table.Td ta="center">
-                    <Badge color={invoice.status === 'Paid' ? 'green' : 'orange'}>
-                      {invoice.status}
-                    </Badge>
-                  </Table.Td>
-                  <Table.Td>
-                    <Group justify="flex-end" gap="xs">
-                      <ActionIcon
-                        variant="light"
-                        color="blue"
-                        onClick={() => navigate(`/invoices/${invoice.id}`)}
-                      >
-                        <IconEye size={16} />
-                      </ActionIcon>
-                      <ActionIcon
-                        variant="light"
-                        color="gray"
-                        onClick={() =>
-                          invoicesApi.downloadPdf(invoice.id, invoice.number)
-                        }
-                      >
-                        <IconDownload size={16} />
-                      </ActionIcon>
-                    </Group>
-                  </Table.Td>
-                </Table.Tr>
-              );
-            })}
-          </Table.Tbody>
-        </Table>
-      )}
+      <InvoiceList
+        invoices={invoices || []}
+        loading={invoicesLoading}
+        emptyState={hasActiveFilters ? 'No invoices found matching filters' : 'No invoices yet'}
+        showDueStatus={true}
+        onView={(id) => navigate(`/invoices/${id}`)}
+        onDownload={(id, number) => invoicesApi.downloadPdf(id, number)}
+      />
     </Container>
   );
 }

@@ -99,6 +99,7 @@ export interface DashboardSummary {
   uninvoicedHoursByProject: Array<{
     projectId: number;
     projectName: string;
+    clientId: number;
     clientName: string;
     totalHours: number;
   }>;

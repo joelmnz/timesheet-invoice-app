@@ -18,7 +18,6 @@ import {
   Textarea,
   Card,
   Badge,
-  Select,
   Switch,
 } from '@mantine/core';
 import { DateTimePicker, DatePickerInput } from '@mantine/dates';
@@ -31,7 +30,6 @@ import {
   IconTrash,
   IconArrowLeft,
   IconFileInvoice,
-  IconDownload,
 } from '@tabler/icons-react';
 import { DateTime } from 'luxon';
 import {
@@ -41,6 +39,7 @@ import {
   invoicesApi,
 } from '../services/api';
 import type { TimeEntry, Expense, Invoice } from '../types';
+import { InvoiceList } from '../components/lists/InvoiceList';
 
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
@@ -625,61 +624,14 @@ export default function ProjectDetail() {
         </Tabs.Panel>
 
         <Tabs.Panel value="invoices" pt="md">
-          {invoicesLoading ? (
-            <Center h={200}>
-              <Loader />
-            </Center>
-          ) : !invoices || invoices.length === 0 ? (
-            <Text c="dimmed" ta="center" mt="xl">
-              No invoices yet. Create your first invoice!
-            </Text>
-          ) : (
-            <Table striped highlightOnHover>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>Invoice #</Table.Th>
-                  <Table.Th>Date</Table.Th>
-                  <Table.Th>Due Date</Table.Th>
-                  <Table.Th ta="right">Total</Table.Th>
-                  <Table.Th ta="center">Status</Table.Th>
-                  <Table.Th ta="right">Actions</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {invoices.map((invoice) => (
-                  <Table.Tr key={invoice.id}>
-                    <Table.Td>{invoice.number}</Table.Td>
-                    <Table.Td>{invoice.dateInvoiced}</Table.Td>
-                    <Table.Td>{invoice.dueDate}</Table.Td>
-                    <Table.Td ta="right">NZD {invoice.total.toFixed(2)}</Table.Td>
-                    <Table.Td ta="center">
-                      <Badge color={invoice.status === 'Paid' ? 'green' : 'orange'}>
-                        {invoice.status}
-                      </Badge>
-                    </Table.Td>
-                    <Table.Td>
-                      <Group justify="flex-end" gap="xs">
-                        <ActionIcon
-                          variant="light"
-                          color="blue"
-                          onClick={() => navigate(`/invoices/${invoice.id}`)}
-                        >
-                          <IconEdit size={16} />
-                        </ActionIcon>
-                        <ActionIcon
-                          variant="light"
-                          color="gray"
-                          onClick={() => invoicesApi.downloadPdf(invoice.id, invoice.number)}
-                        >
-                          <IconDownload size={16} />
-                        </ActionIcon>
-                      </Group>
-                    </Table.Td>
-                  </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
-          )}
+          <InvoiceList
+            invoices={invoices || []}
+            loading={invoicesLoading}
+            emptyState="No invoices yet. Create your first invoice!"
+            compact
+            onView={(id) => navigate(`/invoices/${id}`)}
+            onDownload={(id, number) => invoicesApi.downloadPdf(id, number)}
+          />
         </Tabs.Panel>
       </Tabs>
 

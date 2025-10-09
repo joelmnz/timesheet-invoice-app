@@ -76,7 +76,7 @@ export default function ClientDetail() {
           <Button
             variant="light"
             leftSection={<IconEdit size={16} />}
-            onClick={() => navigate('/clients')}
+            onClick={() => navigate('/clients', { state: { editClientId: clientId } })}
           >
             Edit Client
           </Button>

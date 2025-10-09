@@ -8,15 +8,13 @@ import {
   Table,
   Badge,
   Button,
-  Group,
-  Stack,
   Loader,
   Center,
   Anchor,
 } from '@mantine/core';
 import { IconPlayerPlay } from '@tabler/icons-react';
 import { Line } from 'react-chartjs-2';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -30,6 +28,10 @@ import {
 import { dashboardApi, projectsApi } from '../services/api';
 import { useTimer } from '../contexts/TimerContext';
 import { DateTime } from 'luxon';
+import { ProjectList } from '../components/lists/ProjectList';
+import type { Invoice } from '../types';
+import { EntityTable, Column } from '../components/lists/EntityTable';
+import { formatCurrency } from '../components/lists/format';
 
 ChartJS.register(
   CategoryScale,
@@ -42,6 +44,7 @@ ChartJS.register(
 );
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const { currentTimer, startTimer } = useTimer();
 
   const { data: summary, isLoading: summaryLoading } = useQuery({
@@ -67,6 +70,50 @@ export default function Dashboard() {
   const handleStartTimer = async (projectId: number) => {
     await startTimer(projectId);
   };
+
+  const outstandingInvoicesColumns: Column<Invoice>[] = [
+    {
+      key: 'number',
+      title: 'Invoice #',
+      render: (invoice) => (
+        <Anchor component={Link} to={`/invoices/${invoice.id}`} fw={600}>
+          {invoice.number}
+        </Anchor>
+      ),
+    },
+    {
+      key: 'dateInvoiced',
+      title: 'Date',
+      render: (invoice) => invoice.dateInvoiced,
+    },
+    {
+      key: 'dueDate',
+      title: 'Due Date',
+      render: (invoice) => invoice.dueDate,
+    },
+    {
+      key: 'clientName',
+      title: 'Client',
+      render: (invoice: any) => invoice.clientName,
+    },
+    {
+      key: 'total',
+      title: 'Amount',
+      align: 'right' as const,
+      render: (invoice) => formatCurrency(invoice.total),
+    },
+    {
+      key: 'daysOverdue',
+      title: 'Days Overdue',
+      align: 'center' as const,
+      render: (invoice: any) =>
+        invoice.daysOverdue > 0 ? (
+          <Badge color="red">{invoice.daysOverdue}</Badge>
+        ) : (
+          <Text c="dimmed">-</Text>
+        ),
+    },
+  ];
 
   if (summaryLoading || invoicedLoading || hoursLoading) {
     return (
@@ -117,43 +164,32 @@ export default function Dashboard() {
       </Title>
 
       <Grid>
-        {/* Active Projects with Timer */}
         <Grid.Col span={12}>
           <Card shadow="sm" padding="lg">
             <Title order={3} mb="md">
               Active Projects
             </Title>
-            {!projects || projects.length === 0 ? (
-              <Text c="dimmed">No active projects</Text>
-            ) : (
-              <Stack gap="sm">
-                {projects.map((project) => (
-                  <Group key={project.id} justify="space-between">
-                    <div>
-                      <Anchor component={Link} to={`/projects/${project.id}`} fw={600}>
-                        {project.name}
-                      </Anchor>
-                      <Text size="sm" c="dimmed">
-                        {project.client?.name} • NZD {project.hourlyRate}/hr
-                      </Text>
-                    </div>
-                    {currentTimer?.projectId === project.id ? (
-                      <Badge size="lg" color="red">
-                        Timer Running
-                      </Badge>
-                    ) : (
-                      <Button
-                        leftSection={<IconPlayerPlay size={16} />}
-                        onClick={() => handleStartTimer(project.id)}
-                        disabled={!!currentTimer}
-                      >
-                        Start Timer
-                      </Button>
-                    )}
-                  </Group>
-                ))}
-              </Stack>
-            )}
+            <ProjectList
+              projects={projects || []}
+              variant="compact"
+              emptyState="No active projects"
+              onView={(id) => navigate(`/projects/${id}`)}
+              getRightAction={(project) =>
+                currentTimer?.projectId === project.id ? (
+                  <Badge size="lg" color="red">
+                    Timer Running
+                  </Badge>
+                ) : (
+                  <Button
+                    leftSection={<IconPlayerPlay size={16} />}
+                    onClick={() => handleStartTimer(project.id)}
+                    disabled={!!currentTimer}
+                  >
+                    Start Timer
+                  </Button>
+                )
+              }
+            />
           </Card>
         </Grid.Col>
       
@@ -227,50 +263,17 @@ export default function Dashboard() {
           </Card>
         </Grid.Col>
 
-        {/* Outstanding Invoices */}
         <Grid.Col span={12}>
           <Card shadow="sm" padding="lg">
             <Title order={3} mb="md">
               Outstanding Invoices
             </Title>
-            {summary?.outstandingInvoices.length === 0 ? (
-              <Text c="dimmed">No outstanding invoices</Text>
-            ) : (
-              <Table>
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th>Invoice #</Table.Th>
-                    <Table.Th>Date</Table.Th>
-                    <Table.Th>Due Date</Table.Th>
-                    <Table.Th>Client</Table.Th>
-                    <Table.Th ta="right">Amount</Table.Th>
-                    <Table.Th ta="center">Days Overdue</Table.Th>
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {summary?.outstandingInvoices.map((invoice) => (
-                    <Table.Tr key={invoice.id}>
-                      <Table.Td>
-  <Anchor component={Link} to={`/invoices/${invoice.id}`} fw={600}>
-    {invoice.number}
-  </Anchor>
-</Table.Td>
-                      <Table.Td>{invoice.dateInvoiced}</Table.Td>
-                      <Table.Td>{invoice.dueDate}</Table.Td>
-                      <Table.Td>{invoice.clientName}</Table.Td>
-                      <Table.Td ta="right">NZD {invoice.total.toFixed(2)}</Table.Td>
-                      <Table.Td ta="center">
-                        {invoice.daysOverdue > 0 ? (
-                          <Badge color="red">{invoice.daysOverdue}</Badge>
-                        ) : (
-                          <Text c="dimmed">-</Text>
-                        )}
-                      </Table.Td>
-                    </Table.Tr>
-                  ))}
-                </Table.Tbody>
-              </Table>
-            )}
+            <EntityTable
+              columns={outstandingInvoicesColumns}
+              rows={summary?.outstandingInvoices || []}
+              emptyState="No outstanding invoices"
+              getRowKey={(invoice: any) => invoice.id}
+            />
           </Card>
         </Grid.Col>
 

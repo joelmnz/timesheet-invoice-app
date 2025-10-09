@@ -317,7 +317,8 @@ router.post('/:id/invoices', requireAuth, async (req, res, next) => {
       return res.status(404).json({ error: 'Project not found' });
     }
 
-    // Get uninvoiced time entries up to date
+    const upToDateTime = DateTime.fromISO(upToDate).endOf('day').toISO()!;
+
     const uninvoicedTime = await db
       .select()
       .from(timeEntries)
@@ -325,13 +326,12 @@ router.post('/:id/invoices', requireAuth, async (req, res, next) => {
         and(
           eq(timeEntries.projectId, projectId),
           eq(timeEntries.isInvoiced, false),
-          lte(timeEntries.startAt, upToDate),
+          lte(timeEntries.startAt, upToDateTime),
           sql`${timeEntries.endAt} IS NOT NULL`
         )
       )
       .orderBy(timeEntries.startAt);
 
-    // Get uninvoiced billable expenses up to date
     const uninvoicedExpenses = await db
       .select()
       .from(expenses)

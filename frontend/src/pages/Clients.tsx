@@ -1,32 +1,29 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Container,
-  Title,
   Button,
-  Table,
   Group,
   TextInput,
   Modal,
   Stack,
-  Loader,
-  Center,
   Text,
-  ActionIcon,
   NumberInput,
   Textarea,
-  Anchor,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import { IconPlus, IconEdit, IconTrash, IconSearch } from '@tabler/icons-react';
+import { IconPlus, IconSearch } from '@tabler/icons-react';
 import { clientsApi } from '../services/api';
 import type { Client } from '../types';
+import { ListHeader } from '../components/lists/ListHeader';
+import { ClientList } from '../components/lists/ClientList';
 
 export default function Clients() {
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const [modalOpened, { open: openModal, close: closeModal }] = useDisclosure(false);
   const [deleteModalOpened, { open: openDeleteModal, close: closeDeleteModal }] = useDisclosure(false);
@@ -38,6 +35,16 @@ export default function Clients() {
     queryKey: ['clients', searchQuery],
     queryFn: () => clientsApi.list(searchQuery || undefined),
   });
+
+  useEffect(() => {
+    if (location.state?.editClientId && clients) {
+      const clientToEdit = clients.find(c => c.id === location.state.editClientId);
+      if (clientToEdit) {
+        handleOpenEditModal(clientToEdit);
+        navigate(location.pathname, { replace: true, state: {} });
+      }
+    }
+  }, [location.state, clients]);
 
   const form = useForm({
     initialValues: {
@@ -157,83 +164,33 @@ export default function Clients() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <Center h={400}>
-        <Loader size="lg" />
-      </Center>
-    );
-  }
-
   return (
     <Container size="xl">
-      <Group justify="space-between" mb="xl">
-        <Title order={1}>Clients</Title>
-        <Button leftSection={<IconPlus size={16} />} onClick={handleOpenCreateModal}>
-          New Client
-        </Button>
-      </Group>
+      <ListHeader
+        title="Clients"
+        action={
+          <Button leftSection={<IconPlus size={16} />} onClick={handleOpenCreateModal}>
+            New Client
+          </Button>
+        }
+      >
+        <TextInput
+          placeholder="Search clients..."
+          leftSection={<IconSearch size={16} />}
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          mb="md"
+        />
+      </ListHeader>
 
-      <TextInput
-        placeholder="Search clients..."
-        leftSection={<IconSearch size={16} />}
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        mb="md"
+      <ClientList
+        clients={clients || []}
+        loading={isLoading}
+        emptyState={searchQuery ? 'No clients found' : 'No clients yet. Create your first client!'}
+        onClick={(id) => navigate(`/clients/${id}`)}
+        onEdit={handleOpenEditModal}
+        onDelete={handleOpenDeleteModal}
       />
-
-      {!clients || clients.length === 0 ? (
-        <Text c="dimmed" ta="center" mt="xl">
-          {searchQuery ? 'No clients found' : 'No clients yet. Create your first client!'}
-        </Text>
-      ) : (
-        <Table striped highlightOnHover>
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>Name</Table.Th>
-              <Table.Th>Contact Person</Table.Th>
-              <Table.Th>Email</Table.Th>
-              <Table.Th ta="right">Default Rate</Table.Th>
-              <Table.Th ta="right">Actions</Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {clients.map((client) => (
-              <Table.Tr key={client.id}>
-                <Table.Td>
-                  <Anchor
-                    component="button"
-                    onClick={() => navigate(`/clients/${client.id}`)}
-                  >
-                    {client.name}
-                  </Anchor>
-                </Table.Td>
-                <Table.Td>{client.contactPerson || '-'}</Table.Td>
-                <Table.Td>{client.email || '-'}</Table.Td>
-                <Table.Td ta="right">NZD {client.defaultHourlyRate.toFixed(2)}/hr</Table.Td>
-                <Table.Td>
-                  <Group justify="flex-end" gap="xs">
-                    <ActionIcon
-                      variant="light"
-                      color="blue"
-                      onClick={() => handleOpenEditModal(client)}
-                    >
-                      <IconEdit size={16} />
-                    </ActionIcon>
-                    <ActionIcon
-                      variant="light"
-                      color="red"
-                      onClick={() => handleOpenDeleteModal(client)}
-                    >
-                      <IconTrash size={16} />
-                    </ActionIcon>
-                  </Group>
-                </Table.Td>
-              </Table.Tr>
-            ))}
-          </Table.Tbody>
-        </Table>
-      )}
 
       <Modal
         opened={modalOpened}

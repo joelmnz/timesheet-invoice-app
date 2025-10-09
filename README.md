@@ -73,6 +73,7 @@ bun run db:migrate
 - Backend expects at least:
   - `SESSION_SECRET` (for session encryption)
   - `DATABASE_PATH` (optional, defaults to `./data`)
+  - `ALLOWED_ORIGINS` (optional, for production CORS; comma-separated list)
 - Create a `.env` file in `backend/` if needed.
 
 ### 5. Running the App (Development)
@@ -169,6 +170,7 @@ curl -fsS http://localhost:8080/health
 - `APP_PASSWORD_HASH` – bcrypt hash alternative to APP_PASSWORD
 - `SESSION_SECRET` – required; set a long random string
 - `DATABASE_PATH` – default `/data/app.db`
+- `ALLOWED_ORIGINS` – optional; comma-separated list of allowed CORS origins in production (e.g., `https://app.example.com,https://timesheet.mydomain.com`). If not set or empty, allows all origins.
 - `TZ` – container timezone (e.g., `Pacific/Auckland`)
 
 ### Data persistence

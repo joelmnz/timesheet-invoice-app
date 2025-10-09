@@ -9,6 +9,8 @@ import type {
   DashboardSummary,
   ChartData,
   ReportData,
+  ImportPreview,
+  ImportResult,
 } from '../types';
 
 const API_BASE = '/api';
@@ -275,5 +277,24 @@ export const reportsApi = {
     if (from) params.append('from', from);
     if (to) params.append('to', to);
     window.open(`${API_BASE}/export/${entity}?${params}`, '_blank');
+  },
+};
+
+// Import API
+export const importApi = {
+  validateInvoices: (csvContent: string) =>
+    fetchApi<ImportPreview>('/import/invoices/validate', {
+      method: 'POST',
+      body: JSON.stringify({ csvContent }),
+    }),
+
+  confirmInvoices: (csvContent: string) =>
+    fetchApi<ImportResult>('/import/invoices/confirm', {
+      method: 'POST',
+      body: JSON.stringify({ csvContent }),
+    }),
+
+  downloadExample: () => {
+    window.open(`${API_BASE}/import/invoices/example`, '_blank');
   },
 };

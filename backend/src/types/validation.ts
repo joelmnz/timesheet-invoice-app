@@ -1,0 +1,118 @@
+import { z } from 'zod';
+
+// Auth schemas
+export const loginSchema = z.object({
+  username: z.string().min(1, 'Username is required'),
+  password: z.string().min(1, 'Password is required'),
+});
+
+// Settings schemas
+export const updateSettingsSchema = z.object({
+  companyName: z.string().min(1, 'Company name is required'),
+  companyAddress: z.string().optional(),
+  companyEmail: z.string().email().optional().or(z.literal('')),
+  companyPhone: z.string().optional(),
+  invoiceFooterMarkdown: z.string().optional(),
+  nextInvoiceNumber: z.number().int().positive(),
+});
+
+// Client schemas
+export const createClientSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  address: z.string().optional(),
+  email: z.string().email().optional().or(z.literal('')),
+  contactPerson: z.string().optional(),
+  defaultHourlyRate: z.number().min(0).default(0),
+  notes: z.string().optional(),
+});
+
+export const updateClientSchema = createClientSchema.partial();
+
+// Project schemas
+export const createProjectSchema = z.object({
+  clientId: z.number().int().positive(),
+  name: z.string().min(1, 'Name is required'),
+  hourlyRate: z.number().min(0).default(0),
+  notes: z.string().optional(),
+  active: z.boolean().default(true),
+});
+
+export const updateProjectSchema = createProjectSchema.partial();
+
+// Time entry schemas
+export const createTimeEntrySchema = z.object({
+  startAt: z.string().datetime(),
+  endAt: z.string().datetime().optional(),
+  note: z.string().optional(),
+});
+
+export const updateTimeEntrySchema = z.object({
+  startAt: z.string().datetime().optional(),
+  endAt: z.string().datetime().optional(),
+  note: z.string().optional(),
+});
+
+export const stopTimerSchema = z.object({
+  clientStopAt: z.string().datetime().optional(),
+});
+
+// Expense schemas
+export const createExpenseSchema = z.object({
+  expenseDate: z.string(),
+  description: z.string().optional(),
+  amount: z.number().min(0),
+  isBillable: z.boolean().default(true),
+});
+
+export const updateExpenseSchema = createExpenseSchema.partial();
+
+// Invoice schemas
+export const createInvoiceSchema = z.object({
+  dateInvoiced: z.string(),
+  upToDate: z.string(),
+  notes: z.string().optional(),
+  groupByDay: z.boolean().optional().default(false),
+});
+
+export const updateInvoiceSchema = z.object({
+  number: z.string().optional(),
+  dateInvoiced: z.string().optional(),
+  dueDate: z.string().optional(),
+  notes: z.string().optional(),
+  status: z.enum(['Unpaid', 'Paid']).optional(),
+  datePaid: z.string().optional().nullable(),
+});
+
+// Invoice line item schemas
+export const createInvoiceLineItemSchema = z.object({
+  type: z.enum(['time', 'expense', 'manual']),
+  description: z.string().min(1, 'Description is required'),
+  // Quantity must be greater than 0; allow decimals for hours/units
+  quantity: z.number().gt(0, 'Quantity must be greater than 0').default(1),
+  // Allow negative, zero, and positive unit prices
+  unitPrice: z.number(),
+  linkedTimeEntryId: z.number().int().positive().optional(),
+  linkedExpenseId: z.number().int().positive().optional(),
+});
+
+export const updateInvoiceLineItemSchema = z.object({
+  description: z.string().min(1).optional(),
+  quantity: z.number().gt(0).optional(),
+  unitPrice: z.number().refine((v) => v !== 0).optional(),
+});
+
+export type LoginInput = z.infer<typeof loginSchema>;
+export type UpdateSettingsInput = z.infer<typeof updateSettingsSchema>;
+export type CreateClientInput = z.infer<typeof createClientSchema>;
+export type UpdateClientInput = z.infer<typeof updateClientSchema>;
+export type CreateProjectInput = z.infer<typeof createProjectSchema>;
+export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
+export type CreateTimeEntryInput = z.infer<typeof createTimeEntrySchema>;
+export type UpdateTimeEntryInput = z.infer<typeof updateTimeEntrySchema>;
+export type StopTimerInput = z.infer<typeof stopTimerSchema>;
+export type CreateExpenseInput = z.infer<typeof createExpenseSchema>;
+export type UpdateExpenseInput = z.infer<typeof updateExpenseSchema>;
+export type CreateInvoiceInput = z.infer<typeof createInvoiceSchema>;
+export type UpdateInvoiceInput = z.infer<typeof updateInvoiceSchema>;
+export type CreateInvoiceLineItemInput = z.infer<typeof createInvoiceLineItemSchema>;
+export type UpdateInvoiceLineItemInput = z.infer<typeof updateInvoiceLineItemSchema>;

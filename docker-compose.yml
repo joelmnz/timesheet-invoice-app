@@ -1,0 +1,47 @@
+version: "3.9"
+
+services:
+  app:
+    image: timesheet-invoice-app:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: timesheet-invoice-app
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      # UNRAID-compatible user/group IDs (set these if different)
+      - PUID=${PUID:-99}
+      - PGID=${PGID:-100}
+      - UMASK=${UMASK:-002}
+      # Required
+      - APP_USERNAME=${APP_USERNAME:-admin}
+      - APP_PASSWORD=${APP_PASSWORD:-admin}
+      - SESSION_SECRET=${SESSION_SECRET}
+      # Optional
+      - NODE_ENV=production
+      - TZ=${TZ:-UTC}
+      - DATABASE_PATH=${DATABASE_PATH:-/data/app.db}
+      - PORT=8080
+    volumes:
+      # For UNRAID: use bind mount to appdata (recommended)
+      # Example: - /mnt/user/appdata/timesheet-invoice-app:/data
+      # For Docker Compose on other systems: named volume works with entrypoint
+      - timesheet-data:/data
+    healthcheck:
+      test: ["CMD", "bun", "-e", "fetch('http://localhost:8080/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+volumes:
+  timesheet-data:
+    driver: local

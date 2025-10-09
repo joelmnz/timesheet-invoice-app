@@ -54,7 +54,7 @@ describe('API Service Path Validation', () => {
     });
 
     it('should call PUT /api/settings', async () => {
-      await settingsApi.update({ businessName: 'Test' });
+      await settingsApi.update({ companyName: 'Test' });
       expect(fetchMock).toHaveBeenCalledWith(
         '/api/settings',
         expect.objectContaining({ method: 'PUT' })

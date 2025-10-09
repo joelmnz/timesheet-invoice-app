@@ -57,7 +57,7 @@ export default function Clients() {
     },
     validate: {
       name: (value) => (!value ? 'Name is required' : null),
-      defaultHourlyRate: (value) => (value <= 0 ? 'Hourly rate must be greater than 0' : null),
+        defaultHourlyRate: (value) => (value < 0 ? 'Hourly rate cannot be negative' : null),
     },
   });
 

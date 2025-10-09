@@ -64,8 +64,5 @@ bun run db:migrate    # Apply migrations to the database
 - For database errors, check migration status and schema in `db/schema.ts`.
 - For API errors, review the error handler and validation schemas.
 
-## License
-MIT
-
 ---
 For frontend setup and usage, see the `frontend/README.md`.

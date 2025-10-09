@@ -1,0 +1,34 @@
+version: "3.9"
+
+services:
+  app:
+    image: timesheet-invoice-app:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: timesheet-invoice-app
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      # Required
+      - APP_USERNAME=${APP_USERNAME:-admin}
+      - APP_PASSWORD=${APP_PASSWORD:-admin}
+      - SESSION_SECRET=${SESSION_SECRET}
+      # Optional
+      - NODE_ENV=production
+      - TZ=${TZ:-UTC}
+      - DATABASE_PATH=${DATABASE_PATH:-/data/app.db}
+    volumes:
+      - timesheet-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    user: "99:100"  # UNRAID-friendly: uid 99, gid 100 (users)
+
+volumes:
+  timesheet-data:
+    driver: local

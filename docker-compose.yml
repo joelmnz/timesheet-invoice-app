@@ -14,6 +14,7 @@ services:
       # UNRAID-compatible user/group IDs (set these if different)
       - PUID=${PUID:-99}
       - PGID=${PGID:-100}
+      - UMASK=${UMASK:-002}
       # Required
       - APP_USERNAME=${APP_USERNAME:-admin}
       - APP_PASSWORD=${APP_PASSWORD:-admin}
@@ -22,6 +23,7 @@ services:
       - NODE_ENV=production
       - TZ=${TZ:-UTC}
       - DATABASE_PATH=${DATABASE_PATH:-/data/app.db}
+      - PORT=8080
     volumes:
       # For UNRAID: use bind mount to appdata (recommended)
       # Example: - /mnt/user/appdata/timesheet-invoice-app:/data
@@ -33,6 +35,12 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
 
 volumes:
   timesheet-data:

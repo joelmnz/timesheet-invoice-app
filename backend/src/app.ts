@@ -22,6 +22,10 @@ export function createApp() {
   const SESSION_SECRET = process.env.SESSION_SECRET || 'change-me-in-production';
   const NODE_ENV = process.env.NODE_ENV || 'development';
 
+  if (NODE_ENV === 'production') {
+    app.set('trust proxy', 1);
+  }
+
   const SQLiteStore = ConnectSqlite3(session);
 
   app.use(helmet({

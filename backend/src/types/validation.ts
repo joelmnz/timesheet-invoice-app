@@ -89,8 +89,8 @@ export const createInvoiceLineItemSchema = z.object({
   description: z.string().min(1, 'Description is required'),
   // Quantity must be greater than 0; allow decimals for hours/units
   quantity: z.number().gt(0, 'Quantity must be greater than 0').default(1),
-  // Allow negative unit prices for discounts/credits; disallow zero
-  unitPrice: z.number().refine((v) => v !== 0, { message: 'Unit price cannot be 0' }),
+  // Allow negative, zero, and positive unit prices
+  unitPrice: z.number(),
   linkedTimeEntryId: z.number().int().positive().optional(),
   linkedExpenseId: z.number().int().positive().optional(),
 });

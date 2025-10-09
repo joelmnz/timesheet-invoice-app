@@ -137,6 +137,17 @@ bun run build
 
 The app ships with a multi-stage Dockerfile and a docker-compose.yml for production. The backend serves the built frontend from `frontend/dist` and stores SQLite database files under `/data`.
 
+### Database Migrations
+
+The application includes automatic database migration support:
+
+- **First Start**: When the container starts for the first time (no database exists), migrations run automatically to create the database schema.
+- **Existing Database**: If migrations are needed after an update, you'll see a prompt after login to run migrations through the UI.
+- **Manual Migration**: You can trigger migrations via the UI after logging in, which will:
+  - Create an automatic backup of your database
+  - Run pending migrations
+  - Initialize default settings
+
 ### Quick start with Docker Compose
 
 1. Copy env file and edit secrets:
@@ -146,22 +157,24 @@ cp .env.example .env
 # edit .env to set strong SESSION_SECRET and credentials
 ```
 
-1. Build and run:
+2. Build and run:
 
 ```bash
 docker compose up -d --build
 ```
 
-1. Verify:
+3. Verify:
 
 ```bash
 curl -fsS http://localhost:8080/health
 ```
 
-1. Default login (if not changed in .env):
+4. Default login (if not changed in .env):
 
 - Username: `admin`
 - Password: `admin`
+
+On first login, if database migrations are needed, you'll be prompted to run them through the UI.
 
 ### Environment variables
 

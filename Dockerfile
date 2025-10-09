@@ -43,6 +43,9 @@ COPY --chown=99:100 --from=builder /app/backend/dist /app/backend/dist
 COPY --chown=99:100 --from=builder /app/backend/drizzle /app/backend/drizzle
 COPY --chown=99:100 --from=builder /app/frontend/dist /app/frontend/dist
 
+# Copy source files needed for migrations at runtime
+COPY --chown=99:100 --from=builder /app/backend/drizzle.config.ts /app/backend/drizzle.config.ts
+
 # Ensure writable data dir for SQLite sessions
 RUN mkdir -p /data && chown -R 99:100 /data
 VOLUME ["/data"]

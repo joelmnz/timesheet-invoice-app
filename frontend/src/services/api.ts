@@ -298,3 +298,29 @@ export const importApi = {
     window.open(`${API_BASE}/import/invoices/example`, '_blank');
   },
 };
+
+// Migrations API
+export const migrationsApi = {
+  getStatus: () =>
+    fetchApi<{
+      needed: boolean;
+      reason?: string;
+      tablesExist: boolean;
+      settingsExist: boolean;
+    }>('/migrations/status'),
+
+  runMigrations: () =>
+    fetchApi<{
+      success: boolean;
+      message: string;
+      backupPath?: string;
+      error?: string;
+    }>('/migrations/run', { method: 'POST' }),
+
+  createBackup: () =>
+    fetchApi<{
+      success: boolean;
+      message: string;
+      backupPath: string;
+    }>('/migrations/backup', { method: 'POST' }),
+};

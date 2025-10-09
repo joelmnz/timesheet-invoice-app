@@ -67,6 +67,11 @@ export function createApp() {
   app.use('/api/export', reportsRoutes);
   app.use('/api/auth', authRoutes);
 
+  // Lightweight health endpoint
+  app.get('/health', (_req, res) => {
+    res.status(200).send('ok');
+  });
+
   if (NODE_ENV === 'production') {
     const frontendPath = join(import.meta.dirname, '../../frontend/dist');
     app.use(express.static(frontendPath));

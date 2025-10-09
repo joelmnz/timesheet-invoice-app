@@ -39,6 +39,7 @@ RUN chown -R 99:100 /app/backend/node_modules
 
 # Copy compiled backend and built frontend assets
 COPY --chown=99:100 --from=builder /app/backend/dist /app/backend/dist
+COPY --chown=99:100 --from=builder /app/backend/drizzle /app/backend/drizzle
 COPY --chown=99:100 --from=builder /app/frontend/dist /app/frontend/dist
 
 # Ensure writable data dir for SQLite sessions

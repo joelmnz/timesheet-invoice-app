@@ -20,7 +20,6 @@ backend/data/
 backend/sessions.db
 backend/sessions.db-*
 backend/*.db
-backend/drizzle/
 backend/src/tests/
 frontend/dev-dist/
 .env

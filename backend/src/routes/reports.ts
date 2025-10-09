@@ -25,9 +25,11 @@ router.get('/invoices', requireAuth, async (req, res, next) => {
       .select({
         invoice: invoices,
         clientName: clients.name,
+        projectName: projects.name,
       })
       .from(invoices)
       .innerJoin(clients, eq(invoices.clientId, clients.id))
+      .innerJoin(projects, eq(invoices.projectId, projects.id))
       .where(
         and(
           sql`${invoices.dateInvoiced} >= ${from}`,
@@ -39,11 +41,14 @@ router.get('/invoices', requireAuth, async (req, res, next) => {
     const total = data.reduce((sum, row) => sum + row.invoice.total, 0);
 
     res.json({
-      data: data.map(({ invoice, clientName }) => ({
+      data: data.map(({ invoice, clientName, projectName }) => ({
+        id: invoice.id,
+        number: invoice.number,
         dateInvoiced: invoice.dateInvoiced,
-        invoiceNumber: invoice.number,
         clientName,
-        amount: invoice.total,
+        projectName,
+        status: invoice.status,
+        total: invoice.total,
       })),
       total,
     });
@@ -63,9 +68,11 @@ router.get('/income', requireAuth, async (req, res, next) => {
       .select({
         invoice: invoices,
         clientName: clients.name,
+        projectName: projects.name,
       })
       .from(invoices)
       .innerJoin(clients, eq(invoices.clientId, clients.id))
+      .innerJoin(projects, eq(invoices.projectId, projects.id))
       .where(
         and(
           eq(invoices.status, 'Paid'),
@@ -78,11 +85,14 @@ router.get('/income', requireAuth, async (req, res, next) => {
     const total = data.reduce((sum, row) => sum + row.invoice.total, 0);
 
     res.json({
-      data: data.map(({ invoice, clientName }) => ({
+      data: data.map(({ invoice, clientName, projectName }) => ({
+        id: invoice.id,
+        number: invoice.number,
         datePaid: invoice.datePaid,
-        invoiceNumber: invoice.number,
         clientName,
-        amountPaid: invoice.total,
+        projectName,
+        status: invoice.status,
+        total: invoice.total,
       })),
       total,
     });

@@ -53,7 +53,7 @@ export async function getUnsyncedTimers(): Promise<OfflineTimerState[]> {
     const transaction = database.transaction([STORE_NAME], 'readonly');
     const store = transaction.objectStore(STORE_NAME);
     const index = store.index('synced');
-    const request = index.getAll(false);
+    const request = index.getAll(IDBKeyRange.only(false));
 
     request.onerror = () => reject(request.error);
     request.onsuccess = () => resolve(request.result);
@@ -88,7 +88,7 @@ export async function clearSyncedTimers(): Promise<void> {
     const transaction = database.transaction([STORE_NAME], 'readwrite');
     const store = transaction.objectStore(STORE_NAME);
     const index = store.index('synced');
-    const request = index.openCursor(true);
+    const request = index.openCursor(IDBKeyRange.only(true));
 
     request.onerror = () => reject(request.error);
     request.onsuccess = () => {

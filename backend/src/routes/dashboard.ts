@@ -86,7 +86,7 @@ router.get('/summary', requireAuth, async (req, res, next) => {
 });
 
 // GET /api/charts/invoiced-by-month
-router.get('/charts/invoiced-by-month', requireAuth, async (req, res, next) => {
+router.get('/invoiced-by-month', requireAuth, async (req, res, next) => {
   try {
     const months = parseInt(req.query.months as string) || 12;
     const { start, end } = getLastNMonths(months);
@@ -113,7 +113,7 @@ router.get('/charts/invoiced-by-month', requireAuth, async (req, res, next) => {
 });
 
 // GET /api/charts/hours-by-month
-router.get('/charts/hours-by-month', requireAuth, async (req, res, next) => {
+router.get('/hours-by-month', requireAuth, async (req, res, next) => {
   try {
     const months = parseInt(req.query.months as string) || 12;
     const { start, end } = getLastNMonths(months);

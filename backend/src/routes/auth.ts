@@ -1,8 +1,15 @@
 import { Router } from 'express';
 import bcrypt from 'bcrypt';
+import rateLimit from 'express-rate-limit';
 import { loginSchema } from '../types/validation.js';
 
 const router = Router();
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: process.env.NODE_ENV === 'production' ? 5 : 100,
+  message: 'Too many login attempts, please try again later',
+});
 
 // Get credentials from env
 const APP_USERNAME = process.env.APP_USERNAME || 'admin';
@@ -22,7 +29,7 @@ if (APP_PASSWORD_HASH) {
 }
 
 // POST /api/auth/login
-router.post('/login', async (req, res, next) => {
+router.post('/login', loginLimiter, async (req, res, next) => {
   try {
     const { username, password } = loginSchema.parse(req.body);
 

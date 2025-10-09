@@ -2,7 +2,6 @@ import express from 'express';
 import session from 'express-session';
 import helmet from 'helmet';
 import cors from 'cors';
-import rateLimit from 'express-rate-limit';
 import { dirname, join } from 'path';
 import ConnectSqlite3 from 'connect-sqlite3';
 
@@ -37,12 +36,6 @@ export function createApp() {
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true }));
 
-  const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 5,
-    message: 'Too many login attempts, please try again later',
-  });
-
   app.use(
     session({
       store: new SQLiteStore({
@@ -61,7 +54,6 @@ export function createApp() {
     })
   );
 
-  app.use('/api/auth', authLimiter, authRoutes);
   app.use('/api/settings', settingsRoutes);
   app.use('/api/clients', clientsRoutes);
   app.use('/api/projects', projectsRoutes);
@@ -73,6 +65,7 @@ export function createApp() {
   app.use('/api/charts', dashboardRoutes);
   app.use('/api/reports', reportsRoutes);
   app.use('/api/export', reportsRoutes);
+  app.use('/api/auth', authRoutes);
 
   if (NODE_ENV === 'production') {
     const frontendPath = join(import.meta.dirname, '../../frontend/dist');

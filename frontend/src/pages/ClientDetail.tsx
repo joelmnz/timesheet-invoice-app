@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   Container,
@@ -12,7 +13,12 @@ import {
   Card,
   Badge,
   ActionIcon,
-  Anchor
+  Anchor,
+  Modal,
+  TextInput,
+  NumberInput,
+  Switch,
+  Stack,
 } from '@mantine/core';
 import { Link } from 'react-router-dom';
 import {
@@ -28,10 +34,25 @@ export default function ClientDetail() {
   const navigate = useNavigate();
   const clientId = parseInt(id || '0');
 
+  // State for Add Project modal
+  const [addProjectOpen, setAddProjectOpen] = React.useState(false);
+  const [projectName, setProjectName] = React.useState('');
+  const [hourlyRate, setHourlyRate] = React.useState<number>(0);
+  const [active, setActive] = React.useState(true);
+  const [creating, setCreating] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
+  // Query for client
   const { data: client, isLoading: clientLoading } = useQuery({
     queryKey: ['clients', clientId],
     queryFn: () => clientsApi.get(clientId),
   });
+
+  React.useEffect(() => {
+    if (addProjectOpen && client) {
+      setHourlyRate(client.defaultHourlyRate || 0);
+    }
+  }, [addProjectOpen, client]);
 
   const { data: projects, isLoading: projectsLoading } = useQuery({
     queryKey: ['projects', { clientId }],
@@ -73,14 +94,89 @@ export default function ClientDetail() {
       <Card shadow="sm" padding="lg" mb="xl">
         <Group justify="space-between" mb="md">
           <Title order={1}>{client.name}</Title>
-          <Button
-            variant="light"
-            leftSection={<IconEdit size={16} />}
-            onClick={() => navigate('/clients', { state: { editClientId: clientId } })}
-          >
-            Edit Client
-          </Button>
+          <Group>
+            <Button
+              variant="light"
+              leftSection={<IconEdit size={16} />}
+              onClick={() => navigate('/clients', { state: { editClientId: clientId } })}
+            >
+              Edit Client
+            </Button>
+            <Button
+              variant="filled"
+              color="green"
+              leftSection={<IconEdit size={16} />} // You may want to use a different icon
+              onClick={() => setAddProjectOpen(true)}
+            >
+              Add Project
+            </Button>
+          </Group>
         </Group>
+      <Modal
+        opened={addProjectOpen}
+        onClose={() => setAddProjectOpen(false)}
+        title="Add New Project"
+        centered
+      >
+        <Stack>
+          <TextInput
+            label="Project Name"
+            placeholder="Enter project name"
+            value={projectName}
+            onChange={e => setProjectName(e.currentTarget.value)}
+            required
+          />
+          <NumberInput
+            label="Hourly Rate (NZD)"
+            value={hourlyRate}
+            onChange={val => setHourlyRate(Number(val))}
+            min={0}
+            required
+          />
+          <Switch
+            label="Active"
+            checked={active}
+            onChange={e => setActive(e.currentTarget.checked)}
+          />
+          {error && <Text c="red" size="sm">{error}</Text>}
+          <Group justify="flex-end">
+            <Button variant="default" onClick={() => setAddProjectOpen(false)} disabled={creating}>Cancel</Button>
+            <Button
+              variant="filled"
+              color="green"
+              loading={creating}
+              onClick={async () => {
+                setCreating(true);
+                setError(null);
+                try {
+                  // Call API to create project
+                  await projectsApi.create({
+                    clientId,
+                    name: projectName,
+                    hourlyRate,
+                    active,
+                  });
+                  setAddProjectOpen(false);
+                  setProjectName('');
+                  setHourlyRate(client?.defaultHourlyRate || 0);
+                  setActive(true);
+                  // Optionally, refetch projects list
+                  if (typeof window !== 'undefined' && window.location) {
+                    window.location.reload(); // simple way to refresh
+                  }
+                } catch (err: any) {
+                  setError(err?.message || 'Failed to create project');
+                } finally {
+                  setCreating(false);
+                }
+              }}
+              disabled={!projectName || hourlyRate <= 0}
+            >
+              Create Project
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
 
         <Group gap="xl">
           {client.contactPerson && (

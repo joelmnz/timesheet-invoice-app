@@ -69,21 +69,25 @@ export function TimerProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     async function syncOfflineTimers() {
       if (navigator.onLine) {
-        const unsyncedTimers = await getUnsyncedTimers();
-        for (const timer of unsyncedTimers) {
-          try {
-            if (timer.clientStopAt) {
-              await projectsApi.stopTimer(timer.projectId, timer.clientStopAt);
-            } else {
-              await projectsApi.startTimer(timer.projectId);
+        try {
+          const unsyncedTimers = await getUnsyncedTimers();
+          for (const timer of unsyncedTimers) {
+            try {
+              if (timer.clientStopAt) {
+                await projectsApi.stopTimer(timer.projectId, timer.clientStopAt);
+              } else {
+                await projectsApi.startTimer(timer.projectId);
+              }
+              await markTimerSynced(timer.id);
+            } catch (error) {
+              console.error('Failed to sync timer:', error);
             }
-            await markTimerSynced(timer.id);
-          } catch (error) {
-            console.error('Failed to sync timer:', error);
           }
+          await clearSyncedTimers();
+          queryClient.invalidateQueries({ queryKey: ['current-timer'] });
+        } catch (error) {
+          console.error('Error syncing offline timers:', error);
         }
-        await clearSyncedTimers();
-        queryClient.invalidateQueries({ queryKey: ['current-timer'] });
       }
     }
 

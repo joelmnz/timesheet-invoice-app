@@ -48,16 +48,23 @@ export async function saveOfflineTimer(timer: OfflineTimerState): Promise<void> 
 }
 
 export async function getUnsyncedTimers(): Promise<OfflineTimerState[]> {
-  const database = await openDB();
-  return new Promise((resolve, reject) => {
-    const transaction = database.transaction([STORE_NAME], 'readonly');
-    const store = transaction.objectStore(STORE_NAME);
-    const index = store.index('synced');
-    const request = index.getAll(IDBKeyRange.only(false));
+  try {
+    const database = await openDB();
+    return new Promise((resolve, reject) => {
+      const transaction = database.transaction([STORE_NAME], 'readonly');
+      const store = transaction.objectStore(STORE_NAME);
+      const request = store.getAll();
 
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => resolve(request.result);
-  });
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        const items = (request.result || []) as OfflineTimerState[];
+        resolve(items.filter((t) => t && t.synced === false));
+      };
+    });
+  } catch (error) {
+    console.error('Error getting unsynced timers:', error);
+    return [];
+  }
 }
 
 export async function markTimerSynced(id: string): Promise<void> {
@@ -87,14 +94,16 @@ export async function clearSyncedTimers(): Promise<void> {
   return new Promise((resolve, reject) => {
     const transaction = database.transaction([STORE_NAME], 'readwrite');
     const store = transaction.objectStore(STORE_NAME);
-    const index = store.index('synced');
-    const request = index.openCursor(IDBKeyRange.only(true));
+    const request = store.openCursor();
 
     request.onerror = () => reject(request.error);
     request.onsuccess = () => {
       const cursor = request.result;
       if (cursor) {
-        cursor.delete();
+        const value = cursor.value as OfflineTimerState;
+        if (value && value.synced === true) {
+          cursor.delete();
+        }
         cursor.continue();
       } else {
         resolve();

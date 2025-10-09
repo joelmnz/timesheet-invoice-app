@@ -7,7 +7,9 @@ The app is configured to work in multiple deployment scenarios:
 ### Changes Made
 
 1. **Trust Proxy**: Always enabled to detect HTTPS from reverse proxies/tunnels
-2. **CORS**: Allows credentials from any origin in production (authentication still required)
+2. **CORS**: Configurable via `ALLOWED_ORIGINS` environment variable in production (authentication still required)
+   - If `ALLOWED_ORIGINS` is set: validates requests against comma-separated list of allowed origins
+   - If `ALLOWED_ORIGINS` is empty or not set: allows all origins (for backwards compatibility)
 3. **Session Cookie**:
    - Named `timesheet.sid` to avoid conflicts with other UNRAID containers
    - Uses `secure: 'auto'` to auto-detect HTTP vs HTTPS
@@ -47,12 +49,25 @@ APP_PASSWORD=your-secure-password
 TZ=Pacific/Auckland
 ```
 
+Optional:
+
+```bash
+ALLOWED_ORIGINS=https://your-domain.com,https://another-domain.com
+```
+
+**Note on ALLOWED_ORIGINS:**
+- In production, specify a comma-separated list of allowed origins for enhanced security
+- Example: `ALLOWED_ORIGINS=https://timesheet.mydomain.com,https://app.example.com`
+- If not set or empty, the app will allow requests from any origin (authentication still required)
+- In development, this is automatically set to `http://localhost:5173`
+
 ### Security Notes
 
 1. **SESSION_SECRET**: Use a long random string (>32 chars)
 2. **APP_PASSWORD**: Change from default in production
-3. **CORS**: Open in production but authentication is still required
-4. **Session Store**: Uses SQLite, persists across restarts
+3. **ALLOWED_ORIGINS**: For enhanced security, set this to a comma-separated list of your actual domains in production
+4. **CORS**: If `ALLOWED_ORIGINS` is not set, allows all origins but authentication is still required
+5. **Session Store**: Uses SQLite, persists across restarts
 
 ### Testing
 

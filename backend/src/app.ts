@@ -31,13 +31,20 @@ export function createApp() {
     contentSecurityPolicy: false,
   }));
 
-  // CORS configuration - allows credentials from any origin in production
-  // This is safe because authentication is still required
+  // CORS configuration - validates origins from environment variable in production
+  const allowedOrigins = NODE_ENV === 'production'
+    ? (process.env.ALLOWED_ORIGINS || '').split(',').filter(Boolean)
+    : ['http://localhost:5173'];
+
   app.use(cors({
-    origin: NODE_ENV === 'production' 
+    origin: NODE_ENV === 'production'
       ? (origin, callback) => {
-          // Allow any origin in production (for Cloudflare tunnel, UNRAID IP, etc.)
-          callback(null, true);
+          // Allow requests with no origin (e.g., mobile apps, Postman) or matching origins
+          if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+            callback(null, true);
+          } else {
+            callback(new Error('Not allowed by CORS'));
+          }
         }
       : 'http://localhost:5173',
     credentials: true,

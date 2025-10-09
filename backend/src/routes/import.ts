@@ -13,6 +13,7 @@ const router = Router();
 interface ImportInvoiceRow {
   invoiceNumber: string;
   invoiceDate: string;
+  projectName: string;
   description: string;
   amount: number;
   datePaid: string | null;
@@ -41,6 +42,7 @@ router.post('/invoices/validate', requireAuth, async (req, res, next) => {
     const expectedHeaders = [
       'Invoice Number',
       'Invoice Date',
+      'Project Name',
       'Invoice Line Description',
       'Invoice Amount',
       'Date Invoice Paid'
@@ -72,15 +74,20 @@ router.post('/invoices/validate', requireAuth, async (req, res, next) => {
     const existingInvoices = await db.select({ number: invoicesTable.number }).from(invoicesTable);
     const existingNumbers = new Set(existingInvoices.map(inv => inv.number));
     
+    // Get all projects from database for validation
+    const allProjects = await db.select().from(projects);
+    const projectsByName = new Map(allProjects.map(p => [p.name.toLowerCase(), p]));
+    
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
       const rowNum = i + 2; // +2 because row 1 is headers, and we're 0-indexed
       
       const invoiceNumber = row[0]?.trim() || '';
       const invoiceDate = row[1]?.trim() || '';
-      const description = row[2]?.trim() || '';
-      const amountStr = row[3]?.trim() || '';
-      const datePaid = row[4]?.trim() || null;
+      const projectName = row[2]?.trim() || '';
+      const description = row[3]?.trim() || '';
+      const amountStr = row[4]?.trim() || '';
+      const datePaid = row[5]?.trim() || null;
       
       // Validate invoice number
       if (!invoiceNumber) {
@@ -113,6 +120,27 @@ router.post('/invoices/validate', requireAuth, async (req, res, next) => {
       }
       
       seenInvoiceNumbers.add(invoiceNumber);
+      
+      // Validate project name
+      if (!projectName) {
+        errors.push({
+          row: rowNum,
+          field: 'Project Name',
+          message: 'Project name is required'
+        });
+        continue;
+      }
+      
+      // Check if project exists
+      const project = projectsByName.get(projectName.toLowerCase());
+      if (!project) {
+        errors.push({
+          row: rowNum,
+          field: 'Project Name',
+          message: `Project does not exist: ${projectName}. Please create the project first.`
+        });
+        continue;
+      }
       
       // Validate invoice date
       if (!invoiceDate) {
@@ -173,6 +201,7 @@ router.post('/invoices/validate', requireAuth, async (req, res, next) => {
       invoices.push({
         invoiceNumber,
         invoiceDate,
+        projectName,
         description,
         amount: roundToCents(amount),
         datePaid: validatedDatePaid
@@ -202,6 +231,7 @@ router.post('/invoices/confirm', requireAuth, async (req, res, next) => {
     const expectedHeaders = [
       'Invoice Number',
       'Invoice Date',
+      'Project Name',
       'Invoice Line Description',
       'Invoice Amount',
       'Date Invoice Paid'
@@ -228,15 +258,20 @@ router.post('/invoices/confirm', requireAuth, async (req, res, next) => {
     const existingInvoices = await db.select({ number: invoicesTable.number }).from(invoicesTable);
     const existingNumbers = new Set(existingInvoices.map(inv => inv.number));
     
+    // Get all projects from database for validation
+    const allProjects = await db.select().from(projects);
+    const projectsByName = new Map(allProjects.map(p => [p.name.toLowerCase(), p]));
+    
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
       const rowNum = i + 2;
       
       const invoiceNumber = row[0]?.trim() || '';
       const invoiceDate = row[1]?.trim() || '';
-      const description = row[2]?.trim() || '';
-      const amountStr = row[3]?.trim() || '';
-      const datePaid = row[4]?.trim() || null;
+      const projectName = row[2]?.trim() || '';
+      const description = row[3]?.trim() || '';
+      const amountStr = row[4]?.trim() || '';
+      const datePaid = row[5]?.trim() || null;
       
       if (!invoiceNumber) {
         errors.push({ row: rowNum, field: 'Invoice Number', message: 'Invoice number is required' });
@@ -254,6 +289,17 @@ router.post('/invoices/confirm', requireAuth, async (req, res, next) => {
       }
       
       seenInvoiceNumbers.add(invoiceNumber);
+      
+      if (!projectName) {
+        errors.push({ row: rowNum, field: 'Project Name', message: 'Project name is required' });
+        continue;
+      }
+      
+      const project = projectsByName.get(projectName.toLowerCase());
+      if (!project) {
+        errors.push({ row: rowNum, field: 'Project Name', message: `Project does not exist: ${projectName}. Please create the project first.` });
+        continue;
+      }
       
       if (!invoiceDate) {
         errors.push({ row: rowNum, field: 'Invoice Date', message: 'Invoice date is required' });
@@ -290,6 +336,7 @@ router.post('/invoices/confirm', requireAuth, async (req, res, next) => {
       importedInvoices.push({
         invoiceNumber,
         invoiceDate,
+        projectName,
         description,
         amount: roundToCents(amount),
         datePaid: validatedDatePaid
@@ -304,48 +351,23 @@ router.post('/invoices/confirm', requireAuth, async (req, res, next) => {
       });
     }
     
-    // Get default client and project for imported invoices
-    // We'll need to create a default "Imported" client and project if they don't exist
-    let importClient = await db.select().from(clients).where(eq(clients.name, 'Imported')).limit(1);
-    
-    if (importClient.length === 0) {
-      const [newClient] = await db.insert(clients).values({
-        name: 'Imported',
-        defaultHourlyRate: 0,
-        notes: 'Auto-created for invoice imports'
-      }).returning();
-      importClient = [newClient];
-    }
-    
-    let importProject = await db.select().from(projects)
-      .where(eq(projects.clientId, importClient[0].id))
-      .limit(1);
-    
-    if (importProject.length === 0) {
-      const [newProject] = await db.insert(projects).values({
-        clientId: importClient[0].id,
-        name: 'Imported Invoices',
-        hourlyRate: 0,
-        active: false,
-        notes: 'Auto-created for invoice imports'
-      }).returning();
-      importProject = [newProject];
-    }
-    
-    const clientId = importClient[0].id;
-    const projectId = importProject[0].id;
-    
     // Insert invoices and line items
     let successCount = 0;
     
     for (const invoice of importedInvoices) {
+      // Find the project for this invoice
+      const project = projectsByName.get(invoice.projectName.toLowerCase());
+      if (!project) {
+        continue; // Should not happen as we validated earlier
+      }
+      
       const status = invoice.datePaid ? 'Paid' : 'Unpaid';
       const dueDate = invoice.invoiceDate; // Use same date as invoice date for imports
       
       const [newInvoice] = await db.insert(invoicesTable).values({
         number: invoice.invoiceNumber,
-        clientId,
-        projectId,
+        clientId: project.clientId,
+        projectId: project.id,
         dateInvoiced: invoice.invoiceDate,
         dueDate,
         status,
@@ -384,15 +406,16 @@ router.get('/invoices/example', requireAuth, async (req, res, next) => {
     const headers = [
       'Invoice Number',
       'Invoice Date',
+      'Project Name',
       'Invoice Line Description',
       'Invoice Amount',
       'Date Invoice Paid'
     ];
     
     const rows = [
-      ['INV-0001', '2025-01-01', 'Single line invoice description', '1234.50', '2025-01-20'],
-      ['INV-002', '2025-02-01', 'Invoice Total', '300.45', '2025-02-20'],
-      ['INV-003', '2025-03-01', 'Invoice Line Total', '3450', '']
+      ['INV-0001', '2025-01-01', 'Website Development', 'Single line invoice description', '1234.50', '2025-01-20'],
+      ['INV-002', '2025-02-01', 'Consulting', 'Invoice Total', '300.45', '2025-02-20'],
+      ['INV-003', '2025-03-01', 'Website Development', 'Invoice Line Total', '3450', '']
     ];
     
     const csvContent = generateCSV(headers, rows);

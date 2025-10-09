@@ -136,15 +136,17 @@ export default function ImportInvoices() {
             <div>
               <Title order={4}>Instructions</Title>
               <Text size="sm" mt="xs">
-                1. Download the example CSV file to understand the required format
+                1. Ensure all projects exist in the system before importing (go to Projects page to create them)
                 <br />
-                2. Fill in your invoice data following the example format
+                2. Download the example CSV file to understand the required format
                 <br />
-                3. Upload your CSV file for validation
+                3. Fill in your invoice data following the example format
                 <br />
-                4. Review the preview and fix any errors if needed
+                4. Upload your CSV file for validation
                 <br />
-                5. Confirm the import to add invoices to the system
+                5. Review the preview and fix any errors if needed
+                <br />
+                6. Confirm the import to add invoices to the system
               </Text>
             </div>
 
@@ -154,6 +156,8 @@ export default function ImportInvoices() {
                 • <strong>Invoice Number:</strong> Unique identifier (required)
                 <br />
                 • <strong>Invoice Date:</strong> Date in YYYY-MM-DD format (required)
+                <br />
+                • <strong>Project Name:</strong> Exact name of existing project (required, must exist in system)
                 <br />
                 • <strong>Invoice Line Description:</strong> Description of the invoice (required)
                 <br />
@@ -250,6 +254,7 @@ export default function ImportInvoices() {
                       <Table.Tr>
                         <Table.Th>Invoice Number</Table.Th>
                         <Table.Th>Date</Table.Th>
+                        <Table.Th>Project</Table.Th>
                         <Table.Th>Description</Table.Th>
                         <Table.Th>Amount</Table.Th>
                         <Table.Th>Status</Table.Th>
@@ -260,6 +265,7 @@ export default function ImportInvoices() {
                         <Table.Tr key={idx}>
                           <Table.Td>{invoice.invoiceNumber}</Table.Td>
                           <Table.Td>{invoice.invoiceDate}</Table.Td>
+                          <Table.Td>{invoice.projectName}</Table.Td>
                           <Table.Td>{invoice.description}</Table.Td>
                           <Table.Td>${invoice.amount.toFixed(2)}</Table.Td>
                           <Table.Td>

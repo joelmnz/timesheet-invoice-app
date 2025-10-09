@@ -134,6 +134,7 @@ export interface ReportData {
 export interface ImportInvoiceRow {
   invoiceNumber: string;
   invoiceDate: string;
+  projectName: string;
   description: string;
   amount: number;
   datePaid: string | null;

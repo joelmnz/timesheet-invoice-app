@@ -12,9 +12,11 @@ import {
   Stack,
   Loader,
   Center,
+  Anchor,
 } from '@mantine/core';
 import { IconPlayerPlay } from '@tabler/icons-react';
 import { Line } from 'react-chartjs-2';
+import { Link } from 'react-router-dom';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -128,7 +130,9 @@ export default function Dashboard() {
                 {projects.map((project) => (
                   <Group key={project.id} justify="space-between">
                     <div>
-                      <Text fw={600}>{project.name}</Text>
+                      <Anchor component={Link} to={`/projects/${project.id}`} fw={600}>
+                        {project.name}
+                      </Anchor>
                       <Text size="sm" c="dimmed">
                         {project.client?.name} • NZD {project.hourlyRate}/hr
                       </Text>
@@ -173,8 +177,16 @@ export default function Dashboard() {
                 <Table.Tbody>
                   {summary?.uninvoicedHoursByProject.map((row) => (
                     <Table.Tr key={row.projectId}>
-                      <Table.Td>{row.clientName}</Table.Td>
-                      <Table.Td>{row.projectName}</Table.Td>
+                      <Table.Td>
+                        <Anchor component={Link} to={`/clients/${row.clientId}`}>
+                          {row.clientName}
+                        </Anchor>
+                      </Table.Td>
+                      <Table.Td>
+                        <Anchor component={Link} to={`/projects/${row.projectId}`}>
+                          {row.projectName}
+                        </Anchor>
+                      </Table.Td>
                       <Table.Td ta="right">{row.totalHours.toFixed(1)}</Table.Td>
                     </Table.Tr>
                   ))}

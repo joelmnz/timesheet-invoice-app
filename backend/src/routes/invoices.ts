@@ -27,6 +27,8 @@ import { generateInvoicePdf } from '../services/pdf.js';
 import { DateTime } from 'luxon';
 
 const router = Router();
+// Separate router for invoice line item operations mounted at /api/invoice-lines
+export const invoiceLinesRouter = Router();
 
 // GET /api/invoices
 router.get('/', requireAuth, async (req, res, next) => {
@@ -111,232 +113,6 @@ router.get('/:id', requireAuth, async (req, res, next) => {
       client,
       project,
     });
-  } catch (error) {
-    next(error);
-  }
-});
-
-// POST /api/projects/:id/invoices
-router.post('/projects/:id/invoices', requireAuth, async (req, res, next) => {
-  try {
-    const projectId = parseInt(req.params.id);
-    const { dateInvoiced, upToDate, notes, groupByDay = false } = createInvoiceSchema.parse(req.body);
-
-    // Get project details
-    const [project] = await db
-      .select()
-      .from(projects)
-      .where(eq(projects.id, projectId))
-      .limit(1);
-
-    if (!project) {
-      return res.status(404).json({ error: 'Project not found' });
-    }
-
-    // Get uninvoiced time entries up to date
-    const uninvoicedTime = await db
-      .select()
-      .from(timeEntries)
-      .where(
-        and(
-          eq(timeEntries.projectId, projectId),
-          eq(timeEntries.isInvoiced, false),
-          lte(timeEntries.startAt, upToDate),
-          sql`${timeEntries.endAt} IS NOT NULL`
-        )
-      )
-      .orderBy(timeEntries.startAt);
-
-    // Get uninvoiced billable expenses up to date
-    const uninvoicedExpenses = await db
-      .select()
-      .from(expenses)
-      .where(
-        and(
-          eq(expenses.projectId, projectId),
-          eq(expenses.isInvoiced, false),
-          eq(expenses.isBillable, true),
-          lte(expenses.expenseDate, upToDate)
-        )
-      )
-      .orderBy(expenses.expenseDate);
-
-    if (uninvoicedTime.length === 0 && uninvoicedExpenses.length === 0) {
-      return res.status(400).json({
-        error: 'No uninvoiced time entries or expenses found for this project',
-      });
-    }
-
-    // Start transaction
-    const result = await db.transaction(async (tx) => {
-      // Get and increment invoice number
-      const [settingsData] = await tx
-        .select()
-        .from(settings)
-        .where(eq(settings.id, 1))
-        .limit(1);
-
-      const invoiceNumber = formatInvoiceNumber(settingsData.nextInvoiceNumber);
-
-      await tx
-        .update(settings)
-        .set({
-          nextInvoiceNumber: settingsData.nextInvoiceNumber + 1,
-          updatedAt: getCurrentTimestamp(),
-        })
-        .where(eq(settings.id, 1));
-
-      // Calculate due date
-      const dueDate = calculateDueDate(dateInvoiced);
-
-      // Create invoice
-      const [newInvoice] = await tx
-        .insert(invoices)
-        .values({
-          number: invoiceNumber,
-          clientId: project.clientId,
-          projectId,
-          dateInvoiced,
-          dueDate,
-          status: 'Unpaid',
-          subtotal: 0,
-          total: 0,
-          notes,
-          createdAt: getCurrentTimestamp(),
-          updatedAt: getCurrentTimestamp(),
-        })
-        .returning();
-
-      const lineItems = [];
-
-      // Add time entries as line items
-      if (groupByDay) {
-        // Group by day
-        const groupedByDay = uninvoicedTime.reduce((acc, entry) => {
-          const date = DateTime.fromISO(entry.startAt).toISODate()!;
-          if (!acc[date]) {
-            acc[date] = { hours: 0, entries: [] };
-          }
-          acc[date].hours += entry.totalHours;
-          acc[date].entries.push(entry);
-          return acc;
-        }, {} as Record<string, { hours: number; entries: typeof uninvoicedTime }>);
-
-        for (const [date, { hours, entries }] of Object.entries(groupedByDay)) {
-          const amount = roundToCents(hours * project.hourlyRate);
-          const [lineItem] = await tx
-            .insert(invoiceLineItems)
-            .values({
-              invoiceId: newInvoice.id,
-              type: 'time',
-              description: `Time entries for ${date}`,
-              quantity: hours,
-              unitPrice: project.hourlyRate,
-              amount,
-              createdAt: getCurrentTimestamp(),
-              updatedAt: getCurrentTimestamp(),
-            })
-            .returning();
-          lineItems.push(lineItem);
-
-          // Mark time entries as invoiced
-          for (const entry of entries) {
-            await tx
-              .update(timeEntries)
-              .set({
-                isInvoiced: true,
-                invoiceId: newInvoice.id,
-                updatedAt: getCurrentTimestamp(),
-              })
-              .where(eq(timeEntries.id, entry.id));
-          }
-        }
-      } else {
-        // One line per entry
-        for (const entry of uninvoicedTime) {
-          const date = DateTime.fromISO(entry.startAt).toISODate();
-          const description = entry.note 
-            ? `${date} - ${entry.note}` 
-            : `Time entry - ${date}`;
-          const amount = roundToCents(entry.totalHours * project.hourlyRate);
-
-          const [lineItem] = await tx
-            .insert(invoiceLineItems)
-            .values({
-              invoiceId: newInvoice.id,
-              type: 'time',
-              description,
-              quantity: entry.totalHours,
-              unitPrice: project.hourlyRate,
-              amount,
-              linkedTimeEntryId: entry.id,
-              createdAt: getCurrentTimestamp(),
-              updatedAt: getCurrentTimestamp(),
-            })
-            .returning();
-          lineItems.push(lineItem);
-
-          // Mark as invoiced
-          await tx
-            .update(timeEntries)
-            .set({
-              isInvoiced: true,
-              invoiceId: newInvoice.id,
-              updatedAt: getCurrentTimestamp(),
-            })
-            .where(eq(timeEntries.id, entry.id));
-        }
-      }
-
-      // Add expenses as line items
-      for (const expense of uninvoicedExpenses) {
-        const [lineItem] = await tx
-          .insert(invoiceLineItems)
-          .values({
-            invoiceId: newInvoice.id,
-            type: 'expense',
-            description: expense.description || `Expense - ${expense.expenseDate}`,
-            quantity: 1,
-            unitPrice: expense.amount,
-            amount: expense.amount,
-            linkedExpenseId: expense.id,
-            createdAt: getCurrentTimestamp(),
-            updatedAt: getCurrentTimestamp(),
-          })
-          .returning();
-        lineItems.push(lineItem);
-
-        // Mark as invoiced
-        await tx
-          .update(expenses)
-          .set({
-            isInvoiced: true,
-            invoiceId: newInvoice.id,
-            updatedAt: getCurrentTimestamp(),
-          })
-          .where(eq(expenses.id, expense.id));
-      }
-
-      // Calculate totals
-      const subtotal = roundToCents(
-        lineItems.reduce((sum, item) => sum + item.amount, 0)
-      );
-
-      // Update invoice with totals
-      const [updatedInvoice] = await tx
-        .update(invoices)
-        .set({
-          subtotal,
-          total: subtotal,
-          updatedAt: getCurrentTimestamp(),
-        })
-        .where(eq(invoices.id, newInvoice.id))
-        .returning();
-
-      return { invoice: updatedInvoice, lineItems };
-    });
-
-    res.status(201).json(result);
   } catch (error) {
     next(error);
   }
@@ -455,7 +231,7 @@ router.post('/:id/lines', requireAuth, async (req, res, next) => {
 });
 
 // PUT /api/invoice-lines/:lineId
-router.put('/invoice-lines/:lineId', requireAuth, async (req, res, next) => {
+invoiceLinesRouter.put('/:lineId', requireAuth, async (req, res, next) => {
   try {
     const lineId = parseInt(req.params.lineId);
     const data = updateInvoiceLineItemSchema.parse(req.body);
@@ -496,7 +272,7 @@ router.put('/invoice-lines/:lineId', requireAuth, async (req, res, next) => {
 });
 
 // DELETE /api/invoice-lines/:lineId
-router.delete('/invoice-lines/:lineId', requireAuth, async (req, res, next) => {
+invoiceLinesRouter.delete('/:lineId', requireAuth, async (req, res, next) => {
   try {
     const lineId = parseInt(req.params.lineId);
 

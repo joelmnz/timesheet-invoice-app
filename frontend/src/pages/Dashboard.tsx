@@ -115,6 +115,44 @@ export default function Dashboard() {
       </Title>
 
       <Grid>
+        {/* Active Projects with Timer */}
+        <Grid.Col span={12}>
+          <Card shadow="sm" padding="lg">
+            <Title order={3} mb="md">
+              Active Projects
+            </Title>
+            {!projects || projects.length === 0 ? (
+              <Text c="dimmed">No active projects</Text>
+            ) : (
+              <Stack gap="sm">
+                {projects.map((project) => (
+                  <Group key={project.id} justify="space-between">
+                    <div>
+                      <Text fw={600}>{project.name}</Text>
+                      <Text size="sm" c="dimmed">
+                        {project.client?.name} • NZD {project.hourlyRate}/hr
+                      </Text>
+                    </div>
+                    {currentTimer?.projectId === project.id ? (
+                      <Badge size="lg" color="red">
+                        Timer Running
+                      </Badge>
+                    ) : (
+                      <Button
+                        leftSection={<IconPlayerPlay size={16} />}
+                        onClick={() => handleStartTimer(project.id)}
+                        disabled={!!currentTimer}
+                      >
+                        Start Timer
+                      </Button>
+                    )}
+                  </Group>
+                ))}
+              </Stack>
+            )}
+          </Card>
+        </Grid.Col>
+      
         {/* Uninvoiced Hours */}
         <Grid.Col span={{ base: 12, md: 6 }}>
           <Card shadow="sm" padding="lg">
@@ -236,44 +274,6 @@ export default function Dashboard() {
               Hours Logged (Last 12 Months)
             </Title>
             <Line options={chartOptions} data={hoursChartData} />
-          </Card>
-        </Grid.Col>
-
-        {/* Active Projects with Timer */}
-        <Grid.Col span={12}>
-          <Card shadow="sm" padding="lg">
-            <Title order={3} mb="md">
-              Active Projects
-            </Title>
-            {!projects || projects.length === 0 ? (
-              <Text c="dimmed">No active projects</Text>
-            ) : (
-              <Stack gap="sm">
-                {projects.map((project) => (
-                  <Group key={project.id} justify="space-between">
-                    <div>
-                      <Text fw={600}>{project.name}</Text>
-                      <Text size="sm" c="dimmed">
-                        {project.client?.name} • NZD {project.hourlyRate}/hr
-                      </Text>
-                    </div>
-                    {currentTimer?.projectId === project.id ? (
-                      <Badge size="lg" color="red">
-                        Timer Running
-                      </Badge>
-                    ) : (
-                      <Button
-                        leftSection={<IconPlayerPlay size={16} />}
-                        onClick={() => handleStartTimer(project.id)}
-                        disabled={!!currentTimer}
-                      >
-                        Start Timer
-                      </Button>
-                    )}
-                  </Group>
-                ))}
-              </Stack>
-            )}
           </Card>
         </Grid.Col>
       </Grid>

@@ -41,7 +41,6 @@ export const updateProjectSchema = createProjectSchema.partial();
 
 // Time entry schemas
 export const createTimeEntrySchema = z.object({
-  projectId: z.number().int().positive(),
   startAt: z.string().datetime(),
   endAt: z.string().datetime().optional(),
   note: z.string().optional(),
@@ -59,14 +58,13 @@ export const stopTimerSchema = z.object({
 
 // Expense schemas
 export const createExpenseSchema = z.object({
-  projectId: z.number().int().positive(),
   expenseDate: z.string(),
   description: z.string().optional(),
   amount: z.number().min(0),
   isBillable: z.boolean().default(true),
 });
 
-export const updateExpenseSchema = createExpenseSchema.partial().omit({ projectId: true });
+export const updateExpenseSchema = createExpenseSchema.partial();
 
 // Invoice schemas
 export const createInvoiceSchema = z.object({
@@ -88,16 +86,18 @@ export const updateInvoiceSchema = z.object({
 export const createInvoiceLineItemSchema = z.object({
   type: z.enum(['time', 'expense', 'manual']),
   description: z.string().min(1, 'Description is required'),
-  quantity: z.number().min(0).default(1),
-  unitPrice: z.number().min(0).default(0),
+  // Quantity must be greater than 0; allow decimals for hours/units
+  quantity: z.number().gt(0, 'Quantity must be greater than 0').default(1),
+  // Allow negative unit prices for discounts/credits; disallow zero
+  unitPrice: z.number().refine((v) => v !== 0, { message: 'Unit price cannot be 0' }),
   linkedTimeEntryId: z.number().int().positive().optional(),
   linkedExpenseId: z.number().int().positive().optional(),
 });
 
 export const updateInvoiceLineItemSchema = z.object({
   description: z.string().min(1).optional(),
-  quantity: z.number().min(0).optional(),
-  unitPrice: z.number().min(0).optional(),
+  quantity: z.number().gt(0).optional(),
+  unitPrice: z.number().refine((v) => v !== 0).optional(),
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;

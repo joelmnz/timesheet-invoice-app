@@ -19,7 +19,7 @@ A full-stack web application for tracking time, managing projects, generating in
 
 ## Project Structure
 
-```
+```text
 timesheet_invoice_app/
   backend/    # Express API, database, migrations
   frontend/   # React app, UI, routing

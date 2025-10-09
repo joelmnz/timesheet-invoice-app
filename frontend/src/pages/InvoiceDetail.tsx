@@ -82,7 +82,8 @@ export default function InvoiceDetail() {
     validate: {
       description: (value) => (!value ? 'Description is required' : null),
       quantity: (value) => (value <= 0 ? 'Quantity must be greater than 0' : null),
-      unitPrice: (value) => (value <= 0 ? 'Unit price must be greater than 0' : null),
+      // Allow negative unit prices to support discounts/credits; disallow zero
+      unitPrice: (value) => (value === 0 ? 'Unit price cannot be 0' : null),
     },
   });
 
@@ -515,7 +516,6 @@ export default function InvoiceDetail() {
               label="Unit Price (NZD)"
               placeholder="0.00"
               required
-              min={0}
               decimalScale={2}
               fixedDecimalScale
               {...lineForm.getInputProps('unitPrice')}

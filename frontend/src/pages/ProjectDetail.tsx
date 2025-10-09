@@ -296,9 +296,35 @@ export default function ProjectDetail() {
   };
 
   const handleSubmitTime = timeForm.onSubmit((values) => {
+    // Ensure startAt and endAt are Date objects
+    let startAt = values.startAt;
+    let endAt = values.endAt;
+    if (typeof startAt === 'string') {
+      startAt = new Date(startAt);
+    }
+    if (typeof endAt === 'string') {
+      endAt = new Date(endAt);
+    }
+    // Validate
+    if (!(startAt instanceof Date) || isNaN(startAt.getTime())) {
+      notifications.show({
+        title: 'Error',
+        message: 'Start time is invalid',
+        color: 'red',
+      });
+      return;
+    }
+    if (!(endAt instanceof Date) || isNaN(endAt.getTime())) {
+      notifications.show({
+        title: 'Error',
+        message: 'End time is invalid',
+        color: 'red',
+      });
+      return;
+    }
     const data = {
-      startAt: values.startAt.toISOString(),
-      endAt: values.endAt.toISOString(),
+      startAt: startAt.toISOString(),
+      endAt: endAt.toISOString(),
       note: values.note || undefined,
     };
 

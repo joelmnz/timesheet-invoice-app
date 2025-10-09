@@ -48,6 +48,8 @@ export default function InvoiceDetail() {
     useDisclosure(false);
   const [invoiceModalOpened, { open: openInvoiceModal, close: closeInvoiceModal }] =
     useDisclosure(false);
+  const [markPaidModalOpened, { open: openMarkPaidModal, close: closeMarkPaidModal }] =
+    useDisclosure(false);
 
   const [editingLine, setEditingLine] = useState<InvoiceLineItem | null>(null);
   const [deletingLine, setDeletingLine] = useState<InvoiceLineItem | null>(null);
@@ -84,6 +86,12 @@ export default function InvoiceDetail() {
       quantity: (value) => (value <= 0 ? 'Quantity must be greater than 0' : null),
       // Allow negative unit prices to support discounts/credits; disallow zero
       unitPrice: (value) => (value === 0 ? 'Unit price cannot be 0' : null),
+    },
+  });
+
+  const markPaidForm = useForm({
+    initialValues: {
+      datePaid: new Date(),
     },
   });
 
@@ -249,12 +257,20 @@ export default function InvoiceDetail() {
   };
 
   const handleMarkAsPaid = () => {
+    markPaidForm.setValues({
+      datePaid: new Date(),
+    });
+    openMarkPaidModal();
+  };
+
+  const handleSubmitMarkPaid = markPaidForm.onSubmit((values) => {
     const data: Partial<Invoice> = {
       status: 'Paid',
-      datePaid: DateTime.now().toISODate() || undefined,
+      datePaid: DateTime.fromJSDate(values.datePaid).toISODate() || undefined,
     };
     updateInvoiceMutation.mutate({ id: invoiceId, data });
-  };
+    closeMarkPaidModal();
+  });
 
   if (invoiceLoading || linesLoading) {
     return (
@@ -555,6 +571,37 @@ export default function InvoiceDetail() {
             Delete
           </Button>
         </Group>
+      </Modal>
+
+      <Modal
+        opened={markPaidModalOpened}
+        onClose={closeMarkPaidModal}
+        title="Mark Invoice as Paid"
+      >
+        <form onSubmit={handleSubmitMarkPaid}>
+          <Stack>
+            <Text size="sm" c="dimmed">
+              Set the date payment was received:
+            </Text>
+            <DatePickerInput
+              label="Payment Date"
+              required
+              {...markPaidForm.getInputProps('datePaid')}
+            />
+            <Group justify="flex-end" mt="md">
+              <Button variant="default" onClick={closeMarkPaidModal}>
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                color="green"
+                loading={updateInvoiceMutation.isPending}
+              >
+                Mark as Paid
+              </Button>
+            </Group>
+          </Stack>
+        </form>
       </Modal>
     </Container>
   );

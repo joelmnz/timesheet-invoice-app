@@ -93,6 +93,9 @@ export const projectsApi = {
   list: (active: 'all' | 'true' | 'false' = 'all') =>
     fetchApi<Project[]>(`/projects?active=${active}`),
 
+  listByClient: (clientId: number, active: 'all' | 'true' | 'false' = 'all') =>
+    fetchApi<Project[]>(`/projects?clientId=${clientId}&active=${active}`),
+
   get: (id: number) => fetchApi<Project>(`/projects/${id}`),
 
   create: (data: Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'client'>) =>

@@ -12,7 +12,7 @@ const router = Router();
 // GET /api/projects
 router.get('/', requireAuth, async (req, res, next) => {
   try {
-    const { active = 'all' } = req.query;
+    const { active = 'all', clientId } = req.query;
 
     let query = db
       .select({
@@ -22,10 +22,20 @@ router.get('/', requireAuth, async (req, res, next) => {
       .from(projects)
       .innerJoin(clients, eq(projects.clientId, clients.id));
 
+    const conditions = [];
+
     if (active === 'true') {
-      query = query.where(eq(projects.active, true)) as any;
+      conditions.push(eq(projects.active, true));
     } else if (active === 'false') {
-      query = query.where(eq(projects.active, false)) as any;
+      conditions.push(eq(projects.active, false));
+    }
+
+    if (clientId) {
+      conditions.push(eq(projects.clientId, parseInt(clientId as string)));
+    }
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as any;
     }
 
     const results = await query;

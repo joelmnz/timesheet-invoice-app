@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Container,
@@ -15,6 +16,7 @@ import {
   ActionIcon,
   NumberInput,
   Textarea,
+  Anchor,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useDisclosure } from '@mantine/hooks';
@@ -24,6 +26,7 @@ import { clientsApi } from '../services/api';
 import type { Client } from '../types';
 
 export default function Clients() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [modalOpened, { open: openModal, close: closeModal }] = useDisclosure(false);
   const [deleteModalOpened, { open: openDeleteModal, close: closeDeleteModal }] = useDisclosure(false);
@@ -197,7 +200,14 @@ export default function Clients() {
           <Table.Tbody>
             {clients.map((client) => (
               <Table.Tr key={client.id}>
-                <Table.Td>{client.name}</Table.Td>
+                <Table.Td>
+                  <Anchor
+                    component="button"
+                    onClick={() => navigate(`/clients/${client.id}`)}
+                  >
+                    {client.name}
+                  </Anchor>
+                </Table.Td>
                 <Table.Td>{client.contactPerson || '-'}</Table.Td>
                 <Table.Td>{client.email || '-'}</Table.Td>
                 <Table.Td ta="right">NZD {client.defaultHourlyRate.toFixed(2)}/hr</Table.Td>

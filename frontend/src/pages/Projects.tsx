@@ -34,7 +34,7 @@ export default function Projects() {
   const [deleteModalOpened, { open: openDeleteModal, close: closeDeleteModal }] = useDisclosure(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [deletingProject, setDeletingProject] = useState<Project | null>(null);
-  const [activeFilter, setActiveFilter] = useState<'all' | 'true' | 'false'>('all');
+  const [activeFilter, setActiveFilter] = useState<'all' | 'true' | 'false'>('true');
 
   const { data: projects, isLoading: projectsLoading } = useQuery({
     queryKey: ['projects', activeFilter],
@@ -293,6 +293,15 @@ export default function Projects() {
               required
               searchable
               {...form.getInputProps('clientId')}
+              onChange={(value) => {
+                form.setFieldValue('clientId', value || '');
+                if (value && !editingProject) {
+                  const selectedClient = clients?.find(c => c.id.toString() === value);
+                  if (selectedClient) {
+                    form.setFieldValue('hourlyRate', selectedClient.defaultHourlyRate);
+                  }
+                }
+              }}
             />
             <NumberInput
               label="Hourly Rate (NZD)"

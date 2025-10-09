@@ -31,35 +31,33 @@ export function closeTestDb() {
 function seedTestDb(db: BetterSQLite3Database<typeof schema>) {
   db.insert(settings).values({
     id: 1,
-    username: 'admin',
-    passwordHash: '$2b$10$placeholder',
-    businessName: 'Test Business',
-    businessAddress: '123 Test St',
-    businessPhone: '555-1234',
-    businessEmail: 'test@example.com',
-    taxRate: 0.15,
-    defaultPaymentTermsDays: 20,
+    companyName: 'Test Business',
+    companyAddress: '123 Test St',
+    companyEmail: 'test@example.com',
+    companyPhone: '555-1234',
+    invoiceFooterMarkdown: '',
     nextInvoiceNumber: 1,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   }).run();
 
   db.insert(clients).values({
-    id: 1,
     name: 'Test Client',
     email: 'client@example.com',
-    phone: '555-5678',
     address: '456 Client Ave',
+    contactPerson: 'John Doe',
+    defaultHourlyRate: 50,
+    notes: '',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   }).run();
 
   db.insert(projects).values({
-    id: 1,
     name: 'Test Project',
     clientId: 1,
     hourlyRate: 100,
     active: true,
+    notes: '',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   }).run();

@@ -130,3 +130,32 @@ export interface ReportData {
   data: any[];
   total: number;
 }
+
+export interface ImportInvoiceRow {
+  invoiceNumber: string;
+  invoiceDate: string;
+  projectName: string;
+  description: string;
+  amount: number;
+  datePaid: string | null;
+}
+
+export interface ValidationError {
+  row: number;
+  field: string;
+  message: string;
+}
+
+export interface ImportPreview {
+  valid: boolean;
+  invoices: ImportInvoiceRow[];
+  errors: ValidationError[];
+}
+
+export interface ImportResult {
+  success: boolean;
+  message: string;
+  count?: number;
+  errors?: ValidationError[];
+}
+

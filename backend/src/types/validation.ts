@@ -101,6 +101,19 @@ export const updateInvoiceLineItemSchema = z.object({
   unitPrice: z.number().refine((v) => v !== 0).optional(),
 });
 
+// Invoice import schemas
+export const importInvoiceRowSchema = z.object({
+  invoiceNumber: z.string().min(1, 'Invoice number is required'),
+  invoiceDate: z.string().min(1, 'Invoice date is required'),
+  description: z.string().min(1, 'Description is required'),
+  amount: z.number().min(0, 'Amount must be non-negative'),
+  datePaid: z.string().optional().nullable(),
+});
+
+export const importInvoicesSchema = z.object({
+  csvContent: z.string().min(1, 'CSV content is required'),
+});
+
 export type LoginInput = z.infer<typeof loginSchema>;
 export type UpdateSettingsInput = z.infer<typeof updateSettingsSchema>;
 export type CreateClientInput = z.infer<typeof createClientSchema>;
@@ -116,3 +129,5 @@ export type CreateInvoiceInput = z.infer<typeof createInvoiceSchema>;
 export type UpdateInvoiceInput = z.infer<typeof updateInvoiceSchema>;
 export type CreateInvoiceLineItemInput = z.infer<typeof createInvoiceLineItemSchema>;
 export type UpdateInvoiceLineItemInput = z.infer<typeof updateInvoiceLineItemSchema>;
+export type ImportInvoiceRowInput = z.infer<typeof importInvoiceRowSchema>;
+export type ImportInvoicesInput = z.infer<typeof importInvoicesSchema>;

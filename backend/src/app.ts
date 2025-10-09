@@ -14,6 +14,7 @@ import expensesRoutes from './routes/expenses.js';
 import invoicesRoutes, { invoiceLinesRouter } from './routes/invoices.js';
 import dashboardRoutes from './routes/dashboard.js';
 import reportsRoutes from './routes/reports.js';
+import importRoutes from './routes/import.js';
 
 import { errorHandler } from './middleware/errorHandler.js';
 
@@ -85,6 +86,7 @@ export function createApp() {
   app.use('/api/charts', dashboardRoutes);
   app.use('/api/reports', reportsRoutes);
   app.use('/api/export', reportsRoutes);
+  app.use('/api/import', importRoutes);
   app.use('/api/auth', authRoutes);
 
   // Lightweight health endpoint

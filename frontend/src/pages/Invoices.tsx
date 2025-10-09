@@ -11,7 +11,7 @@ import {
   Card,
 } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
-import { IconFilter, IconFilterOff } from '@tabler/icons-react';
+import { IconFilter, IconFilterOff, IconUpload } from '@tabler/icons-react';
 import { DateTime } from 'luxon';
 import { invoicesApi, clientsApi, projectsApi } from '../services/api';
 import { ListHeader } from '../components/lists/ListHeader';
@@ -88,13 +88,22 @@ export default function Invoices() {
       <ListHeader
         title="Invoices"
         action={
-          <Button
-            variant="light"
-            leftSection={filtersExpanded ? <IconFilterOff size={16} /> : <IconFilter size={16} />}
-            onClick={() => setFiltersExpanded(!filtersExpanded)}
-          >
-            {filtersExpanded ? 'Hide Filters' : 'Show Filters'}
-          </Button>
+          <Group>
+            <Button
+              variant="outline"
+              leftSection={<IconUpload size={16} />}
+              onClick={() => navigate('/import/invoices')}
+            >
+              Import Invoices
+            </Button>
+            <Button
+              variant="light"
+              leftSection={filtersExpanded ? <IconFilterOff size={16} /> : <IconFilter size={16} />}
+              onClick={() => setFiltersExpanded(!filtersExpanded)}
+            >
+              {filtersExpanded ? 'Hide Filters' : 'Show Filters'}
+            </Button>
+          </Group>
         }
       />
 

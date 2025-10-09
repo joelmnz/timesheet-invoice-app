@@ -11,6 +11,7 @@ import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
 import Invoices from './pages/Invoices';
 import InvoiceDetail from './pages/InvoiceDetail';
+import ImportInvoices from './pages/ImportInvoices';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 
@@ -55,6 +56,7 @@ function AppRoutes() {
           <Route path="/projects/:id" element={<ProjectDetail />} />
           <Route path="/invoices" element={<Invoices />} />
           <Route path="/invoices/:id" element={<InvoiceDetail />} />
+          <Route path="/import/invoices" element={<ImportInvoices />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<Navigate to="/" replace />} />

@@ -227,11 +227,9 @@ export async function generateInvoicePdf(invoiceId: number): Promise<Buffer> {
     const html = md.render(settingsData.invoiceFooterMarkdown);
     const pdfContent = htmlToPdfmake(html);
     content.push({
-      text: '',
+      stack: [pdfContent],
       margin: [0, 20, 0, 0],
-      pageBreak: 'before',
     });
-    content.push(pdfContent);
   }
 
   const docDefinition: TDocumentDefinitions = {

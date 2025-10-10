@@ -208,6 +208,7 @@ export default function Dashboard() {
                     <Table.Th>Client</Table.Th>
                     <Table.Th>Project</Table.Th>
                     <Table.Th ta="right">Hours</Table.Th>
+                    <Table.Th ta="right">Amount $</Table.Th>
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>
@@ -224,8 +225,23 @@ export default function Dashboard() {
                         </Anchor>
                       </Table.Td>
                       <Table.Td ta="right">{row.totalHours.toFixed(1)}</Table.Td>
+                      <Table.Td ta="right">{formatCurrency(row.totalAmount)}</Table.Td>
                     </Table.Tr>
                   ))}
+                  <Table.Tr>
+                    <Table.Td colSpan={2} fw={700}>Total</Table.Td>
+                    <Table.Td ta="right" fw={700}>
+                      {summary?.uninvoicedHoursByProject
+                        .reduce((sum, row) => sum + row.totalHours, 0)
+                        .toFixed(1)}
+                    </Table.Td>
+                    <Table.Td ta="right" fw={700}>
+                      {formatCurrency(
+                        summary?.uninvoicedHoursByProject
+                          .reduce((sum, row) => sum + row.totalAmount, 0) || 0
+                      )}
+                    </Table.Td>
+                  </Table.Tr>
                 </Table.Tbody>
               </Table>
             )}

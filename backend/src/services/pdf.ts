@@ -2,9 +2,11 @@ import PdfPrinter from 'pdfmake';
 import { TDocumentDefinitions, Content } from 'pdfmake/interfaces';
 import MarkdownIt from 'markdown-it';
 import htmlToPdfmake from 'html-to-pdfmake';
+import { createRequire } from 'module';
 import { db } from '../db/index.js';
 import { invoices, invoiceLineItems, clients, projects, settings } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
+import { JSDOM } from 'jsdom';
 
 const md = new MarkdownIt({
   html: false,
@@ -25,14 +27,24 @@ md.validateLink = (url: string) => {
   );
 };
 
+// Import vfs fonts from pdfmake using createRequire for ESM compatibility
+const require = createRequire(import.meta.url);
+const vfsFonts = require('pdfmake/build/vfs_fonts.js');
+
+// Convert base64-encoded fonts from vfs to Buffers
 const fonts = {
   Roboto: {
-    normal: 'Roboto-Regular.ttf',
-    bold: 'Roboto-Medium.ttf',
-    italics: 'Roboto-Italic.ttf',
-    bolditalics: 'Roboto-MediumItalic.ttf',
+    normal: Buffer.from(vfsFonts['Roboto-Regular.ttf'], 'base64'),
+    bold: Buffer.from(vfsFonts['Roboto-Medium.ttf'], 'base64'),
+    italics: Buffer.from(vfsFonts['Roboto-Italic.ttf'], 'base64'),
+    bolditalics: Buffer.from(vfsFonts['Roboto-MediumItalic.ttf'], 'base64'),
   },
 };
+
+// Create a minimal DOM for html-to-pdfmake
+const { window } = new JSDOM('');
+global.window = window as any;
+global.document = window.document as any;
 
 export async function generateInvoicePdf(invoiceId: number): Promise<Buffer> {
   // Fetch invoice with related data
@@ -195,13 +207,15 @@ export async function generateInvoicePdf(invoiceId: number): Promise<Buffer> {
       {
         width: 200,
         stack: [
-          {
-            columns: [
-              { text: 'Subtotal:', alignment: 'left' },
-              { text: `NZD ${invoice.subtotal.toFixed(2)}`, alignment: 'right' },
-            ],
-            margin: [0, 0, 0, 5],
-          },
+
+          // Subtotal if needed in future
+          // {
+          //   columns: [
+          //     { text: 'Subtotal:', alignment: 'left' },
+          //     { text: `NZD ${invoice.subtotal.toFixed(2)}`, alignment: 'right' },
+          //   ],
+          //   margin: [0, 0, 0, 5],
+          // },
           {
             columns: [
               { text: 'Total:', bold: true, alignment: 'left' },
@@ -232,11 +246,9 @@ export async function generateInvoicePdf(invoiceId: number): Promise<Buffer> {
     const html = md.render(settingsData.invoiceFooterMarkdown);
     const pdfContent = htmlToPdfmake(html);
     content.push({
-      text: '',
+      stack: [pdfContent],
       margin: [0, 20, 0, 0],
-      pageBreak: 'before',
     });
-    content.push(pdfContent);
   }
 
   const docDefinition: TDocumentDefinitions = {

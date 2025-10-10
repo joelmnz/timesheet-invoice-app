@@ -29,7 +29,6 @@ import { dashboardApi, projectsApi } from '../services/api';
 import { useTimer } from '../contexts/TimerContext';
 import { DateTime } from 'luxon';
 import { ProjectList } from '../components/lists/ProjectList';
-import type { Invoice } from '../types';
 import { EntityTable, Column } from '../components/lists/EntityTable';
 import { formatCurrency } from '../components/lists/format';
 
@@ -71,7 +70,15 @@ export default function Dashboard() {
     await startTimer(projectId);
   };
 
-  const outstandingInvoicesColumns: Column<Invoice>[] = [
+  const outstandingInvoicesColumns: Column<{
+    id: number;
+    number: string;
+    dateInvoiced: string;
+    dueDate: string;
+    clientName: string;
+    total: number;
+    daysOverdue: number;
+  }>[] = [
     {
       key: 'number',
       title: 'Invoice #',
@@ -288,7 +295,7 @@ export default function Dashboard() {
               columns={outstandingInvoicesColumns}
               rows={summary?.outstandingInvoices || []}
               emptyState="No outstanding invoices"
-              getRowKey={(invoice: any) => invoice.id}
+              getRowKey={(invoice) => invoice.id}
             />
           </Card>
         </Grid.Col>

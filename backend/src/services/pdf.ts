@@ -2,18 +2,24 @@ import PdfPrinter from 'pdfmake';
 import { TDocumentDefinitions, Content } from 'pdfmake/interfaces';
 import MarkdownIt from 'markdown-it';
 import htmlToPdfmake from 'html-to-pdfmake';
+import { createRequire } from 'module';
 import { db } from '../db/index.js';
 import { invoices, invoiceLineItems, clients, projects, settings } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 
 const md = new MarkdownIt();
 
+// Import vfs fonts from pdfmake using createRequire for ESM compatibility
+const require = createRequire(import.meta.url);
+const vfsFonts = require('pdfmake/build/vfs_fonts.js');
+
+// Convert base64-encoded fonts from vfs to Buffers
 const fonts = {
   Roboto: {
-    normal: 'Roboto-Regular.ttf',
-    bold: 'Roboto-Medium.ttf',
-    italics: 'Roboto-Italic.ttf',
-    bolditalics: 'Roboto-MediumItalic.ttf',
+    normal: Buffer.from(vfsFonts['Roboto-Regular.ttf'], 'base64'),
+    bold: Buffer.from(vfsFonts['Roboto-Medium.ttf'], 'base64'),
+    italics: Buffer.from(vfsFonts['Roboto-Italic.ttf'], 'base64'),
+    bolditalics: Buffer.from(vfsFonts['Roboto-MediumItalic.ttf'], 'base64'),
   },
 };
 

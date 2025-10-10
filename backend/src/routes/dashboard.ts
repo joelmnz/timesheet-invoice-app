@@ -24,6 +24,8 @@ router.get('/summary', requireAuth, async (req, res, next) => {
         clientId: clients.id,
         clientName: clients.name,
         totalHours: sql<number>`SUM(${timeEntries.totalHours})`,
+        hourlyRate: projects.hourlyRate,
+        totalAmount: sql<number>`SUM(${timeEntries.totalHours}) * ${projects.hourlyRate}`,
       })
       .from(timeEntries)
       .innerJoin(projects, eq(timeEntries.projectId, projects.id))
@@ -34,7 +36,7 @@ router.get('/summary', requireAuth, async (req, res, next) => {
           sql`${timeEntries.endAt} IS NOT NULL`
         )
       )
-      .groupBy(timeEntries.projectId, projects.name, clients.id, clients.name);
+      .groupBy(timeEntries.projectId, projects.name, clients.id, clients.name, projects.hourlyRate);
 
     // Uninvoiced expenses by project
     const uninvoicedExpensesRaw = await db

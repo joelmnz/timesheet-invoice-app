@@ -13,7 +13,7 @@ import {
   Anchor,
 } from '@mantine/core';
 import { IconPlayerPlay } from '@tabler/icons-react';
-import { Line } from 'react-chartjs-2';
+import { Bar } from 'react-chartjs-2';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Chart as ChartJS,
@@ -21,6 +21,7 @@ import {
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
   Title as ChartTitle,
   Tooltip,
   Legend,
@@ -29,7 +30,6 @@ import { dashboardApi, projectsApi } from '../services/api';
 import { useTimer } from '../contexts/TimerContext';
 import { DateTime } from 'luxon';
 import { ProjectList } from '../components/lists/ProjectList';
-import type { Invoice } from '../types';
 import { EntityTable, Column } from '../components/lists/EntityTable';
 import { formatCurrency } from '../components/lists/format';
 
@@ -38,6 +38,7 @@ ChartJS.register(
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
   ChartTitle,
   Tooltip,
   Legend
@@ -71,7 +72,15 @@ export default function Dashboard() {
     await startTimer(projectId);
   };
 
-  const outstandingInvoicesColumns: Column<Invoice>[] = [
+  const outstandingInvoicesColumns: Column<{
+    id: number;
+    number: string;
+    dateInvoiced: string;
+    dueDate: string;
+    clientName: string;
+    total: number;
+    daysOverdue: number;
+  }>[] = [
     {
       key: 'number',
       title: 'Invoice #',
@@ -208,6 +217,7 @@ export default function Dashboard() {
                     <Table.Th>Client</Table.Th>
                     <Table.Th>Project</Table.Th>
                     <Table.Th ta="right">Hours</Table.Th>
+                    <Table.Th ta="right">Amount $</Table.Th>
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>
@@ -224,8 +234,23 @@ export default function Dashboard() {
                         </Anchor>
                       </Table.Td>
                       <Table.Td ta="right">{row.totalHours.toFixed(1)}</Table.Td>
+                      <Table.Td ta="right">{formatCurrency(row.totalAmount)}</Table.Td>
                     </Table.Tr>
                   ))}
+                  <Table.Tr>
+                    <Table.Td colSpan={2} fw={700}>Total</Table.Td>
+                    <Table.Td ta="right" fw={700}>
+                      {summary?.uninvoicedHoursByProject
+                        .reduce((sum, row) => sum + row.totalHours, 0)
+                        .toFixed(1)}
+                    </Table.Td>
+                    <Table.Td ta="right" fw={700}>
+                      {formatCurrency(
+                        summary?.uninvoicedHoursByProject
+                          .reduce((sum, row) => sum + row.totalAmount, 0) || 0
+                      )}
+                    </Table.Td>
+                  </Table.Tr>
                 </Table.Tbody>
               </Table>
             )}
@@ -272,19 +297,19 @@ export default function Dashboard() {
               columns={outstandingInvoicesColumns}
               rows={summary?.outstandingInvoices || []}
               emptyState="No outstanding invoices"
-              getRowKey={(invoice: any) => invoice.id}
+              getRowKey={(invoice) => invoice.id}
             />
           </Card>
         </Grid.Col>
 
         {/* Charts */}
         <Grid.Col span={{ base: 12, md: 6 }}>
-          <Card shadow="sm" padding="lg">
-            <Title order={3} mb="md">
-              Invoiced Amount (Last 12 Months)
-            </Title>
-            <Line options={chartOptions} data={invoicedChartData} />
-          </Card>
+            <Card shadow="sm" padding="lg">
+              <Title order={3} mb="md">
+                Invoiced Amount (Last 12 Months)
+              </Title>
+              <Bar options={chartOptions} data={invoicedChartData} />
+            </Card>
         </Grid.Col>
 
         <Grid.Col span={{ base: 12, md: 6 }}>
@@ -292,7 +317,7 @@ export default function Dashboard() {
             <Title order={3} mb="md">
               Hours Logged (Last 12 Months)
             </Title>
-            <Line options={chartOptions} data={hoursChartData} />
+            <Bar options={chartOptions} data={hoursChartData} />
           </Card>
         </Grid.Col>
       </Grid>

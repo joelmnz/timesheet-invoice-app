@@ -13,7 +13,7 @@ import {
   Anchor,
 } from '@mantine/core';
 import { IconPlayerPlay } from '@tabler/icons-react';
-import { Line } from 'react-chartjs-2';
+import { Bar } from 'react-chartjs-2';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Chart as ChartJS,
@@ -21,6 +21,7 @@ import {
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
   Title as ChartTitle,
   Tooltip,
   Legend,
@@ -37,6 +38,7 @@ ChartJS.register(
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
   ChartTitle,
   Tooltip,
   Legend
@@ -302,12 +304,12 @@ export default function Dashboard() {
 
         {/* Charts */}
         <Grid.Col span={{ base: 12, md: 6 }}>
-          <Card shadow="sm" padding="lg">
-            <Title order={3} mb="md">
-              Invoiced Amount (Last 12 Months)
-            </Title>
-            <Line options={chartOptions} data={invoicedChartData} />
-          </Card>
+            <Card shadow="sm" padding="lg">
+              <Title order={3} mb="md">
+                Invoiced Amount (Last 12 Months)
+              </Title>
+              <Bar options={chartOptions} data={invoicedChartData} />
+            </Card>
         </Grid.Col>
 
         <Grid.Col span={{ base: 12, md: 6 }}>
@@ -315,7 +317,7 @@ export default function Dashboard() {
             <Title order={3} mb="md">
               Hours Logged (Last 12 Months)
             </Title>
-            <Line options={chartOptions} data={hoursChartData} />
+            <Bar options={chartOptions} data={hoursChartData} />
           </Card>
         </Grid.Col>
       </Grid>

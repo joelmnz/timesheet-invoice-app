@@ -6,6 +6,7 @@ import { createRequire } from 'module';
 import { db } from '../db/index.js';
 import { invoices, invoiceLineItems, clients, projects, settings } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
+import { JSDOM } from 'jsdom';
 
 const md = new MarkdownIt();
 
@@ -22,6 +23,11 @@ const fonts = {
     bolditalics: Buffer.from(vfsFonts['Roboto-MediumItalic.ttf'], 'base64'),
   },
 };
+
+// Create a minimal DOM for html-to-pdfmake
+const { window } = new JSDOM('');
+global.window = window as any;
+global.document = window.document as any;
 
 export async function generateInvoicePdf(invoiceId: number): Promise<Buffer> {
   // Fetch invoice with related data

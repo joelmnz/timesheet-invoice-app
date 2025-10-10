@@ -106,6 +106,13 @@ After deployment:
 
 ### Troubleshooting
 
+If you get CORS errors ("Not allowed by CORS"):
+
+1. Check the error message in server logs - it will show the blocked origin URL
+2. Add that origin to `ALLOWED_ORIGINS` environment variable (comma-separated)
+3. If using a reverse proxy or tunnel, make sure the origin header is being forwarded correctly
+4. For same-origin deployments (recommended), leave `ALLOWED_ORIGINS` empty to disable CORS
+
 If you still get 401 errors:
 
 1. Check browser DevTools → Network → Request Headers

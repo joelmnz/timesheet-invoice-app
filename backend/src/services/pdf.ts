@@ -190,13 +190,15 @@ export async function generateInvoicePdf(invoiceId: number): Promise<Buffer> {
       {
         width: 200,
         stack: [
-          {
-            columns: [
-              { text: 'Subtotal:', alignment: 'left' },
-              { text: `NZD ${invoice.subtotal.toFixed(2)}`, alignment: 'right' },
-            ],
-            margin: [0, 0, 0, 5],
-          },
+
+          // Subtotal if needed in future
+          // {
+          //   columns: [
+          //     { text: 'Subtotal:', alignment: 'left' },
+          //     { text: `NZD ${invoice.subtotal.toFixed(2)}`, alignment: 'right' },
+          //   ],
+          //   margin: [0, 0, 0, 5],
+          // },
           {
             columns: [
               { text: 'Total:', bold: true, alignment: 'left' },

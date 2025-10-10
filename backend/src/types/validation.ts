@@ -12,7 +12,7 @@ export const updateSettingsSchema = z.object({
   companyAddress: z.string().optional(),
   companyEmail: z.string().email().optional().or(z.literal('')),
   companyPhone: z.string().optional(),
-  invoiceFooterMarkdown: z.string().optional(),
+  invoiceFooterMarkdown: z.string().max(5000, 'Invoice footer must be less than 5000 characters').optional(),
   nextInvoiceNumber: z.number().int().positive(),
 });
 

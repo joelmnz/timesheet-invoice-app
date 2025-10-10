@@ -6,7 +6,24 @@ import { db } from '../db/index.js';
 import { invoices, invoiceLineItems, clients, projects, settings } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 
-const md = new MarkdownIt();
+const md = new MarkdownIt({
+  html: false,
+  linkify: false,
+  typographer: true,
+});
+
+const defaultValidateLink = md.validateLink.bind(md);
+md.validateLink = (url: string) => {
+  if (!defaultValidateLink(url)) {
+    return false;
+  }
+  const normalized = url.trim().toLowerCase();
+  return (
+    normalized.startsWith('http://') ||
+    normalized.startsWith('https://') ||
+    normalized.startsWith('mailto:')
+  );
+};
 
 const fonts = {
   Roboto: {

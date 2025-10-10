@@ -21,16 +21,37 @@ import { errorHandler } from './middleware/errorHandler.js';
 
 export function createApp() {
   const app = express();
-  const SESSION_SECRET = process.env.SESSION_SECRET || 'change-me-in-production';
   const NODE_ENV = process.env.NODE_ENV || 'development';
+  const SESSION_SECRET = process.env.SESSION_SECRET || 'change-me-in-production';
+
+  if (NODE_ENV === 'production' && (!process.env.SESSION_SECRET || process.env.SESSION_SECRET === 'change-me-in-production')) {
+    throw new Error('SESSION_SECRET must be set to a strong value in production');
+  }
 
   // Trust proxy for both HTTPS tunnels (Cloudflare) and reverse proxies
   app.set('trust proxy', 1);
 
+  // Disable x-powered-by header
+  app.disable('x-powered-by');
+
   const SQLiteStore = ConnectSqlite3(session);
 
   app.use(helmet({
-    contentSecurityPolicy: false,
+    contentSecurityPolicy: NODE_ENV === 'production'
+      ? {
+          directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'"],
+            styleSrc: ["'self'", "'unsafe-inline'"],
+            imgSrc: ["'self'", "data:", "blob:"],
+            fontSrc: ["'self'", "data:"],
+            connectSrc: ["'self'"],
+            objectSrc: ["'none'"],
+            baseUri: ["'self'"],
+            frameAncestors: ["'none'"],
+          },
+        }
+      : false,
   }));
 
   // CORS configuration - validates origins from environment variable in production
@@ -38,19 +59,28 @@ export function createApp() {
     ? (process.env.ALLOWED_ORIGINS || '').split(',').filter(Boolean)
     : ['http://localhost:5173'];
 
-  app.use(cors({
-    origin: NODE_ENV === 'production'
-      ? (origin, callback) => {
-          // Allow requests with no origin (e.g., mobile apps, Postman) or matching origins
-          if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
-            callback(null, true);
-          } else {
-            callback(new Error('Not allowed by CORS'));
+  if (NODE_ENV === 'production' && allowedOrigins.length === 0) {
+    console.warn('WARNING: ALLOWED_ORIGINS not set in production. CORS is disabled - assuming same-origin deployment.');
+  }
+
+  if (NODE_ENV === 'development' || allowedOrigins.length > 0) {
+    app.use(cors({
+      origin: NODE_ENV === 'production'
+        ? (origin, callback) => {
+            // In production, only allow explicitly listed origins
+            if (origin && allowedOrigins.includes(origin)) {
+              callback(null, true);
+            } else if (!origin && process.env.ALLOW_NO_ORIGIN === 'true') {
+              // Allow requests with no origin only if explicitly enabled (e.g., for Postman)
+              callback(null, true);
+            } else {
+              callback(new Error('Not allowed by CORS'));
+            }
           }
-        }
-      : 'http://localhost:5173',
-    credentials: true,
-  }));
+        : 'http://localhost:5173',
+      credentials: true,
+    }));
+  }
 
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true }));

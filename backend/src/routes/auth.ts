@@ -24,7 +24,10 @@ if (APP_PASSWORD_HASH) {
 } else if (APP_PASSWORD) {
   passwordHash = await bcrypt.hash(APP_PASSWORD, 12);
 } else {
-  console.warn('WARNING: No password configured! Using default password "admin"');
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('APP_PASSWORD or APP_PASSWORD_HASH must be set in production');
+  }
+  console.warn('WARNING: No password configured! Using default password "admin" - DO NOT USE IN PRODUCTION');
   passwordHash = await bcrypt.hash('admin', 12);
 }
 
@@ -43,10 +46,16 @@ router.post('/login', loginLimiter, async (req, res, next) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    req.session.authenticated = true;
-    req.session.username = username;
+    req.session.regenerate((err) => {
+      if (err) {
+        return next(err);
+      }
 
-    res.json({ success: true, username });
+      req.session.authenticated = true;
+      req.session.username = username;
+
+      res.json({ success: true, username });
+    });
   } catch (error) {
     next(error);
   }
@@ -58,6 +67,7 @@ router.post('/logout', (req, res) => {
     if (err) {
       return res.status(500).json({ error: 'Failed to logout' });
     }
+    res.clearCookie('timesheet.sid');
     res.json({ success: true });
   });
 });

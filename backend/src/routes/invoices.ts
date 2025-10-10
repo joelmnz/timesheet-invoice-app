@@ -332,7 +332,7 @@ router.get('/:id/pdf', requireAuth, async (req, res, next) => {
     const filename = `${invoice.number}_${clientName}_${dateStr}.pdf`;
 
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
     res.send(pdfBuffer);
   } catch (error) {
     next(error);

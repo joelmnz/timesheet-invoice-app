@@ -1,7 +1,6 @@
 import express from 'express';
 import session from 'express-session';
 import helmet from 'helmet';
-import cors from 'cors';
 import { dirname, join } from 'path';
 import ConnectSqlite3 from 'connect-sqlite3';
 
@@ -18,6 +17,7 @@ import importRoutes from './routes/import.js';
 import migrationsRoutes from './routes/migrations.js';
 
 import { errorHandler } from './middleware/errorHandler.js';
+import { createCorsMiddleware } from './middleware/cors.js';
 
 export function createApp() {
   const app = express();
@@ -54,34 +54,8 @@ export function createApp() {
       : false,
   }));
 
-  // CORS configuration - validates origins from environment variable in production
-  const allowedOrigins = NODE_ENV === 'production'
-    ? (process.env.ALLOWED_ORIGINS || '').split(',').filter(Boolean)
-    : ['http://localhost:5173'];
-
-  if (NODE_ENV === 'production' && allowedOrigins.length === 0) {
-    console.warn('WARNING: ALLOWED_ORIGINS not set in production. CORS is disabled - assuming same-origin deployment.');
-  }
-
-  if (NODE_ENV === 'development' || allowedOrigins.length > 0) {
-    app.use(cors({
-      origin: NODE_ENV === 'production'
-        ? (origin, callback) => {
-            // In production, only allow explicitly listed origins
-            if (origin && allowedOrigins.includes(origin)) {
-              callback(null, true);
-            } else if (!origin && process.env.ALLOW_NO_ORIGIN === 'true') {
-              // Allow requests with no origin only if explicitly enabled (e.g., for Postman)
-              callback(null, true);
-            } else {
-              const blockedOrigin = origin || '(no origin header)';
-              callback(new Error(`Not allowed by CORS. Origin '${blockedOrigin}' is not in the allowed origins list. Please add it to the ALLOWED_ORIGINS environment variable.`));
-            }
-          }
-        : 'http://localhost:5173',
-      credentials: true,
-    }));
-  }
+  // CORS configuration - environment-aware middleware
+  app.use(createCorsMiddleware(NODE_ENV));
 
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true }));

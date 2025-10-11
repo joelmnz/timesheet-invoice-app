@@ -70,11 +70,51 @@ bun run db:migrate
 
 ### 4. Environment Variables
 
-- Backend expects at least:
-  - `SESSION_SECRET` (for session encryption)
-  - `DATABASE_PATH` (optional, defaults to `./data`)
-  - `ALLOWED_ORIGINS` (optional, for production CORS; comma-separated list)
-- Create a `.env` file in `backend/` if needed.
+#### Backend
+
+- `SESSION_SECRET` (required in production) - for session encryption
+- `DATABASE_PATH` (optional, defaults to `./data/app.db`)
+- `APP_USERNAME` and `APP_PASSWORD` (or `APP_PASSWORD_HASH`) - authentication credentials
+- `ALLOWED_ORIGINS` (optional) - for production CORS configuration; comma-separated list
+  - **Leave empty for same-origin deployments** (recommended - backend serves frontend)
+  - **Set for cross-origin deployments** (e.g., `https://app.example.com,https://timesheet.mydomain.com`)
+- `ALLOW_NO_ORIGIN_IN_DEV` (optional, defaults to `false`) - allows requests without Origin header
+  - Useful in development for tools like curl and Postman
+  - NOT recommended in production
+
+Create a `.env` file in `backend/` with your configuration. See `backend/.env.example` for all options.
+
+#### CORS Configuration Guide
+
+The application uses environment-aware CORS middleware:
+
+**Production Mode:**
+- Requires `Origin` header for API requests
+- Only allows origins specified in `ALLOWED_ORIGINS`
+- Blocks requests without Origin header (unless `ALLOW_NO_ORIGIN_IN_DEV=true`, not recommended)
+- Logs blocked attempts for debugging
+
+**Development Mode:**
+- Allows `http://localhost:5173` by default
+- Optionally allows requests without Origin header if `ALLOW_NO_ORIGIN_IN_DEV=true`
+
+**Testing CORS with curl:**
+
+```bash
+# Test with valid origin (production)
+curl -H "Origin: https://your-domain.com" \
+     -H "Content-Type: application/json" \
+     -X POST http://localhost:8080/api/auth/login \
+     -d '{"username":"admin","password":"admin"}' \
+     --cookie-jar cookies.txt
+
+# Test without origin (will fail in production unless ALLOW_NO_ORIGIN_IN_DEV=true)
+curl -X GET http://localhost:8080/api/settings
+
+# Test with invalid origin (will fail)
+curl -H "Origin: https://evil.com" \
+     -X GET http://localhost:8080/api/settings
+```
 
 ### 5. Running the App (Development)
 
@@ -183,7 +223,11 @@ On first login, if database migrations are needed, you'll be prompted to run the
 - `APP_PASSWORD_HASH` – bcrypt hash alternative to APP_PASSWORD
 - `SESSION_SECRET` – required; set a long random string
 - `DATABASE_PATH` – default `/data/app.db`
-- `ALLOWED_ORIGINS` – optional; comma-separated list of allowed CORS origins in production (e.g., `https://app.example.com,https://timesheet.mydomain.com`). If not set or empty, allows all origins.
+- `ALLOWED_ORIGINS` – optional; comma-separated list of allowed CORS origins in production (e.g., `https://app.example.com,https://timesheet.mydomain.com`). 
+  - If not set or empty, CORS is disabled (assumes same-origin deployment where backend serves frontend)
+  - Only set if frontend is hosted on a different domain
+- `ALLOW_NO_ORIGIN_IN_DEV` – optional; set to `true` to allow requests without Origin header (useful for curl/Postman in development)
+  - NOT recommended in production
 - `TZ` – container timezone (e.g., `Pacific/Auckland`)
 
 ### Data persistence

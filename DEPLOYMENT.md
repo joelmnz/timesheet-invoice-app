@@ -7,10 +7,22 @@ The app is configured to work in multiple deployment scenarios:
 ### Changes Made
 
 1. **Trust Proxy**: Always enabled to detect HTTPS from reverse proxies/tunnels
-2. **CORS**: Configurable via `ALLOWED_ORIGINS` environment variable in production
-   - If `ALLOWED_ORIGINS` is set: validates requests against comma-separated list of allowed origins
-   - If `ALLOWED_ORIGINS` is empty or not set: CORS is disabled (recommended for same-origin deployments where backend serves frontend)
-   - **Security Note**: Only set `ALLOWED_ORIGINS` if your frontend is hosted on a different domain. Leaving it empty disables CORS middleware entirely.
+2. **CORS**: Configurable via `ALLOWED_ORIGINS` environment variable with secure, environment-aware middleware
+   - **Production mode**: 
+     - Requires `Origin` header for API requests
+     - Only allows origins explicitly listed in `ALLOWED_ORIGINS` (comma-separated)
+     - Blocks requests without `Origin` header by default (secure)
+     - Optionally allows requests without `Origin` if `ALLOW_NO_ORIGIN_IN_DEV=true` (not recommended)
+     - Logs blocked CORS attempts with origin or '(no origin header)'
+   - **Development mode**:
+     - Allows `http://localhost:5173` by default
+     - Optionally allows requests without `Origin` if `ALLOW_NO_ORIGIN_IN_DEV=true`
+   - **Same-origin deployments** (recommended):
+     - Leave `ALLOWED_ORIGINS` empty - CORS middleware is disabled
+     - Backend serves frontend from same origin - no CORS needed
+   - **Cross-origin deployments**:
+     - Set `ALLOWED_ORIGINS` to explicit list of allowed frontend domains
+     - CORS will strictly validate all requests
 3. **Session Cookie**:
    - Named `timesheet.sid` to avoid conflicts with other UNRAID containers
    - Uses `secure: 'auto'` to auto-detect HTTP vs HTTPS
@@ -77,8 +89,12 @@ ALLOW_NO_ORIGIN=true
 - **ALLOWED_ORIGINS**: 
   - **Leave empty (recommended)** if backend serves frontend (same-origin deployment)
   - Only set this if your frontend is on a different domain
-  - When set, CORS will strictly validate origins
-  - If you need to allow non-browser clients (Postman, mobile apps), set `ALLOW_NO_ORIGIN=true`
+  - When set, CORS will strictly validate origins and require Origin header
+  - Format: comma-separated list (e.g., `https://app.example.com,https://timesheet.mydomain.com`)
+- **ALLOW_NO_ORIGIN_IN_DEV**:
+  - Set to `true` to allow requests without Origin header (useful for curl, Postman, mobile apps)
+  - Only recommended in development/testing environments
+  - In production, prefer explicit `ALLOWED_ORIGINS` for security
 - **Content Security Policy**: Automatically enabled in production to mitigate XSS risks
 - **Session Store**: Uses SQLite, persists across restarts
 
@@ -90,9 +106,16 @@ ALLOW_NO_ORIGIN=true
    - For same-origin deployments (recommended): leave empty
    - For cross-origin deployments: set to explicit list of allowed domains
    - **Never leave ALLOWED_ORIGINS empty if you're hosting frontend separately**
-4. **CORS**: Disabled by default in production for same-origin security
-5. **Session Store**: Uses SQLite, persists across restarts
-6. **CSP**: Enabled in production, disabled in development
+4. **ALLOW_NO_ORIGIN_IN_DEV**:
+   - Only enable in development for testing tools (curl, Postman)
+   - **Never set to true in production** - always require Origin header
+   - Logs blocked attempts to help debug CORS issues
+5. **CORS Behavior**:
+   - Production: Requires Origin header, validates against ALLOWED_ORIGINS
+   - Development: Allows localhost:5173, optionally allows no Origin
+   - Same-origin: CORS disabled when ALLOWED_ORIGINS is empty (secure default)
+6. **Session Store**: Uses SQLite, persists across restarts
+7. **CSP**: Enabled in production, disabled in development
 
 ### Testing
 
@@ -106,12 +129,41 @@ After deployment:
 
 ### Troubleshooting
 
-If you get CORS errors ("Not allowed by CORS"):
+#### CORS Errors ("Not allowed by CORS")
 
-1. Check the error message in server logs - it will show the blocked origin URL
-2. Add that origin to `ALLOWED_ORIGINS` environment variable (comma-separated)
-3. If using a reverse proxy or tunnel, make sure the origin header is being forwarded correctly
-4. For same-origin deployments (recommended), leave `ALLOWED_ORIGINS` empty to disable CORS
+1. Check the error message in server logs - it will show the blocked origin URL or '(no origin header)'
+2. **If origin is blocked:**
+   - Add that origin to `ALLOWED_ORIGINS` environment variable (comma-separated)
+   - Example: `ALLOWED_ORIGINS=https://your-domain.com,https://app.example.com`
+3. **If '(no origin header)' is blocked:**
+   - In development: Set `ALLOW_NO_ORIGIN_IN_DEV=true` to allow tools like curl/Postman
+   - In production: Origin header is required for security - configure your client to send it
+4. **If using a reverse proxy or tunnel:**
+   - Ensure the proxy forwards the Origin header correctly
+   - Check proxy configuration (nginx, Cloudflare, etc.)
+5. **For same-origin deployments (recommended):**
+   - Leave `ALLOWED_ORIGINS` empty to disable CORS
+   - Backend will serve frontend from same domain - no CORS needed
+
+#### Testing CORS Configuration
+
+```bash
+# Test with valid origin (should succeed if origin is in ALLOWED_ORIGINS)
+curl -v -H "Origin: https://your-domain.com" \
+     -H "Content-Type: application/json" \
+     -X GET http://localhost:8080/api/settings \
+     --cookie-jar cookies.txt
+
+# Test without origin (will fail unless ALLOW_NO_ORIGIN_IN_DEV=true)
+curl -v -X GET http://localhost:8080/api/settings
+
+# Test with invalid origin (should fail)
+curl -v -H "Origin: https://evil.com" \
+     -X GET http://localhost:8080/api/settings
+
+# Check server logs for CORS blocked messages
+docker compose logs -f backend
+```
 
 If you still get 401 errors:
 

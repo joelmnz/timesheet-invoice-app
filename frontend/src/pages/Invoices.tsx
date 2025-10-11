@@ -11,6 +11,7 @@ import {
   Card,
 } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
+import { notifications } from '@mantine/notifications';
 import { IconFilter, IconFilterOff, IconUpload } from '@tabler/icons-react';
 import { DateTime } from 'luxon';
 import { invoicesApi, clientsApi, projectsApi } from '../services/api';

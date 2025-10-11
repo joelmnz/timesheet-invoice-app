@@ -20,6 +20,7 @@ import {
   Switch,
   Stack,
 } from '@mantine/core';
+import { notifications } from '@mantine/notifications';
 import { Link } from 'react-router-dom';
 import {
   IconArrowLeft,

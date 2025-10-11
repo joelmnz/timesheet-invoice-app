@@ -13,6 +13,7 @@ import {
   Box,
 } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
+import { notifications } from '@mantine/notifications';
 import { IconFileExport, IconCalendar } from '@tabler/icons-react';
 import { DateTime } from 'luxon';
 import { reportsApi } from '../services/api';
@@ -40,8 +41,16 @@ export default function Reports() {
 
   const data = reportType === 'invoices' ? invoicesData : incomeData;
 
-  const handleExportCsv = () => {
-    reportsApi.exportCsv('invoices', fromDate, toDate);
+  const handleExportCsv = async () => {
+    try {
+      await reportsApi.exportCsv('invoices', fromDate, toDate);
+    } catch (error) {
+      notifications.show({
+        title: 'Error',
+        message: error instanceof Error ? error.message : 'Failed to export CSV',
+        color: 'red',
+      });
+    }
   };
 
   return (

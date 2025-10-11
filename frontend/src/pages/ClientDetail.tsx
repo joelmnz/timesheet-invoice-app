@@ -20,6 +20,7 @@ import {
   Switch,
   Stack,
 } from '@mantine/core';
+import { notifications } from '@mantine/notifications';
 import { Link } from 'react-router-dom';
 import {
   IconArrowLeft,
@@ -311,7 +312,17 @@ export default function ClientDetail() {
                     <ActionIcon
                       variant="light"
                       color="gray"
-                      onClick={() => invoicesApi.downloadPdf(invoice.id, invoice.number)}
+                      onClick={async () => {
+                        try {
+                          await invoicesApi.downloadPdf(invoice.id, invoice.number);
+                        } catch (error) {
+                          notifications.show({
+                            title: 'Error',
+                            message: error instanceof Error ? error.message : 'Failed to download PDF',
+                            color: 'red',
+                          });
+                        }
+                      }}
                     >
                       <IconDownload size={16} />
                     </ActionIcon>

@@ -364,7 +364,17 @@ export default function InvoiceDetail() {
           )}
           <Button
             variant="light"
-            onClick={() => invoicesApi.downloadPdf(invoice.id, invoice.number)}
+            onClick={async () => {
+              try {
+                await invoicesApi.downloadPdf(invoice.id, invoice.number);
+              } catch (error) {
+                notifications.show({
+                  title: 'Error',
+                  message: error instanceof Error ? error.message : 'Failed to download PDF',
+                  color: 'red',
+                });
+              }
+            }}
           >
             <IconDownload size={16} style={{ marginRight: 8 }} />
             Download PDF

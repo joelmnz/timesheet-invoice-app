@@ -40,8 +40,16 @@ export default function Reports() {
 
   const data = reportType === 'invoices' ? invoicesData : incomeData;
 
-  const handleExportCsv = () => {
-    reportsApi.exportCsv('invoices', fromDate, toDate);
+  const handleExportCsv = async () => {
+    try {
+      await reportsApi.exportCsv('invoices', fromDate, toDate);
+    } catch (error) {
+      notifications.show({
+        title: 'Error',
+        message: error instanceof Error ? error.message : 'Failed to export CSV',
+        color: 'red',
+      });
+    }
   };
 
   return (

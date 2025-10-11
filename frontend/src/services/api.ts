@@ -236,8 +236,22 @@ export const invoicesApi = {
       method: 'DELETE',
     }),
 
-  downloadPdf: (id: number, filename: string) => {
-    window.open(`${API_BASE}/invoices/${id}/pdf`, '_blank');
+  downloadPdf: async (id: number, filename: string) => {
+    const response = await fetch(`${API_BASE}/invoices/${id}/pdf`, {
+      credentials: 'include',
+    });
+    
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: response.statusText }));
+      throw new Error(error.error || response.statusText);
+    }
+    
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    window.open(url, '_blank');
+    
+    // Clean up the blob URL after a short delay to allow the browser to load it
+    setTimeout(() => window.URL.revokeObjectURL(url), 100);
   },
 };
 
@@ -268,7 +282,7 @@ export const reportsApi = {
     return fetchApi<ReportData>(`/reports/income?${params}`);
   },
 
-  exportCsv: (
+  exportCsv: async (
     entity: 'invoices' | 'time-entries' | 'expenses' | 'clients' | 'projects',
     from?: string,
     to?: string
@@ -276,7 +290,22 @@ export const reportsApi = {
     const params = new URLSearchParams();
     if (from) params.append('from', from);
     if (to) params.append('to', to);
-    window.open(`${API_BASE}/export/${entity}?${params}`, '_blank');
+    
+    const response = await fetch(`${API_BASE}/export/${entity}?${params}`, {
+      credentials: 'include',
+    });
+    
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: response.statusText }));
+      throw new Error(error.error || response.statusText);
+    }
+    
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    window.open(url, '_blank');
+    
+    // Clean up the blob URL after a short delay
+    setTimeout(() => window.URL.revokeObjectURL(url), 100);
   },
 };
 
@@ -294,8 +323,22 @@ export const importApi = {
       body: JSON.stringify({ csvContent }),
     }),
 
-  downloadExample: () => {
-    window.open(`${API_BASE}/import/invoices/example`, '_blank');
+  downloadExample: async () => {
+    const response = await fetch(`${API_BASE}/import/invoices/example`, {
+      credentials: 'include',
+    });
+    
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: response.statusText }));
+      throw new Error(error.error || response.statusText);
+    }
+    
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    window.open(url, '_blank');
+    
+    // Clean up the blob URL after a short delay
+    setTimeout(() => window.URL.revokeObjectURL(url), 100);
   },
 };
 

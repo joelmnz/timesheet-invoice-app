@@ -194,7 +194,17 @@ export default function Invoices() {
         emptyState={hasActiveFilters ? 'No invoices found matching filters' : 'No invoices yet'}
         showDueStatus={true}
         onView={(id) => navigate(`/invoices/${id}`)}
-        onDownload={(id, number) => invoicesApi.downloadPdf(id, number)}
+        onDownload={async (id, number) => {
+          try {
+            await invoicesApi.downloadPdf(id, number);
+          } catch (error) {
+            notifications.show({
+              title: 'Error',
+              message: error instanceof Error ? error.message : 'Failed to download PDF',
+              color: 'red',
+            });
+          }
+        }}
       />
     </Container>
   );

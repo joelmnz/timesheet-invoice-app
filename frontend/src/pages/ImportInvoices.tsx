@@ -117,8 +117,16 @@ export default function ImportInvoices() {
     confirmMutation.mutate(csvContent);
   };
 
-  const handleDownloadExample = () => {
-    importApi.downloadExample();
+  const handleDownloadExample = async () => {
+    try {
+      await importApi.downloadExample();
+    } catch (error) {
+      notifications.show({
+        title: 'Error',
+        message: error instanceof Error ? error.message : 'Failed to download example',
+        color: 'red',
+      });
+    }
   };
 
   return (

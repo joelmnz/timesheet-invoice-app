@@ -74,7 +74,8 @@ export function createApp() {
               // Allow requests with no origin only if explicitly enabled (e.g., for Postman)
               callback(null, true);
             } else {
-              callback(new Error('Not allowed by CORS'));
+              const blockedOrigin = origin || '(no origin header)';
+              callback(new Error(`Not allowed by CORS. Origin '${blockedOrigin}' is not in the allowed origins list. Please add it to the ALLOWED_ORIGINS environment variable.`));
             }
           }
         : 'http://localhost:5173',

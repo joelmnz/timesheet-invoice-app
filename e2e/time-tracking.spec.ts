@@ -1,5 +1,5 @@
-import { test, expect } from '../fixtures/helpers';
-import { generateTestId } from '../fixtures/helpers';
+import { test, expect } from './fixtures/helpers';
+import { generateTestId } from './fixtures/helpers';
 
 test.describe('Time Tracking', () => {
   let clientName: string;

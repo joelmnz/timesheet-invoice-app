@@ -169,7 +169,7 @@ export default function Clients() {
       <ListHeader
         title="Clients"
         action={
-          <Button leftSection={<IconPlus size={16} />} onClick={handleOpenCreateModal}>
+          <Button leftSection={<IconPlus size={16} />} onClick={handleOpenCreateModal} data-testid="create-client-btn">
             New Client
           </Button>
         }
@@ -205,22 +205,26 @@ export default function Clients() {
               placeholder="Client name"
               required
               {...form.getInputProps('name')}
+              data-testid="client-name-input"
             />
             <TextInput
               label="Contact Person"
               placeholder="Contact person name"
               {...form.getInputProps('contactPerson')}
+              data-testid="client-contact-input"
             />
             <TextInput
               label="Email"
               placeholder="client@example.com"
               type="email"
               {...form.getInputProps('email')}
+              data-testid="client-email-input"
             />
             <Textarea
               label="Address"
               placeholder="Client address"
               {...form.getInputProps('address')}
+              data-testid="client-address-input"
             />
             <NumberInput
               label="Default Hourly Rate (NZD)"
@@ -230,11 +234,13 @@ export default function Clients() {
               decimalScale={2}
               fixedDecimalScale
               {...form.getInputProps('defaultHourlyRate')}
+              data-testid="client-rate-input"
             />
             <Textarea
               label="Notes"
               placeholder="Additional notes"
               {...form.getInputProps('notes')}
+              data-testid="client-notes-input"
             />
             <Group justify="flex-end" mt="md">
               <Button variant="default" onClick={closeModal}>
@@ -243,6 +249,7 @@ export default function Clients() {
               <Button
                 type="submit"
                 loading={createMutation.isPending || updateMutation.isPending}
+                data-testid="client-submit-btn"
               >
                 {editingClient ? 'Update' : 'Create'}
               </Button>

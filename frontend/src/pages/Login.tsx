@@ -96,6 +96,7 @@ export default function Login() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 autoFocus
+                data-testid="login-username"
               />
 
               <PasswordInput
@@ -104,9 +105,10 @@ export default function Login() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                data-testid="login-password"
               />
 
-              <Button type="submit" fullWidth loading={loading}>
+              <Button type="submit" fullWidth loading={loading} data-testid="login-submit">
                 Sign in
               </Button>
             </Stack>

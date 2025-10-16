@@ -143,6 +143,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           onClick={handleLogout}
           mt="auto"
           color="red"
+          data-testid="user-menu"
         />
       </AppShell.Navbar>
 

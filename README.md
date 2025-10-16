@@ -156,7 +156,47 @@ bun run build
 
 ### 7. Testing
 
-- No explicit test scripts found. Add tests as needed.
+#### Backend Unit Tests
+
+```bash
+cd backend
+bun run test        # Run all tests
+bun run test:ui     # Run with UI
+bun run test:coverage  # Generate coverage report
+```
+
+#### End-to-End (E2E) Tests
+
+E2E tests use Playwright to test the full application flow:
+
+```bash
+# Install Playwright browsers (first time only)
+npx playwright install chromium
+
+# Run E2E tests
+npm run test:e2e
+
+# Run in interactive UI mode
+npm run test:e2e:ui
+
+# Run in headed mode (see browser)
+npm run test:e2e:headed
+
+# Debug tests
+npm run test:e2e:debug
+
+# View test report
+npm run test:e2e:report
+```
+
+**Test Coverage:**
+- Authentication flows
+- Client and project management (create, update, archive)
+- Time tracking (manual entry, timer, editing)
+- Invoice generation and calculations
+- All tests use `E2E-` prefixed test data for easy identification
+
+See [Test Strategy Documentation](docs/testing/TEST_STRATEGY.md) for detailed information.
 
 ### 8. Useful Scripts
 

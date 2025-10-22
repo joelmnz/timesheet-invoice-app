@@ -131,8 +131,12 @@ export const projectsApi = {
 
 // Time Entries API
 export const timeEntriesApi = {
-  list: (projectId: number) =>
-    fetchApi<TimeEntry[]>(`/projects/${projectId}/time-entries`),
+  list: (projectId: number, page = 1, pageSize = 25) => {
+    const params = new URLSearchParams();
+    params.append('page', page.toString());
+    params.append('page_size', pageSize.toString());
+    return fetchApi<import('../types').PaginatedResponse<TimeEntry>>(`/projects/${projectId}/time-entries?${params}`);
+  },
 
   create: (projectId: number, data: Partial<TimeEntry>) =>
     fetchApi<TimeEntry>(`/projects/${projectId}/time-entries`, {
@@ -154,8 +158,12 @@ export const timeEntriesApi = {
 
 // Expenses API
 export const expensesApi = {
-  list: (projectId: number) =>
-    fetchApi<Expense[]>(`/projects/${projectId}/expenses`),
+  list: (projectId: number, page = 1, pageSize = 25) => {
+    const params = new URLSearchParams();
+    params.append('page', page.toString());
+    params.append('page_size', pageSize.toString());
+    return fetchApi<import('../types').PaginatedResponse<Expense>>(`/projects/${projectId}/expenses?${params}`);
+  },
 
   create: (projectId: number, data: Partial<Expense>) =>
     fetchApi<Expense>(`/projects/${projectId}/expenses`, {
@@ -181,6 +189,8 @@ export const invoicesApi = {
     projectId?: number;
     from?: string;
     to?: string;
+    page?: number;
+    pageSize?: number;
   }) => {
     const searchParams = new URLSearchParams();
     if (params?.status) searchParams.append('status', params.status);
@@ -188,7 +198,9 @@ export const invoicesApi = {
     if (params?.projectId) searchParams.append('projectId', params.projectId.toString());
     if (params?.from) searchParams.append('from', params.from);
     if (params?.to) searchParams.append('to', params.to);
-    return fetchApi<Invoice[]>(`/invoices?${searchParams}`);
+    if (params?.page) searchParams.append('page', params.page.toString());
+    if (params?.pageSize) searchParams.append('page_size', params.pageSize.toString());
+    return fetchApi<import('../types').PaginatedResponse<Invoice>>(`/invoices?${searchParams}`);
   },
 
   get: (id: number) => fetchApi<Invoice>(`/invoices/${id}`),

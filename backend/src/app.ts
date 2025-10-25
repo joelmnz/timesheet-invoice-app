@@ -19,6 +19,13 @@ import migrationsRoutes from './routes/migrations.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { createCorsMiddleware } from './middleware/cors.js';
 
+// Track database initialization status
+export let dbInitialized = false;
+
+export function setDbInitialized() {
+  dbInitialized = true;
+}
+
 export function createApp() {
   const app = express();
   const NODE_ENV = process.env.NODE_ENV || 'development';
@@ -96,8 +103,12 @@ export function createApp() {
   app.use('/api/migrations', migrationsRoutes);
   app.use('/api/auth', authRoutes);
 
-  // Lightweight health endpoint
+  // Lightweight health endpoint - only responds when database is initialized
   app.get('/health', (_req, res) => {
+    if (!dbInitialized) {
+      res.status(503).send('Database initialization in progress');
+      return;
+    }
     res.status(200).send('ok');
   });
 

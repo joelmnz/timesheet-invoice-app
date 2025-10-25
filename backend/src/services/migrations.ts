@@ -1,9 +1,13 @@
-import { copyFileSync, existsSync, mkdirSync } from 'fs';
+import { copyFileSync, existsSync, mkdirSync, readFileSync } from 'fs';
 import { migrate } from 'drizzle-orm/bun-sqlite/migrator';
 import { db, sqlite } from '../db/index.js';
 import { settings } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
-import { dirname } from 'path';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 interface MigrationStatus {
   needed: boolean;
@@ -91,8 +95,32 @@ export function backupDatabase(dbPath: string): string {
 export async function runMigrations(): Promise<void> {
   try {
     console.log('Running migrations...');
-    migrate(db, { migrationsFolder: './drizzle' });
-    console.log('Migrations completed successfully');
+    
+    // Check if tables already exist
+    const tableCheck = sqlite.query(`
+      SELECT name FROM sqlite_master 
+      WHERE type='table' AND name='clients'
+    `).all();
+    
+    if (tableCheck.length === 0) {
+      // Tables don't exist, run migration SQL directly
+      console.log('No tables found, applying migration SQL...');
+      const migrationPath = join(__dirname, '../../drizzle/0000_young_madripoor.sql');
+      const migrationSQL = readFileSync(migrationPath, 'utf-8');
+      
+      // Split by statement breakpoint and execute each statement
+      const statements = migrationSQL
+        .split('--> statement-breakpoint')
+        .map(s => s.trim())
+        .filter(s => s.length > 0);
+      
+      for (const statement of statements) {
+        sqlite.exec(statement);
+      }
+      console.log('✓ Migration SQL applied successfully');
+    } else {
+      console.log('✓ Tables already exist, skipping migration');
+    }
 
     // Seed initial settings if not exists
     const existingSettings = await db.select().from(settings).where(eq(settings.id, 1)).limit(1);
@@ -108,8 +136,10 @@ export async function runMigrations(): Promise<void> {
         invoiceFooterMarkdown: '',
         nextInvoiceNumber: 1,
       });
-      console.log('Initial settings created');
+      console.log('✓ Initial settings created');
     }
+    
+    console.log('Migrations completed successfully');
   } catch (error) {
     console.error('Migration failed:', error);
     throw new Error(`Migration failed: ${error instanceof Error ? error.message : 'Unknown error'}`);

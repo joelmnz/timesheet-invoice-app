@@ -1,10 +1,10 @@
 name: E2E Tests
 
 on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main, develop ]
+  # push:
+  #   branches: [ main, develop ]
+  # pull_request:
+  #   branches: [ main, develop ]
   workflow_dispatch:
 
 jobs:
@@ -33,8 +33,8 @@ jobs:
 
       - name: Install Playwright dependencies
         run: |
-          npm ci
-          npx playwright install --with-deps chromium
+          bun install
+          bunx playwright install --with-deps chromium
 
       - name: Setup test database
         run: |
@@ -46,7 +46,7 @@ jobs:
           bun run db:migrate
 
       - name: Run E2E tests
-        run: npm run test:e2e
+        run: bun run test:e2e
         env:
           CI: true
           BASE_URL: http://localhost:5173

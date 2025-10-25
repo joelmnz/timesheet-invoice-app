@@ -10,7 +10,7 @@ export const loginSchema = z.object({
 export const updateSettingsSchema = z.object({
   companyName: z.string().min(1, 'Company name is required'),
   companyAddress: z.string().optional(),
-  companyEmail: z.string().email().optional().or(z.literal('')),
+  companyEmail: z.string().email().or(z.literal('')).optional(),
   companyPhone: z.string().optional(),
   invoiceFooterMarkdown: z.string().max(5000, 'Invoice footer must be less than 5000 characters').optional(),
   nextInvoiceNumber: z.number().int().positive(),
@@ -20,7 +20,7 @@ export const updateSettingsSchema = z.object({
 export const createClientSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   address: z.string().optional(),
-  email: z.string().email().optional().or(z.literal('')),
+  email: z.string().email().or(z.literal('')).optional(),
   contactPerson: z.string().optional(),
   defaultHourlyRate: z.number().min(0).default(0),
   notes: z.string().optional(),

@@ -41,9 +41,9 @@ export default defineConfig({
   /* Run your local dev server before starting the tests */
   webServer: [
     {
-      command: 'cd backend && export PATH="$HOME/.bun/bin:$PATH" && bun run dev',
+      command: 'cd backend && rm -f ./data/e2e-test.db && export PATH="$HOME/.bun/bin:$PATH" && bun run dev',
       url: 'http://localhost:8080/health',
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer: false, // Always start fresh
       timeout: 120000,
       env: {
         APP_USERNAME: 'admin',
@@ -56,7 +56,7 @@ export default defineConfig({
     {
       command: 'cd frontend && export PATH="$HOME/.bun/bin:$PATH" && bun run dev',
       url: 'http://localhost:5173',
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer: false, // Always start fresh
       timeout: 120000,
     },
   ],

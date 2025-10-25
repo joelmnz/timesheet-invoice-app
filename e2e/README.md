@@ -14,16 +14,16 @@ This directory contains end-to-end tests for the Timesheet Invoice Application u
 
 ```bash
 # Run all tests
-npm run test:e2e
+bun run test:e2e
 
 # Run in UI mode (recommended for development)
-npm run test:e2e:ui
+bun run test:e2e:ui
 
 # Run with browser visible
-npm run test:e2e:headed
+bun run test:e2e:headed
 
 # Debug tests
-npm run test:e2e:debug
+bun run test:e2e:debug
 ```
 
 ## Test Structure

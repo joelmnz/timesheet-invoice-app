@@ -251,18 +251,18 @@ To validate the implementation:
 
 ```bash
 # 1. Install dependencies
-npm install
-npx playwright install chromium
+bun install
+bunx playwright install chromium
 
 # 2. List all tests (should show 21 tests)
-npx playwright test --list
+bunx playwright test --list
 
 # 3. Run tests in UI mode (visual validation)
-npm run test:e2e:ui
+bun run test:e2e:ui
 
 # 4. Generate and view report
-npm run test:e2e
-npm run test:e2e:report
+bun run test:e2e
+bun run test:e2e:report
 ```
 
 ## Success Criteria Met

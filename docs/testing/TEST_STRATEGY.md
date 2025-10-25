@@ -129,32 +129,32 @@ We use `data-testid` attributes for reliable element selection:
 
 ```bash
 # Run all E2E tests
-npm run test:e2e
+bun run test:e2e
 
 # Run in UI mode (interactive)
-npm run test:e2e:ui
+bun run test:e2e:ui
 
 # Run in headed mode (see browser)
-npm run test:e2e:headed
+bun run test:e2e:headed
 
 # Debug a specific test
-npm run test:e2e:debug
+bun run test:e2e:debug
 
 # View latest test report
-npm run test:e2e:report
+bun run test:e2e:report
 ```
 
 ### Test-Specific Commands
 
 ```bash
 # Run specific test file
-npx playwright test e2e/clients.spec.ts
+bunx playwright test e2e/clients.spec.ts
 
 # Run specific test by name
-npx playwright test -g "should create a new client"
+bunx playwright test -g "should create a new client"
 
 # Run in debug mode for specific test
-npx playwright test e2e/clients.spec.ts --debug
+bunx playwright test e2e/clients.spec.ts --debug
 ```
 
 ### CI/CD Pipeline
@@ -204,13 +204,13 @@ ALLOW_NO_ORIGIN_IN_DEV=true
 
 ```bash
 # Run with headed browser
-npm run test:e2e:headed
+bun run test:e2e:headed
 
 # Interactive UI mode
-npm run test:e2e:ui
+bun run test:e2e:ui
 
 # Debug mode with Inspector
-npm run test:e2e:debug
+bun run test:e2e:debug
 ```
 
 ### 2. Screenshots and Videos
@@ -222,14 +222,14 @@ On test failure, Playwright automatically captures:
 
 View in the HTML report:
 ```bash
-npm run test:e2e:report
+bun run test:e2e:report
 ```
 
 ### 3. Trace Viewer
 
 ```bash
 # Open trace for failed test
-npx playwright show-trace test-results/path-to-trace.zip
+bunx playwright show-trace test-results/path-to-trace.zip
 ```
 
 ### 4. Console Logs

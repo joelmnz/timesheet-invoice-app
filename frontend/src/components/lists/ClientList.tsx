@@ -64,6 +64,7 @@ export function ClientList({
             <ActionIcon
               variant="light"
               color="blue"
+              aria-label="Edit"
               onClick={(e) => {
                 e.stopPropagation();
                 onEdit(client);
@@ -76,6 +77,7 @@ export function ClientList({
             <ActionIcon
               variant="light"
               color="red"
+              aria-label="Delete"
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete(client);

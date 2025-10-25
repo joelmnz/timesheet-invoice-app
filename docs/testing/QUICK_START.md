@@ -6,17 +6,17 @@
 
 ```bash
 # Install root-level dependencies (includes Playwright)
-npm install
+bun install
 
 # Install Playwright browsers
-npx playwright install chromium
+bunx playwright install chromium
 ```
 
 ### 2. Verify Installation
 
 ```bash
 # List all available tests
-npx playwright test --list
+bunx playwright test --list
 
 # Should show 21 tests across 5 test files
 ```
@@ -27,35 +27,35 @@ npx playwright test --list
 
 ```bash
 # Run all tests (headless)
-npm run test:e2e
+bun run test:e2e
 
 # Interactive UI mode (recommended for development)
-npm run test:e2e:ui
+bun run test:e2e:ui
 
 # Run with visible browser
-npm run test:e2e:headed
+bun run test:e2e:headed
 
 # Debug mode with Playwright Inspector
-npm run test:e2e:debug
+bun run test:e2e:debug
 
 # View last test report
-npm run test:e2e:report
+bun run test:e2e:report
 ```
 
 ### Targeted Testing
 
 ```bash
 # Run specific test file
-npx playwright test e2e/clients.spec.ts
+bunx playwright test e2e/clients.spec.ts
 
 # Run specific test by name
-npx playwright test -g "should create a new client"
+bunx playwright test -g "should create a new client"
 
 # Run in specific browser
-npx playwright test --project=chromium
+bunx playwright test --project=chromium
 
 # Update snapshots (if using visual testing)
-npx playwright test --update-snapshots
+bunx playwright test --update-snapshots
 ```
 
 ## Debugging Failed Tests
@@ -64,10 +64,10 @@ npx playwright test --update-snapshots
 
 ```bash
 # Run in headed mode to see what's happening
-npm run test:e2e:headed
+bun run test:e2e:headed
 
 # Use UI mode for step-by-step debugging
-npm run test:e2e:ui
+bun run test:e2e:ui
 ```
 
 ### 2. Check Test Artifacts
@@ -78,24 +78,24 @@ After a test run, check these folders:
 
 ```bash
 # Open HTML report
-npm run test:e2e:report
+bun run test:e2e:report
 ```
 
 ### 3. Use Playwright Inspector
 
 ```bash
 # Debug specific test
-npx playwright test e2e/clients.spec.ts --debug
+bunx playwright test e2e/clients.spec.ts --debug
 
 # Debug with grep pattern
-npx playwright test -g "should create" --debug
+bunx playwright test -g "should create" --debug
 ```
 
 ### 4. View Trace Files
 
 ```bash
 # Show trace for a specific test
-npx playwright show-trace test-results/path-to-trace.zip
+bunx playwright show-trace test-results/path-to-trace.zip
 ```
 
 ## Writing New Tests
@@ -162,7 +162,7 @@ Error: WebServer process exited unexpectedly with code 1
 **Solution**: 
 - Check if ports 8080 and 5173 are free
 - Verify Bun is installed: `bun --version`
-- Check backend/frontend dependencies are installed
+- Check backend/frontend dependencies are installed (`bun install` in each directory)
 
 ### Selector Not Found
 
@@ -172,7 +172,7 @@ Error: WebServer process exited unexpectedly with code 1
 1. Check if `data-testid` exists in the component
 2. Use Playwright Inspector to find the element:
    ```bash
-   npx playwright test --debug
+   bunx playwright test --debug
    ```
 3. Verify the element is visible (not hidden by CSS)
 
@@ -221,31 +221,31 @@ Tests run automatically in GitHub Actions on:
 
 ```bash
 # Run only changed tests
-npx playwright test --only-changed
+bunx playwright test --only-changed
 
 # Run tests in parallel (faster)
-npx playwright test --workers=4
+bunx playwright test --workers=4
 ```
 
 ### 2. Codegen for New Tests
 
 ```bash
 # Generate test code by recording actions
-npx playwright codegen http://localhost:5173
+bunx playwright codegen http://localhost:5173
 ```
 
 ### 3. Mobile Testing
 
 ```bash
 # Test on mobile viewport
-npx playwright test --project="Mobile Chrome"
+bunx playwright test --project="Mobile Chrome"
 ```
 
 ### 4. Network Debugging
 
 ```bash
 # See network requests
-npx playwright test --trace on
+bunx playwright test --trace on
 ```
 
 ## Resources

@@ -17,6 +17,7 @@ import { DateTime } from 'luxon';
 import { invoicesApi, clientsApi, projectsApi } from '../services/api';
 import { ListHeader } from '../components/lists/ListHeader';
 import { InvoiceList } from '../components/lists/InvoiceList';
+import { Pagination } from '../components/common/Pagination';
 import { formatCurrency } from '../components/lists/format';
 
 export default function Invoices() {
@@ -27,8 +28,10 @@ export default function Invoices() {
   const [fromDate, setFromDate] = useState<Date | null>(null);
   const [toDate, setToDate] = useState<Date | null>(null);
   const [filtersExpanded, setFiltersExpanded] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
-  const { data: invoices, isLoading: invoicesLoading } = useQuery({
+  const { data: invoicesResponse, isLoading: invoicesLoading } = useQuery({
     queryKey: [
       'invoices',
       {
@@ -37,6 +40,8 @@ export default function Invoices() {
         projectId: projectFilter ? parseInt(projectFilter) : undefined,
         from: fromDate ? DateTime.fromJSDate(fromDate).toISODate() : undefined,
         to: toDate ? DateTime.fromJSDate(toDate).toISODate() : undefined,
+        page,
+        pageSize,
       },
     ],
     queryFn: () =>
@@ -46,8 +51,12 @@ export default function Invoices() {
         projectId: projectFilter ? parseInt(projectFilter) : undefined,
         from: fromDate ? DateTime.fromJSDate(fromDate).toISODate() || undefined : undefined,
         to: toDate ? DateTime.fromJSDate(toDate).toISODate() || undefined : undefined,
+        page,
+        pageSize,
       }),
   });
+
+  const invoices = invoicesResponse?.data || [];
 
   const { data: clients } = useQuery({
     queryKey: ['clients'],
@@ -65,6 +74,7 @@ export default function Invoices() {
     setProjectFilter('');
     setFromDate(null);
     setToDate(null);
+    setPage(1);
   };
 
   const hasActiveFilters =
@@ -207,6 +217,16 @@ export default function Invoices() {
           }
         }}
       />
+      {invoicesResponse && (
+        <Pagination
+          pagination={invoicesResponse.pagination}
+          onPageChange={(newPage) => setPage(newPage)}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setPage(1);
+          }}
+        />
+      )}
     </Container>
   );
 }

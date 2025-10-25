@@ -9,7 +9,7 @@ import {
   clients, 
   settings 
 } from '../db/schema.js';
-import { eq, and, lte, sql } from 'drizzle-orm';
+import { eq, and, lte, sql, count } from 'drizzle-orm';
 import { 
   createInvoiceSchema, 
   updateInvoiceSchema,
@@ -34,6 +34,10 @@ export const invoiceLinesRouter = Router();
 router.get('/', requireAuth, async (req, res, next) => {
   try {
     const { status, clientId, projectId, from, to } = req.query;
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const pageSizeParam = parseInt(req.query.page_size as string) || 25;
+    const pageSize = [10, 25, 50, 100].includes(pageSizeParam) ? pageSizeParam : 25;
+    const offset = (page - 1) * pageSize;
 
     let query = db
       .select({
@@ -71,7 +75,23 @@ router.get('/', requireAuth, async (req, res, next) => {
       query = query.where(and(...conditions)) as any;
     }
 
-    const results = await query.orderBy(sql`${invoices.dateInvoiced} DESC`);
+    // Get total count with same conditions
+    let countQuery = db
+      .select({ count: count() })
+      .from(invoices);
+
+    if (conditions.length > 0) {
+      countQuery = countQuery.where(and(...conditions)) as any;
+    }
+
+    const [totalResult] = await countQuery;
+    const total = totalResult.count;
+
+    // Get paginated results sorted by dateInvoiced DESC
+    const results = await query
+      .orderBy(sql`${invoices.dateInvoiced} DESC`)
+      .limit(pageSize)
+      .offset(offset);
 
     const response = results.map(({ invoice, client, project }) => ({
       ...invoice,
@@ -79,7 +99,15 @@ router.get('/', requireAuth, async (req, res, next) => {
       project,
     }));
 
-    res.json(response);
+    res.json({
+      data: response,
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.ceil(total / pageSize),
+      },
+    });
   } catch (error) {
     next(error);
   }

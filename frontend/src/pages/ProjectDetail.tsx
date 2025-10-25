@@ -41,6 +41,7 @@ import {
 } from '../services/api';
 import type { TimeEntry, Expense, Project } from '../types';
 import { InvoiceList } from '../components/lists/InvoiceList';
+import { Pagination } from '../components/common/Pagination';
 
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
@@ -61,25 +62,37 @@ export default function ProjectDetail() {
   const [deletingTimeEntry, setDeletingTimeEntry] = useState<TimeEntry | null>(null);
   const [deletingExpense, setDeletingExpense] = useState<Expense | null>(null);
 
+  // Pagination state
+  const [timePage, setTimePage] = useState(1);
+  const [timePageSize, setTimePageSize] = useState(25);
+  const [expensePage, setExpensePage] = useState(1);
+  const [expensePageSize, setExpensePageSize] = useState(25);
+  const [invoicePage, setInvoicePage] = useState(1);
+  const [invoicePageSize, setInvoicePageSize] = useState(25);
+
   const { data: project, isLoading: projectLoading } = useQuery({
     queryKey: ['projects', projectId],
     queryFn: () => projectsApi.get(projectId),
   });
 
-  const { data: timeEntries, isLoading: timeEntriesLoading } = useQuery({
-    queryKey: ['time-entries', projectId],
-    queryFn: () => timeEntriesApi.list(projectId),
+  const { data: timeEntriesResponse, isLoading: timeEntriesLoading } = useQuery({
+    queryKey: ['time-entries', projectId, timePage, timePageSize],
+    queryFn: () => timeEntriesApi.list(projectId, timePage, timePageSize),
   });
 
-  const { data: expenses, isLoading: expensesLoading } = useQuery({
-    queryKey: ['expenses', projectId],
-    queryFn: () => expensesApi.list(projectId),
+  const { data: expensesResponse, isLoading: expensesLoading } = useQuery({
+    queryKey: ['expenses', projectId, expensePage, expensePageSize],
+    queryFn: () => expensesApi.list(projectId, expensePage, expensePageSize),
   });
 
-  const { data: invoices, isLoading: invoicesLoading } = useQuery({
-    queryKey: ['invoices', { projectId }],
-    queryFn: () => invoicesApi.list({ projectId }),
+  const { data: invoicesResponse, isLoading: invoicesLoading } = useQuery({
+    queryKey: ['invoices', { projectId, page: invoicePage, pageSize: invoicePageSize }],
+    queryFn: () => invoicesApi.list({ projectId, page: invoicePage, pageSize: invoicePageSize }),
   });
+
+  const timeEntries = timeEntriesResponse?.data || [];
+  const expenses = expensesResponse?.data || [];
+  const invoices = invoicesResponse?.data || [];
 
   const projectForm = useForm({
     initialValues: {
@@ -676,6 +689,16 @@ export default function ProjectDetail() {
               </Table.Tbody>
             </Table>
           )}
+          {timeEntriesResponse && (
+            <Pagination
+              pagination={timeEntriesResponse.pagination}
+              onPageChange={(page) => setTimePage(page)}
+              onPageSizeChange={(size) => {
+                setTimePageSize(size);
+                setTimePage(1);
+              }}
+            />
+          )}
         </Tabs.Panel>
 
         <Tabs.Panel value="expenses" pt="md">
@@ -749,6 +772,16 @@ export default function ProjectDetail() {
               </Table.Tbody>
             </Table>
           )}
+          {expensesResponse && (
+            <Pagination
+              pagination={expensesResponse.pagination}
+              onPageChange={(page) => setExpensePage(page)}
+              onPageSizeChange={(size) => {
+                setExpensePageSize(size);
+                setExpensePage(1);
+              }}
+            />
+          )}
         </Tabs.Panel>
 
         <Tabs.Panel value="invoices" pt="md">
@@ -770,6 +803,16 @@ export default function ProjectDetail() {
               }
             }}
           />
+          {invoicesResponse && (
+            <Pagination
+              pagination={invoicesResponse.pagination}
+              onPageChange={(page) => setInvoicePage(page)}
+              onPageSizeChange={(size) => {
+                setInvoicePageSize(size);
+                setInvoicePage(1);
+              }}
+            />
+          )}
         </Tabs.Panel>
       </Tabs>
 

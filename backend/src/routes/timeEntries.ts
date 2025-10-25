@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { db } from '../db/index.js';
 import { timeEntries } from '../db/schema.js';
-import { eq, and, lt, gt, ne } from 'drizzle-orm';
+import { eq, and, lt, gt, ne, desc, count } from 'drizzle-orm';
 import { createTimeEntrySchema, updateTimeEntrySchema } from '../types/validation.js';
 import { requireAuth } from '../middleware/auth.js';
 import { roundUpToSixMinutes, getCurrentTimestamp } from '../utils/time.js';
@@ -12,14 +12,37 @@ const router = Router();
 router.get('/projects/:projectId/time-entries', requireAuth, async (req, res, next) => {
   try {
     const projectId = parseInt(req.params.projectId);
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const pageSizeParam = parseInt(req.query.page_size as string) || 25;
+    const pageSize = [10, 25, 50, 100].includes(pageSizeParam) ? pageSizeParam : 25;
+    const offset = (page - 1) * pageSize;
 
+    // Get total count
+    const [totalResult] = await db
+      .select({ count: count() })
+      .from(timeEntries)
+      .where(eq(timeEntries.projectId, projectId));
+
+    const total = totalResult.count;
+
+    // Get paginated entries sorted by startAt DESC
     const entries = await db
       .select()
       .from(timeEntries)
       .where(eq(timeEntries.projectId, projectId))
-      .orderBy(timeEntries.startAt);
+      .orderBy(desc(timeEntries.startAt))
+      .limit(pageSize)
+      .offset(offset);
 
-    res.json(entries);
+    res.json({
+      data: entries,
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.ceil(total / pageSize),
+      },
+    });
   } catch (error) {
     next(error);
   }

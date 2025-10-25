@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { db } from '../db/index.js';
 import { expenses } from '../db/schema.js';
-import { eq } from 'drizzle-orm';
+import { eq, desc, count } from 'drizzle-orm';
 import { createExpenseSchema, updateExpenseSchema } from '../types/validation.js';
 import { requireAuth } from '../middleware/auth.js';
 import { getCurrentTimestamp } from '../utils/time.js';
@@ -12,14 +12,37 @@ const router = Router();
 router.get('/projects/:projectId/expenses', requireAuth, async (req, res, next) => {
   try {
     const projectId = parseInt(req.params.projectId);
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const pageSizeParam = parseInt(req.query.page_size as string) || 25;
+    const pageSize = [10, 25, 50, 100].includes(pageSizeParam) ? pageSizeParam : 25;
+    const offset = (page - 1) * pageSize;
 
+    // Get total count
+    const [totalResult] = await db
+      .select({ count: count() })
+      .from(expenses)
+      .where(eq(expenses.projectId, projectId));
+
+    const total = totalResult.count;
+
+    // Get paginated expenses sorted by expenseDate DESC
     const expenseList = await db
       .select()
       .from(expenses)
       .where(eq(expenses.projectId, projectId))
-      .orderBy(expenses.expenseDate);
+      .orderBy(desc(expenses.expenseDate))
+      .limit(pageSize)
+      .offset(offset);
 
-    res.json(expenseList);
+    res.json({
+      data: expenseList,
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.ceil(total / pageSize),
+      },
+    });
   } catch (error) {
     next(error);
   }

@@ -188,11 +188,17 @@ export default function InvoiceDetail() {
 
   const handleOpenInvoiceModal = () => {
     if (invoice) {
+      // Helper function to safely parse date strings, falling back to current date if invalid
+      const parseDateSafely = (dateStr: string): Date => {
+        const parsed = new Date(dateStr);
+        return isNaN(parsed.getTime()) ? new Date() : parsed;
+      };
+
       invoiceForm.setValues({
-        dateInvoiced: new Date(invoice.dateInvoiced),
-        dueDate: new Date(invoice.dueDate),
+        dateInvoiced: parseDateSafely(invoice.dateInvoiced),
+        dueDate: parseDateSafely(invoice.dueDate),
         status: invoice.status,
-        datePaid: invoice.datePaid ? new Date(invoice.datePaid) : null,
+        datePaid: invoice.datePaid ? parseDateSafely(invoice.datePaid) : null,
         notes: invoice.notes || '',
       });
       openInvoiceModal();

@@ -29,6 +29,7 @@ import {
   IconEye,
 } from '@tabler/icons-react';
 import { clientsApi, projectsApi, invoicesApi } from '../services/api';
+import { Pagination } from '../components/common/Pagination';
 
 export default function ClientDetail() {
   const { id } = useParams<{ id: string }>();
@@ -42,6 +43,10 @@ export default function ClientDetail() {
   const [active, setActive] = React.useState(true);
   const [creating, setCreating] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+
+  // Pagination state for invoices
+  const [page, setPage] = React.useState(1);
+  const [pageSize, setPageSize] = React.useState(25);
 
   // Query for client
   const { data: client, isLoading: clientLoading } = useQuery({
@@ -61,8 +66,8 @@ export default function ClientDetail() {
   });
 
   const { data: invoicesResponse, isLoading: invoicesLoading } = useQuery({
-    queryKey: ['invoices', { clientId }],
-    queryFn: () => invoicesApi.list({ clientId }),
+    queryKey: ['invoices', { clientId, page, pageSize }],
+    queryFn: () => invoicesApi.list({ clientId, page, pageSize }),
   });
 
   const invoices = invoicesResponse?.data || [];
@@ -334,6 +339,16 @@ export default function ClientDetail() {
             ))}
           </Table.Tbody>
         </Table>
+      )}
+      {invoicesResponse && (
+        <Pagination
+          pagination={invoicesResponse.pagination}
+          onPageChange={(newPage) => setPage(newPage)}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setPage(1);
+          }}
+        />
       )}
     </Container>
   );

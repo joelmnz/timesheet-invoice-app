@@ -60,10 +60,12 @@ export default function ClientDetail() {
     queryFn: () => projectsApi.listByClient(clientId, 'all'),
   });
 
-  const { data: invoices, isLoading: invoicesLoading } = useQuery({
+  const { data: invoicesResponse, isLoading: invoicesLoading } = useQuery({
     queryKey: ['invoices', { clientId }],
     queryFn: () => invoicesApi.list({ clientId }),
   });
+
+  const invoices = invoicesResponse?.data || [];
 
   if (clientLoading) {
     return (

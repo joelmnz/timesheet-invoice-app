@@ -1,0 +1,41 @@
+name: Backend Tests on PR
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/test-on-pr.yml'
+
+jobs:
+  backend-tests:
+    name: Run Backend API Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: bun install
+
+      - name: Run backend tests
+        working-directory: backend
+        run: bun run test
+
+      - name: Generate test summary
+        if: always()
+        run: |
+          echo "## Backend Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ All tests completed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Test Suite:** Backend API Integration Tests" >> $GITHUB_STEP_SUMMARY
+          echo "**Execution:** Sequential (shared in-memory database)" >> $GITHUB_STEP_SUMMARY

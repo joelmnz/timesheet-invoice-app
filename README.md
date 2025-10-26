@@ -156,47 +156,61 @@ bun run build
 
 ### 7. Testing
 
-#### Backend Unit Tests
+The application has two test suites:
+
+#### Backend API Tests
+
+API integration tests using Vitest and Supertest (88 tests, ~42s):
 
 ```bash
 cd backend
-bun run test        # Run all tests
-bun run test:ui     # Run with UI
-bun run test:coverage  # Generate coverage report
+bun run test              # Run all tests (sequential)
+bun run test:parallel     # Run in parallel (dev/debug)
+bun run test:watch        # Run with watch mode
+bun test src/tests/auth.test.ts  # Run specific file
 ```
+
+**Coverage:**
+- Authentication and session management (16 tests)
+- Client and project CRUD operations (51 tests)
+- Settings management (14 tests)
+- CSV import validation (5 tests)
+- Invoice generation (2 tests)
+
+See [`backend/src/tests/BACKEND_TESTS.md`](backend/src/tests/BACKEND_TESTS.md) for detailed documentation.
 
 #### End-to-End (E2E) Tests
 
-E2E tests use Playwright to test the full application flow:
+Full application flow tests using Playwright:
 
 ```bash
 # Install Playwright browsers (first time only)
-npx playwright install chromium
+bunx playwright install chromium
 
-# Run E2E tests
-npm run test:e2e
+# Run E2E tests (from project root)
+bun run test:e2e
 
 # Run in interactive UI mode
-npm run test:e2e:ui
+bun run test:e2e:ui
 
 # Run in headed mode (see browser)
-npm run test:e2e:headed
+bun run test:e2e:headed
 
 # Debug tests
-npm run test:e2e:debug
+bun run test:e2e:debug
 
 # View test report
-npm run test:e2e:report
+bun run test:e2e:report
 ```
 
-**Test Coverage:**
+**Coverage:**
 - Authentication flows
 - Client and project management (create, update, archive)
 - Time tracking (manual entry, timer, editing)
 - Invoice generation and calculations
 - All tests use `E2E-` prefixed test data for easy identification
 
-See [Test Strategy Documentation](docs/testing/TEST_STRATEGY.md) for detailed information.
+See [`e2e/README.md`](e2e/README.md) for detailed documentation.
 
 ### 8. Useful Scripts
 

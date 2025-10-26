@@ -1,34 +1,8 @@
-import { Database } from 'bun:sqlite';
-import { drizzle, BunSQLiteDatabase } from 'drizzle-orm/bun-sqlite';
-import * as schema from '../db/schema.js';
-import { migrate } from 'drizzle-orm/bun-sqlite/migrator';
-import { eq } from 'drizzle-orm';
-import { settings, clients, projects } from '../db/schema.js';
+import type { SuperAgentTest } from 'supertest';
+import { db } from '../db/index.js';
+import { settings } from '../db/schema.js';
 
-let testDb: BunSQLiteDatabase<typeof schema> | null = null;
-let testSqlite: Database | null = null;
-
-export function getTestDb() {
-  if (!testDb) {
-    testSqlite = new Database(':memory:');
-    testDb = drizzle(testSqlite, { schema });
-    
-    migrate(testDb, { migrationsFolder: './drizzle' });
-    
-    seedTestDb(testDb);
-  }
-  return testDb;
-}
-
-export function closeTestDb() {
-  if (testSqlite) {
-    testSqlite.close();
-    testSqlite = null;
-    testDb = null;
-  }
-}
-
-function seedTestDb(db: BunSQLiteDatabase<typeof schema>) {
+export function ensureTestSettings() {
   db.insert(settings).values({
     id: 1,
     companyName: 'Test Business',
@@ -39,33 +13,109 @@ function seedTestDb(db: BunSQLiteDatabase<typeof schema>) {
     nextInvoiceNumber: 1,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-  }).run();
-
-  db.insert(clients).values({
-    name: 'Test Client',
-    email: 'client@example.com',
-    address: '456 Client Ave',
-    contactPerson: 'John Doe',
-    defaultHourlyRate: 50,
-    notes: '',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  }).run();
-
-  db.insert(projects).values({
-    name: 'Test Project',
-    clientId: 1,
-    hourlyRate: 100,
-    active: true,
-    notes: '',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+  }).onConflictDoUpdate({
+    target: settings.id,
+    set: {
+      companyName: 'Test Business',
+      companyAddress: '123 Test St',
+      companyEmail: 'test@example.com',
+      companyPhone: '555-1234',
+      invoiceFooterMarkdown: '',
+      nextInvoiceNumber: 1,
+      updatedAt: new Date().toISOString(),
+    }
   }).run();
 }
 
-export async function createAuthenticatedAgent(agent: any) {
+export async function createAuthenticatedAgent(agent: SuperAgentTest) {
   await agent
     .post('/api/auth/login')
     .send({ username: 'admin', password: 'admin' });
   return agent;
+}
+
+export function createTestClientData(overrides: any = {}) {
+  return {
+    name: `Test Client ${Date.now()}`,
+    email: 'test@example.com',
+    contactPerson: 'John Doe',
+    address: '123 Test St',
+    defaultHourlyRate: 100,
+    notes: '',
+    ...overrides,
+  };
+}
+
+export function createTestProjectData(clientId: number, overrides: any = {}) {
+  return {
+    clientId,
+    name: `Test Project ${Date.now()}`,
+    hourlyRate: 150,
+    active: true,
+    notes: '',
+    ...overrides,
+  };
+}
+
+export function createTestTimeEntryData(projectId: number, overrides: any = {}) {
+  const startAt = new Date();
+  const endAt = new Date(startAt.getTime() + 3600000);
+  
+  return {
+    projectId,
+    startAt: startAt.toISOString(),
+    endAt: endAt.toISOString(),
+    note: 'Test time entry',
+    ...overrides,
+  };
+}
+
+export function createTestExpenseData(projectId: number, overrides: any = {}) {
+  return {
+    projectId,
+    expenseDate: new Date().toISOString().split('T')[0],
+    description: 'Test expense',
+    amount: 50,
+    isBillable: true,
+    ...overrides,
+  };
+}
+
+export function createTestInvoiceData(overrides: any = {}) {
+  const dateInvoiced = new Date().toISOString().split('T')[0];
+  
+  return {
+    dateInvoiced,
+    upToDate: dateInvoiced,
+    notes: 'Test invoice',
+    groupByDay: false,
+    ...overrides,
+  };
+}
+
+export function expectValidationError(res: any, field?: string) {
+  if (res.status !== 400) {
+    throw new Error(`Expected status 400 but got ${res.status}: ${JSON.stringify(res.body)}`);
+  }
+  if (field && !JSON.stringify(res.body).toLowerCase().includes(field.toLowerCase())) {
+    throw new Error(`Expected error to mention field "${field}" but got: ${JSON.stringify(res.body)}`);
+  }
+}
+
+export function expectUnauthorized(res: any) {
+  if (res.status !== 401) {
+    throw new Error(`Expected status 401 but got ${res.status}: ${JSON.stringify(res.body)}`);
+  }
+}
+
+export function expectNotFound(res: any) {
+  if (res.status !== 404) {
+    throw new Error(`Expected status 404 but got ${res.status}: ${JSON.stringify(res.body)}`);
+  }
+}
+
+export function expectSuccess(res: any, expectedStatus = 200) {
+  if (res.status !== expectedStatus) {
+    throw new Error(`Expected status ${expectedStatus} but got ${res.status}: ${JSON.stringify(res.body)}`);
+  }
 }

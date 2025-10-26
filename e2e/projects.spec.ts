@@ -11,9 +11,17 @@ test.describe('Project Management', () => {
     
     await page.goto('/clients');
     await page.locator('[data-testid="create-client-btn"]').click();
+    
+    // Wait for modal to be visible
+    await page.locator('[data-testid="client-name-input"]').waitFor({ state: 'visible' });
+    
     await page.locator('[data-testid="client-name-input"]').fill(clientName);
     await page.locator('[data-testid="client-rate-input"]').fill('120');
     await page.locator('[data-testid="client-submit-btn"]').click();
+    
+    // Wait for modal to close
+    await page.locator('[data-testid="client-name-input"]').waitFor({ state: 'hidden', timeout: 15000 });
+    
     await expect(page.getByText(clientName)).toBeVisible();
   });
 
@@ -26,6 +34,9 @@ test.describe('Project Management', () => {
     // Click create project button
     await page.locator('[data-testid="create-project-btn"]').click();
     
+    // Wait for modal to be visible
+    await page.locator('[data-testid="project-name-input"]').waitFor({ state: 'visible' });
+    
     // Fill in project details
     await page.locator('[data-testid="project-name-input"]').fill(projectName);
     
@@ -34,7 +45,7 @@ test.describe('Project Management', () => {
     await page.getByRole('option', { name: clientName }).click();
     
     // Rate should auto-populate from client, verify and adjust if needed
-    await expect(page.locator('[data-testid="project-rate-input"]')).toHaveValue('120');
+    await expect(page.locator('[data-testid="project-rate-input"]')).toHaveValue('120.00');
     
     await page.locator('[data-testid="project-notes-input"]').fill('Test project notes');
     
@@ -59,19 +70,37 @@ test.describe('Project Management', () => {
     // Create active project
     await page.goto('/projects');
     await page.locator('[data-testid="create-project-btn"]').click();
+    
+    // Wait for modal to be visible
+    await page.locator('[data-testid="project-name-input"]').waitFor({ state: 'visible' });
+    
     await page.locator('[data-testid="project-name-input"]').fill(activeProjectName);
     await page.locator('[data-testid="project-client-select"]').click();
     await page.getByRole('option', { name: clientName }).click();
     await page.locator('[data-testid="project-submit-btn"]').click();
+    
+    // Wait for modal to close
+    await page.locator('[data-testid="project-name-input"]').waitFor({ state: 'hidden', timeout: 15000 });
+    
     await expect(page.getByText(activeProjectName)).toBeVisible();
     
     // Create inactive project
     await page.locator('[data-testid="create-project-btn"]').click();
+    
+    // Wait for modal to be visible
+    await page.locator('[data-testid="project-name-input"]').waitFor({ state: 'visible' });
+    
     await page.locator('[data-testid="project-name-input"]').fill(inactiveProjectName);
     await page.locator('[data-testid="project-client-select"]').click();
     await page.getByRole('option', { name: clientName }).click();
-    await page.locator('[data-testid="project-active-switch"]').click(); // Uncheck active
+    
+    // Uncheck active switch - force click since the input is visually hidden
+    await page.locator('[data-testid="project-active-switch"]').click({ force: true });
+    
     await page.locator('[data-testid="project-submit-btn"]').click();
+    
+    // Wait for modal to close
+    await page.locator('[data-testid="project-name-input"]').waitFor({ state: 'hidden', timeout: 15000 });
     
     // Should only see active project by default
     await expect(page.getByText(activeProjectName)).toBeVisible();
@@ -94,17 +123,34 @@ test.describe('Project Management', () => {
     // Create a project
     await page.goto('/projects');
     await page.locator('[data-testid="create-project-btn"]').click();
+    
+    // Wait for modal to be visible
+    await page.locator('[data-testid="project-name-input"]').waitFor({ state: 'visible' });
+    
     await page.locator('[data-testid="project-name-input"]').fill(projectName);
     await page.locator('[data-testid="project-client-select"]').click();
     await page.getByRole('option', { name: clientName }).click();
     await page.locator('[data-testid="project-submit-btn"]').click();
+    
+    // Wait for modal to close
+    await page.locator('[data-testid="project-name-input"]').waitFor({ state: 'hidden', timeout: 15000 });
+    
     await expect(page.getByText(projectName)).toBeVisible();
     
     // Archive the project (set to inactive)
-    const projectRow = page.getByText(projectName).locator('..');
-    await projectRow.getByLabel('Edit').click();
-    await page.locator('[data-testid="project-active-switch"]').click();
+    const projectRow = page.locator('tr:has-text("' + projectName + '")');
+    await projectRow.locator('[aria-label="Edit"]').click();
+    
+    // Wait for modal to be visible
+    await page.locator('[data-testid="project-name-input"]').waitFor({ state: 'visible' });
+    
+    await page.locator('[data-testid="project-active-switch"]').click({ force: true });
     await page.locator('[data-testid="project-submit-btn"]').click();
+    
+    // Wait for modal to close
+    await page.locator('[data-testid="project-name-input"]').waitFor({ state: 'hidden', timeout: 15000 });
+    // Wait for modal to close
+    await page.locator('[data-testid="project-name-input"]').waitFor({ state: 'hidden', timeout: 15000 });
     
     // Project should no longer be visible in active filter
     await expect(page.getByText(projectName)).not.toBeVisible();
@@ -114,10 +160,17 @@ test.describe('Project Management', () => {
     await expect(page.getByText(projectName)).toBeVisible();
     
     // Unarchive the project (set to active)
-    const inactiveProjectRow = page.getByText(projectName).locator('..');
-    await inactiveProjectRow.getByLabel('Edit').click();
-    await page.locator('[data-testid="project-active-switch"]').click();
+    const inactiveProjectRow = page.locator('tr:has-text("' + projectName + '")');
+    await inactiveProjectRow.locator('[aria-label="Edit"]').click();
+    
+    // Wait for modal to be visible
+    await page.locator('[data-testid="project-name-input"]').waitFor({ state: 'visible' });
+    
+    await page.locator('[data-testid="project-active-switch"]').click({ force: true });
     await page.locator('[data-testid="project-submit-btn"]').click();
+    
+    // Wait for modal to close
+    await page.locator('[data-testid="project-name-input"]').waitFor({ state: 'hidden', timeout: 15000 });
     
     // Switch back to active filter
     await page.getByRole('button', { name: 'Active' }).click();

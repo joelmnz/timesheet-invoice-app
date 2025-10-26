@@ -178,7 +178,7 @@ export default function Projects() {
       <ListHeader
         title="Projects"
         action={
-          <Button leftSection={<IconPlus size={16} />} onClick={handleOpenCreateModal}>
+          <Button leftSection={<IconPlus size={16} />} onClick={handleOpenCreateModal} data-testid="create-project-btn">
             New Project
           </Button>
         }
@@ -227,6 +227,7 @@ export default function Projects() {
               placeholder="Project name"
               required
               {...form.getInputProps('name')}
+              data-testid="project-name-input"
             />
             <Select
               label="Client"
@@ -244,6 +245,7 @@ export default function Projects() {
                   }
                 }
               }}
+              data-testid="project-client-select"
             />
             <NumberInput
               label="Hourly Rate (NZD)"
@@ -253,15 +255,18 @@ export default function Projects() {
               decimalScale={2}
               fixedDecimalScale
               {...form.getInputProps('hourlyRate')}
+              data-testid="project-rate-input"
             />
             <Textarea
               label="Notes"
               placeholder="Additional notes"
               {...form.getInputProps('notes')}
+              data-testid="project-notes-input"
             />
             <Switch
               label="Active"
               {...form.getInputProps('active', { type: 'checkbox' })}
+              data-testid="project-active-switch"
             />
             <Group justify="flex-end" mt="md">
               <Button variant="default" onClick={closeModal}>
@@ -270,6 +275,7 @@ export default function Projects() {
               <Button
                 type="submit"
                 loading={createMutation.isPending || updateMutation.isPending}
+                data-testid="project-submit-btn"
               >
                 {editingProject ? 'Update' : 'Create'}
               </Button>

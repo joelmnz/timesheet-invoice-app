@@ -601,6 +601,7 @@ export default function ProjectDetail() {
             leftSection={<IconFileInvoice size={16} />}
             onClick={() => openInvoiceModal()}
             disabled={uninvoicedHours === 0 && uninvoicedExpenses === 0}
+            data-testid="create-invoice-btn"
           >
             Create Invoice
           </Button>
@@ -619,6 +620,7 @@ export default function ProjectDetail() {
             <Button
               leftSection={<IconPlus size={16} />}
               onClick={handleOpenCreateTimeModal}
+              data-testid="add-time-entry-btn"
             >
               Add Time Entry
             </Button>
@@ -827,17 +829,20 @@ export default function ProjectDetail() {
               placeholder="Select start time"
               required
               {...timeForm.getInputProps('startAt')}
+              data-testid="time-start-input"
             />
             <DateTimePicker
               label="End Time"
               placeholder="Select end time"
               required
               {...timeForm.getInputProps('endAt')}
+              data-testid="time-end-input"
             />
             <Textarea
               label="Note"
               placeholder="Optional note"
               {...timeForm.getInputProps('note')}
+              data-testid="time-note-input"
             />
             <Group justify="flex-end" mt="md">
               <Button variant="default" onClick={closeTimeModal}>
@@ -848,6 +853,7 @@ export default function ProjectDetail() {
                 loading={
                   createTimeEntryMutation.isPending || updateTimeEntryMutation.isPending
                 }
+                data-testid="time-submit-btn"
               >
                 {editingTimeEntry ? 'Update' : 'Create'}
               </Button>
@@ -962,27 +968,31 @@ export default function ProjectDetail() {
               placeholder="Select date"
               required
               {...invoiceForm.getInputProps('dateInvoiced')}
+              data-testid="invoice-date-input"
             />
             <DatePickerInput
               label="Include items up to"
               placeholder="Select date"
               required
               {...invoiceForm.getInputProps('upToDate')}
+              data-testid="invoice-upto-input"
             />
             <Textarea
               label="Notes"
               placeholder="Additional notes"
               {...invoiceForm.getInputProps('notes')}
+              data-testid="invoice-notes-input"
             />
             <Switch
               label="Group time entries by day"
               {...invoiceForm.getInputProps('groupByDay', { type: 'checkbox' })}
+              data-testid="invoice-groupby-switch"
             />
             <Group justify="flex-end" mt="md">
               <Button variant="default" onClick={closeInvoiceModal}>
                 Cancel
               </Button>
-              <Button type="submit" loading={createInvoiceMutation.isPending}>
+              <Button type="submit" loading={createInvoiceMutation.isPending} data-testid="invoice-submit-btn">
                 Create Invoice
               </Button>
             </Group>

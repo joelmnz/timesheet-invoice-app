@@ -107,6 +107,7 @@ export function ProjectList({
             <ActionIcon
               variant="light"
               color="gray"
+              aria-label="View"
               onClick={(e) => {
                 e.stopPropagation();
                 onView(project.id);
@@ -119,6 +120,7 @@ export function ProjectList({
             <ActionIcon
               variant="light"
               color="blue"
+              aria-label="Edit"
               onClick={(e) => {
                 e.stopPropagation();
                 onEdit(project);
@@ -131,6 +133,7 @@ export function ProjectList({
             <ActionIcon
               variant="light"
               color="red"
+              aria-label="Delete"
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete(project);

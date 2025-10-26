@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { existsSync } from 'fs';
-import { createApp } from './app.js';
+import { createApp, setDbInitialized } from './app.js';
 import { runMigrations, checkMigrationStatus } from './services/migrations.js';
 
 const PORT = process.env.PORT || 8080;
@@ -12,33 +12,39 @@ if (NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
   process.exit(1);
 }
 
-// Auto-run migrations on first start if database doesn't exist
+// Auto-run migrations on first start or if database schema is missing
 async function initializeDatabase() {
   const dbExists = existsSync(DATABASE_PATH);
   
-  if (!dbExists) {
-    console.log('Database not found. Running initial migrations...');
-    try {
-      await runMigrations();
-      console.log('Initial database setup complete!');
-    } catch (error) {
-      console.error('Failed to initialize database:', error);
-      console.error('You can run migrations manually via the UI after login');
-    }
-  } else {
-    // Check if migrations are needed
-    try {
-      const status = await checkMigrationStatus();
-      if (status.needed) {
-        console.log('⚠️  Database migrations needed. Please run migrations via the UI after login.');
-        console.log(`   Reason: ${status.reason}`);
+  try {
+    // Check migration status (whether file exists or not)
+    const status = await checkMigrationStatus();
+    
+    if (!dbExists || status.needed) {
+      if (!dbExists) {
+        console.log('Database not found. Running initial migrations...');
       } else {
-        console.log('✓ Database schema is up to date');
+        console.log('Database migrations needed. Running migrations...');
+        console.log(`Reason: ${status.reason}`);
       }
-    } catch (error) {
-      console.error('Failed to check migration status:', error);
+      
+      await runMigrations();
+      console.log('✓ Database migrations complete!');
+    } else {
+      console.log('✓ Database schema is up to date');
+    }
+  } catch (error) {
+    console.error('Failed to initialize database:', error);
+    if (!dbExists) {
+      console.error('FATAL: Cannot start without a database');
+      throw error;
+    } else {
+      console.error('You may need to run migrations manually via the UI after login');
     }
   }
+  
+  // Mark database as initialized after migrations are complete
+  setDbInitialized();
 }
 
 const app = createApp();

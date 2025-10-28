@@ -25,7 +25,8 @@
     "build": "vite build",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "generate:icons": "bun scripts/generate-icons.mjs"
   },
   "devDependencies": {
     "@types/luxon": "^3.7.1",
@@ -38,6 +39,7 @@
     "vite": "^7.1.9",
     "vite-plugin-pwa": "^1.0.3",
     "vitest": "^3.2.4",
+    "pwa-asset-generator": "^6.4.0",
     "workbox-window": "^7.3.0"
   }
 }

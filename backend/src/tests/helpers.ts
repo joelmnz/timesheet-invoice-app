@@ -34,6 +34,33 @@ export async function createAuthenticatedAgent(agent: SuperAgentTest) {
   return agent;
 }
 
+export async function loginAsTestUser(agent: SuperAgentTest) {
+  await agent
+    .post('/api/auth/login')
+    .send({ username: 'admin', password: 'admin' });
+}
+
+export async function createTestClient(agent: SuperAgentTest, overrides: any = {}): Promise<number> {
+  const response = await agent
+    .post('/api/clients')
+    .send(createTestClientData(overrides));
+  return response.body.id;
+}
+
+export async function createTestProject(agent: SuperAgentTest, clientId: number, overrides: any = {}): Promise<number> {
+  const response = await agent
+    .post('/api/projects')
+    .send(createTestProjectData(clientId, overrides));
+  return response.body.id;
+}
+
+export async function createTestTimeEntry(agent: SuperAgentTest, projectId: number, overrides: any = {}): Promise<number> {
+  const response = await agent
+    .post('/api/time-entries')
+    .send(createTestTimeEntryData(projectId, overrides));
+  return response.body.id;
+}
+
 export function createTestClientData(overrides: any = {}) {
   return {
     name: `Test Client ${Date.now()}`,

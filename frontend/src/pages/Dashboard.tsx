@@ -217,7 +217,7 @@ export default function Dashboard() {
                     <Table.Th>Client</Table.Th>
                     <Table.Th>Project</Table.Th>
                     <Table.Th ta="right">Hours</Table.Th>
-                    <Table.Th ta="right">Amount $</Table.Th>
+                    <Table.Th ta="right">Amount</Table.Th>
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>

@@ -41,10 +41,12 @@ export default function TimeEntries() {
     }),
   });
 
-  const { data: projects } = useQuery({
+  const { data: projectsResponse } = useQuery({
     queryKey: ['projects'],
     queryFn: () => projectsApi.list('all'),
   });
+
+  const projects = projectsResponse?.data || [];
 
   const timeEntries = timeEntriesResponse?.data || [];
 

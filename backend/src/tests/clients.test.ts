@@ -101,7 +101,7 @@ describe("Clients Routes", () => {
       const res = await agent.get("/api/clients");
 
       expect(res.status).toBe(200);
-      expect(Array.isArray(res.body)).toBe(true);
+      expect(Array.isArray(res.body.data)).toBe(true);
     });
 
     test("should support pagination", async () => {
@@ -109,10 +109,14 @@ describe("Clients Routes", () => {
       await agent.post("/api/clients").send({ name: "Client 2" });
       await agent.post("/api/clients").send({ name: "Client 3" });
 
-      const res = await agent.get("/api/clients?page=1&pageSize=2");
+      const res = await agent.get("/api/clients?page=1&page_size=2");
 
       expect(res.status).toBe(200);
-      expect(res.body.length).toBeLessThanOrEqual(2);
+      expect(Array.isArray(res.body.data)).toBe(true);
+      expect(res.body.data.length).toBeLessThanOrEqual(2);
+      expect(res.body.pagination).toBeDefined();
+      expect(res.body.pagination.page).toBe(1);
+      expect(res.body.pagination.pageSize).toBe(2);
     });
 
     test("should search by name", async () => {
@@ -122,8 +126,8 @@ describe("Clients Routes", () => {
       const res = await agent.get(`/api/clients?query=${uniqueName}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.length).toBeGreaterThan(0);
-      expect(res.body[0].name).toBe(uniqueName);
+      expect(res.body.data.length).toBeGreaterThan(0);
+      expect(res.body.data[0].name).toBe(uniqueName);
     });
 
     test("should search by email", async () => {
@@ -136,8 +140,8 @@ describe("Clients Routes", () => {
       const res = await agent.get(`/api/clients?query=${uniqueEmail}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.length).toBeGreaterThan(0);
-      expect(res.body[0].email).toBe(uniqueEmail);
+      expect(res.body.data.length).toBeGreaterThan(0);
+      expect(res.body.data[0].email).toBe(uniqueEmail);
     });
 
     test("should search by contact person", async () => {
@@ -150,8 +154,8 @@ describe("Clients Routes", () => {
       const res = await agent.get(`/api/clients?query=${uniqueContact}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.length).toBeGreaterThan(0);
-      expect(res.body[0].contactPerson).toBe(uniqueContact);
+      expect(res.body.data.length).toBeGreaterThan(0);
+      expect(res.body.data[0].contactPerson).toBe(uniqueContact);
     });
 
     test("should require authentication", async () => {

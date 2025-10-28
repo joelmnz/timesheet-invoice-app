@@ -10,26 +10,36 @@ const router = Router();
 // GET /api/clients
 router.get('/', requireAuth, async (req, res, next) => {
   try {
-    const { query, page = '1', pageSize = '50' } = req.query;
+    const { query, page = '1', page_size = '25' } = req.query;
     const pageNum = parseInt(page as string);
-    const pageSizeNum = parseInt(pageSize as string);
+    const pageSizeNum = parseInt(page_size as string);
     const offset = (pageNum - 1) * pageSizeNum;
 
     let queryBuilder = db.select().from(clients);
+    let countBuilder = db.select({ count: count() }).from(clients);
 
     if (query) {
-      queryBuilder = queryBuilder.where(
-        or(
-          like(clients.name, `%${query}%`),
-          like(clients.email, `%${query}%`),
-          like(clients.contactPerson, `%${query}%`)
-        )
-      ) as any;
+      const searchCondition = or(
+        like(clients.name, `%${query}%`),
+        like(clients.email, `%${query}%`),
+        like(clients.contactPerson, `%${query}%`)
+      );
+      queryBuilder = queryBuilder.where(searchCondition) as any;
+      countBuilder = countBuilder.where(searchCondition) as any;
     }
 
+    const [{ count: totalCount }] = await countBuilder;
     const results = await queryBuilder.limit(pageSizeNum).offset(offset);
 
-    res.json(results);
+    res.json({
+      data: results,
+      pagination: {
+        page: pageNum,
+        pageSize: pageSizeNum,
+        total: totalCount,
+        totalPages: Math.ceil(totalCount / pageSizeNum),
+      },
+    });
   } catch (error) {
     next(error);
   }

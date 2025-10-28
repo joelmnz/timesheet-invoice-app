@@ -1,9 +1,10 @@
 import { Group, ActionIcon, Stack, Text, Anchor } from '@mantine/core';
 import { IconEdit, IconTrash, IconEye } from '@tabler/icons-react';
-import type { Project } from '../../types';
+import type { Project, PaginationMeta } from '../../types';
 import { EntityTable, Column } from './EntityTable';
 import { StatusBadge } from './StatusBadge';
 import { formatHourlyRate } from './format';
+import { Pagination } from '../common/Pagination';
 import { ReactNode } from 'react';
 
 interface ProjectListProps {
@@ -11,6 +12,9 @@ interface ProjectListProps {
   variant?: 'table' | 'compact';
   loading?: boolean;
   emptyState?: ReactNode;
+  pagination?: PaginationMeta;
+  onPageChange?: (page: number) => void;
+  onPageSizeChange?: (pageSize: number) => void;
   onView?: (id: number) => void;
   onEdit?: (project: Project) => void;
   onDelete?: (project: Project) => void;
@@ -22,6 +26,9 @@ export function ProjectList({
   variant = 'table',
   loading,
   emptyState,
+  pagination,
+  onPageChange,
+  onPageSizeChange,
   onView,
   onEdit,
   onDelete,
@@ -148,12 +155,21 @@ export function ProjectList({
   }
 
   return (
-    <EntityTable
-      columns={columns}
-      rows={projects}
-      loading={loading}
-      emptyState={emptyState}
-      getRowKey={(p) => p.id}
-    />
+    <>
+      <EntityTable
+        columns={columns}
+        rows={projects}
+        loading={loading}
+        emptyState={emptyState}
+        getRowKey={(p) => p.id}
+      />
+      {pagination && onPageChange && onPageSizeChange && (
+        <Pagination
+          pagination={pagination}
+          onPageChange={onPageChange}
+          onPageSizeChange={onPageSizeChange}
+        />
+      )}
+    </>
   );
 }

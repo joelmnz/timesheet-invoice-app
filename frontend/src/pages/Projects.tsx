@@ -31,16 +31,22 @@ export default function Projects() {
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [deletingProject, setDeletingProject] = useState<Project | null>(null);
   const [activeFilter, setActiveFilter] = useState<'all' | 'true' | 'false'>('true');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
-  const { data: projects, isLoading: projectsLoading } = useQuery({
-    queryKey: ['projects', activeFilter],
-    queryFn: () => projectsApi.list(activeFilter),
+  const { data: projectsResponse, isLoading: projectsLoading } = useQuery({
+    queryKey: ['projects', activeFilter, page, pageSize],
+    queryFn: () => projectsApi.list(activeFilter, page, pageSize),
   });
 
-  const { data: clients, isLoading: clientsLoading } = useQuery({
+  const { data: clientsResponse, isLoading: clientsLoading } = useQuery({
     queryKey: ['clients'],
     queryFn: () => clientsApi.list(),
   });
+
+  const clients = clientsResponse?.data || [];
+
+  const projects = projectsResponse?.data || [];
 
   const form = useForm({
     initialValues: {
@@ -209,6 +215,12 @@ export default function Projects() {
         projects={projects || []}
         loading={projectsLoading || clientsLoading}
         emptyState="No projects found. Create your first project!"
+        pagination={projectsResponse?.pagination}
+        onPageChange={(newPage) => setPage(newPage)}
+        onPageSizeChange={(size) => {
+          setPageSize(size);
+          setPage(1);
+        }}
         onView={handleViewProject}
         onEdit={handleOpenEditModal}
         onDelete={handleOpenDeleteModal}

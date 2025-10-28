@@ -78,10 +78,12 @@ export default function ProjectDetail() {
     queryFn: () => projectsApi.get(projectId),
   });
 
-  const { data: clients, isLoading: clientsLoading } = useQuery({
+  const { data: clientsResponse, isLoading: clientsLoading } = useQuery({
     queryKey: ['clients'],
     queryFn: () => clientsApi.list(),
   });
+
+  const clients = clientsResponse?.data || [];
 
   const { data: timeEntriesResponse, isLoading: timeEntriesLoading } = useQuery({
     queryKey: ['time-entries', projectId, timePage, timePageSize],

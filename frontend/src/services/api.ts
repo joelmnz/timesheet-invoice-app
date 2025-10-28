@@ -64,12 +64,12 @@ export const settingsApi = {
 
 // Clients API
 export const clientsApi = {
-  list: (query?: string, page = 1, pageSize = 50) => {
+  list: (query?: string, page = 1, pageSize = 25) => {
     const params = new URLSearchParams();
     if (query) params.append('query', query);
     params.append('page', page.toString());
-    params.append('pageSize', pageSize.toString());
-    return fetchApi<Client[]>(`/clients?${params}`);
+    params.append('page_size', pageSize.toString());
+    return fetchApi<import('../types').PaginatedResponse<Client>>(`/clients?${params}`);
   },
 
   get: (id: number) => fetchApi<Client>(`/clients/${id}`),
@@ -92,11 +92,22 @@ export const clientsApi = {
 
 // Projects API
 export const projectsApi = {
-  list: (active: 'all' | 'true' | 'false' = 'all') =>
-    fetchApi<Project[]>(`/projects?active=${active}`),
+  list: (active: 'all' | 'true' | 'false' = 'all', page = 1, pageSize = 25) => {
+    const params = new URLSearchParams();
+    params.append('active', active);
+    params.append('page', page.toString());
+    params.append('page_size', pageSize.toString());
+    return fetchApi<import('../types').PaginatedResponse<Project>>(`/projects?${params}`);
+  },
 
-  listByClient: (clientId: number, active: 'all' | 'true' | 'false' = 'all') =>
-    fetchApi<Project[]>(`/projects?clientId=${clientId}&active=${active}`),
+  listByClient: (clientId: number, active: 'all' | 'true' | 'false' = 'all', page = 1, pageSize = 1000) => {
+    const params = new URLSearchParams();
+    params.append('clientId', clientId.toString());
+    params.append('active', active);
+    params.append('page', page.toString());
+    params.append('page_size', pageSize.toString());
+    return fetchApi<import('../types').PaginatedResponse<Project>>(`/projects?${params}`);
+  },
 
   get: (id: number) => fetchApi<Project>(`/projects/${id}`),
 

@@ -12,7 +12,10 @@ const router = Router();
 // GET /api/projects
 router.get('/', requireAuth, async (req, res, next) => {
   try {
-    const { active = 'all', clientId } = req.query;
+    const { active = 'all', clientId, page = '1', page_size = '25' } = req.query;
+    const pageNum = parseInt(page as string);
+    const pageSizeNum = parseInt(page_size as string);
+    const offset = (pageNum - 1) * pageSizeNum;
 
     let query = db
       .select({
@@ -38,14 +41,35 @@ router.get('/', requireAuth, async (req, res, next) => {
       query = query.where(and(...conditions)) as any;
     }
 
-    const results = await query;
+    // Get total count
+    let countQuery = db
+      .select({ count: count() })
+      .from(projects)
+      .innerJoin(clients, eq(projects.clientId, clients.id));
 
-    const response = results.map(({ project, client }) => ({
+    if (conditions.length > 0) {
+      countQuery = countQuery.where(and(...conditions)) as any;
+    }
+
+    const [{ count: totalCount }] = await countQuery;
+
+    // Get paginated results
+    const results = await query.limit(pageSizeNum).offset(offset);
+
+    const projectsData = results.map(({ project, client }) => ({
       ...project,
       client,
     }));
 
-    res.json(response);
+    res.json({
+      data: projectsData,
+      pagination: {
+        page: pageNum,
+        pageSize: pageSizeNum,
+        total: totalCount,
+        totalPages: Math.ceil(totalCount / pageSizeNum),
+      },
+    });
   } catch (error) {
     next(error);
   }

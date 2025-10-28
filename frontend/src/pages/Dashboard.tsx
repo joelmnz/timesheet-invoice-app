@@ -63,10 +63,12 @@ export default function Dashboard() {
     queryFn: () => dashboardApi.getHoursByMonth(12),
   });
 
-  const { data: projects } = useQuery({
+  const { data: projectsResponse } = useQuery({
     queryKey: ['projects', 'true'],
     queryFn: () => projectsApi.list('true'),
   });
+
+  const projects = projectsResponse?.data || [];
 
   const handleStartTimer = async (projectId: number) => {
     await startTimer(projectId);

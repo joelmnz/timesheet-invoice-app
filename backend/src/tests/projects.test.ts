@@ -91,9 +91,9 @@ describe("Projects Routes", () => {
       const res = await agent.get("/api/projects");
 
       expect(res.status).toBe(200);
-      expect(Array.isArray(res.body)).toBe(true);
-      if (res.body.length > 0) {
-        expect(res.body[0].client).toBeDefined();
+      expect(Array.isArray(res.body.data)).toBe(true);
+      if (res.body.data.length > 0) {
+        expect(res.body.data[0].client).toBeDefined();
       }
     });
 
@@ -111,11 +111,13 @@ describe("Projects Routes", () => {
 
       const activeRes = await agent.get("/api/projects?active=true");
       expect(activeRes.status).toBe(200);
-      expect(activeRes.body.every((p: any) => p.active === true)).toBe(true);
+      expect(Array.isArray(activeRes.body.data)).toBe(true);
+      expect(activeRes.body.data.every((p: any) => p.active === true)).toBe(true);
 
       const inactiveRes = await agent.get("/api/projects?active=false");
       expect(inactiveRes.status).toBe(200);
-      expect(inactiveRes.body.every((p: any) => p.active === false)).toBe(true);
+      expect(Array.isArray(inactiveRes.body.data)).toBe(true);
+      expect(inactiveRes.body.data.every((p: any) => p.active === false)).toBe(true);
     });
 
     test("should filter by clientId", async () => {
@@ -130,7 +132,8 @@ describe("Projects Routes", () => {
       const res = await agent.get(`/api/projects?clientId=${client2Id}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.every((p: any) => p.clientId === client2Id)).toBe(true);
+      expect(Array.isArray(res.body.data)).toBe(true);
+      expect(res.body.data.every((p: any) => p.clientId === client2Id)).toBe(true);
     });
 
     test("should require authentication", async () => {

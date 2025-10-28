@@ -55,6 +55,14 @@ The app is configured to work in multiple deployment scenarios:
 
 ### Environment Variables for UNRAID
 
+**Container User/Group:**
+- The container runs as UID 99 (nobody) and GID 100 (users) - standard UNRAID compatibility
+- If using bind mounts, ensure your host data directory has ownership `99:100`:
+  ```bash
+  chown -R 99:100 /mnt/user/appdata/timesheet-invoice-app
+  ```
+- If using named volumes, Docker handles ownership automatically
+
 **Required in your Docker container:**
 
 ```bash

@@ -27,7 +27,7 @@ services:
     volumes:
       # For UNRAID: use bind mount to appdata (recommended)
       # Example: - /mnt/user/appdata/timesheet-invoice-app:/data
-      # For Docker Compose on other systems: named volume works with entrypoint
+      # For Docker Compose on other systems: named volume (automatic ownership)
       - timesheet-data:/data
     healthcheck:
       test: ["CMD", "bun", "-e", "fetch('http://localhost:8080/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]

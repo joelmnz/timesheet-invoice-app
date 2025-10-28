@@ -43,6 +43,7 @@ import {
 } from '../services/api';
 import type { TimeEntry, Expense, Project } from '../types';
 import { InvoiceList } from '../components/lists/InvoiceList';
+import { TimeEntryList } from '../components/lists/TimeEntryList';
 import { Pagination } from '../components/common/Pagination';
 
 export default function ProjectDetail() {
@@ -650,79 +651,21 @@ export default function ProjectDetail() {
             </Button>
           </Group>
 
-          {timeEntriesLoading ? (
-            <Center h={200}>
-              <Loader />
-            </Center>
-          ) : !timeEntries || timeEntries.length === 0 ? (
-            <Text c="dimmed" ta="center" mt="xl">
-              No time entries yet. Add your first time entry!
-            </Text>
-          ) : (
-            <Table striped highlightOnHover>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>Start</Table.Th>
-                  <Table.Th>End</Table.Th>
-                  <Table.Th ta="right">Hours</Table.Th>
-                  <Table.Th>Note</Table.Th>
-                  <Table.Th ta="center">Status</Table.Th>
-                  <Table.Th ta="right">Actions</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {timeEntries.map((entry) => (
-                  <Table.Tr key={entry.id}>
-                    <Table.Td>
-                      {DateTime.fromISO(entry.startAt).toFormat('yyyy-MM-dd HH:mm')}
-                    </Table.Td>
-                    <Table.Td>
-                      {entry.endAt
-                        ? DateTime.fromISO(entry.endAt).toFormat('yyyy-MM-dd HH:mm')
-                        : 'Running'}
-                    </Table.Td>
-                    <Table.Td ta="right">{entry.totalHours.toFixed(2)}</Table.Td>
-                    <Table.Td>{entry.note || '-'}</Table.Td>
-                    <Table.Td ta="center">
-                      <Badge color={entry.isInvoiced ? 'blue' : 'gray'}>
-                        {entry.isInvoiced ? 'Invoiced' : 'Uninvoiced'}
-                      </Badge>
-                    </Table.Td>
-                    <Table.Td>
-                      <Group justify="flex-end" gap="xs">
-                        <ActionIcon
-                          variant="light"
-                          color="blue"
-                          onClick={() => handleOpenEditTimeModal(entry)}
-                          disabled={entry.isInvoiced}
-                        >
-                          <IconEdit size={16} />
-                        </ActionIcon>
-                        <ActionIcon
-                          variant="light"
-                          color="red"
-                          onClick={() => handleOpenDeleteTimeModal(entry)}
-                          disabled={entry.isInvoiced}
-                        >
-                          <IconTrash size={16} />
-                        </ActionIcon>
-                      </Group>
-                    </Table.Td>
-                  </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
-          )}
-          {timeEntriesResponse && (
-            <Pagination
-              pagination={timeEntriesResponse.pagination}
-              onPageChange={(page) => setTimePage(page)}
-              onPageSizeChange={(size) => {
-                setTimePageSize(size);
-                setTimePage(1);
-              }}
-            />
-          )}
+          <TimeEntryList
+            timeEntries={timeEntries}
+            loading={timeEntriesLoading}
+            emptyState="No time entries yet. Add your first time entry!"
+            pagination={timeEntriesResponse?.pagination}
+            onPageChange={(page) => setTimePage(page)}
+            onPageSizeChange={(size) => {
+              setTimePageSize(size);
+              setTimePage(1);
+            }}
+            onEdit={handleOpenEditTimeModal}
+            onDelete={handleOpenDeleteTimeModal}
+            showProjectColumn={false}
+            showProjectFilter={false}
+          />
         </Tabs.Panel>
 
         <Tabs.Panel value="expenses" pt="md">

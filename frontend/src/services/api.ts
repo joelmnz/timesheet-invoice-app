@@ -138,8 +138,28 @@ export const timeEntriesApi = {
     return fetchApi<import('../types').PaginatedResponse<TimeEntry>>(`/projects/${projectId}/time-entries?${params}`);
   },
 
+  listAll: (params?: {
+    projectId?: number;
+    status?: 'all' | 'uninvoiced' | 'invoiced';
+    page?: number;
+    pageSize?: number;
+  }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.projectId) searchParams.append('projectId', params.projectId.toString());
+    if (params?.status) searchParams.append('status', params.status);
+    searchParams.append('page', (params?.page || 1).toString());
+    searchParams.append('page_size', (params?.pageSize || 25).toString());
+    return fetchApi<import('../types').PaginatedResponse<TimeEntry>>(`/time-entries?${searchParams}`);
+  },
+
   create: (projectId: number, data: Partial<TimeEntry>) =>
     fetchApi<TimeEntry>(`/projects/${projectId}/time-entries`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  createWithProject: (data: Partial<TimeEntry> & { projectId: number }) =>
+    fetchApi<TimeEntry>('/time-entries', {
       method: 'POST',
       body: JSON.stringify(data),
     }),

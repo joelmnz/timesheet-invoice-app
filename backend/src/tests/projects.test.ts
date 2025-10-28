@@ -91,9 +91,9 @@ describe("Projects Routes", () => {
       const res = await agent.get("/api/projects");
 
       expect(res.status).toBe(200);
-      expect(Array.isArray(res.body)).toBe(true);
-      if (res.body.length > 0) {
-        expect(res.body[0].client).toBeDefined();
+      expect(Array.isArray(res.body.data)).toBe(true);
+      if (res.body.data.length > 0) {
+        expect(res.body.data[0].client).toBeDefined();
       }
     });
 
@@ -111,11 +111,13 @@ describe("Projects Routes", () => {
 
       const activeRes = await agent.get("/api/projects?active=true");
       expect(activeRes.status).toBe(200);
-      expect(activeRes.body.every((p: any) => p.active === true)).toBe(true);
+      expect(Array.isArray(activeRes.body.data)).toBe(true);
+      expect(activeRes.body.data.every((p: any) => p.active === true)).toBe(true);
 
       const inactiveRes = await agent.get("/api/projects?active=false");
       expect(inactiveRes.status).toBe(200);
-      expect(inactiveRes.body.every((p: any) => p.active === false)).toBe(true);
+      expect(Array.isArray(inactiveRes.body.data)).toBe(true);
+      expect(inactiveRes.body.data.every((p: any) => p.active === false)).toBe(true);
     });
 
     test("should filter by clientId", async () => {
@@ -130,7 +132,8 @@ describe("Projects Routes", () => {
       const res = await agent.get(`/api/projects?clientId=${client2Id}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.every((p: any) => p.clientId === client2Id)).toBe(true);
+      expect(Array.isArray(res.body.data)).toBe(true);
+      expect(res.body.data.every((p: any) => p.clientId === client2Id)).toBe(true);
     });
 
     test("should require authentication", async () => {
@@ -191,6 +194,33 @@ describe("Projects Routes", () => {
       expect(res.body.name).toBe(updates.name);
       expect(res.body.hourlyRate).toBe(updates.hourlyRate);
       expect(res.body.active).toBe(updates.active);
+    });
+
+    test("should update project clientId", async () => {
+      // Create project with first client
+      const created = await agent.post("/api/projects").send({
+        clientId: testClientId,
+        name: "Client Change Test"
+      });
+      const projectId = created.body.id;
+
+      // Create a second client
+      const client2 = await agent.post("/api/clients").send(createTestClientData());
+      const client2Id = client2.body.id;
+
+      // Update project to use second client
+      const res = await agent.put(`/api/projects/${projectId}`).send({
+        clientId: client2Id
+      });
+
+      expect(res.status).toBe(200);
+      expect(res.body.clientId).toBe(client2Id);
+
+      // Verify the change persisted by getting the project again
+      const getRes = await agent.get(`/api/projects/${projectId}`);
+      expect(getRes.status).toBe(200);
+      expect(getRes.body.clientId).toBe(client2Id);
+      expect(getRes.body.client.id).toBe(client2Id);
     });
 
     test("should return 404 for non-existent project", async () => {

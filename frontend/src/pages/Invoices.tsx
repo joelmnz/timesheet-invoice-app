@@ -58,15 +58,19 @@ export default function Invoices() {
 
   const invoices = invoicesResponse?.data || [];
 
-  const { data: clients } = useQuery({
+  const { data: clientsResponse } = useQuery({
     queryKey: ['clients'],
     queryFn: () => clientsApi.list(),
   });
 
-  const { data: projects } = useQuery({
+  const clients = clientsResponse?.data || [];
+
+  const { data: projectsResponse } = useQuery({
     queryKey: ['projects', 'all'],
     queryFn: () => projectsApi.list('all'),
   });
+
+  const projects = projectsResponse?.data || [];
 
   const handleClearFilters = () => {
     setStatusFilter('');

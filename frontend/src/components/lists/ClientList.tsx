@@ -1,14 +1,18 @@
 import { Group, ActionIcon, Anchor } from '@mantine/core';
 import { IconEdit, IconTrash } from '@tabler/icons-react';
-import type { Client } from '../../types';
+import type { Client, PaginationMeta } from '../../types';
 import { EntityTable, Column } from './EntityTable';
 import { formatHourlyRate } from './format';
+import { Pagination } from '../common/Pagination';
 import { ReactNode } from 'react';
 
 interface ClientListProps {
   clients: Client[];
   loading?: boolean;
   emptyState?: ReactNode;
+  pagination?: PaginationMeta;
+  onPageChange?: (page: number) => void;
+  onPageSizeChange?: (pageSize: number) => void;
   onClick?: (id: number) => void;
   onEdit?: (client: Client) => void;
   onDelete?: (client: Client) => void;
@@ -18,6 +22,9 @@ export function ClientList({
   clients,
   loading,
   emptyState,
+  pagination,
+  onPageChange,
+  onPageSizeChange,
   onClick,
   onEdit,
   onDelete,
@@ -92,12 +99,21 @@ export function ClientList({
   }
 
   return (
-    <EntityTable
-      columns={columns}
-      rows={clients}
-      loading={loading}
-      emptyState={emptyState}
-      getRowKey={(c) => c.id}
-    />
+    <>
+      <EntityTable
+        columns={columns}
+        rows={clients}
+        loading={loading}
+        emptyState={emptyState}
+        getRowKey={(c) => c.id}
+      />
+      {pagination && onPageChange && onPageSizeChange && (
+        <Pagination
+          pagination={pagination}
+          onPageChange={onPageChange}
+          onPageSizeChange={onPageSizeChange}
+        />
+      )}
+    </>
   );
 }

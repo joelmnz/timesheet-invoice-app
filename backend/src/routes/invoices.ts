@@ -235,6 +235,23 @@ router.post('/:id/lines', requireAuth, async (req, res, next) => {
     const invoiceId = parseInt(req.params.id);
     const data = createInvoiceLineItemSchema.parse(req.body);
 
+    // Check if invoice is paid
+    const [invoice] = await db
+      .select()
+      .from(invoices)
+      .where(eq(invoices.id, invoiceId))
+      .limit(1);
+
+    if (!invoice) {
+      return res.status(404).json({ error: 'Invoice not found' });
+    }
+
+    if (invoice.status === 'Paid') {
+      return res.status(409).json({
+        error: 'Cannot add line items to paid invoices',
+      });
+    }
+
     const amount = roundToCents(data.quantity * data.unitPrice);
 
     const [newLine] = await db
@@ -278,14 +295,55 @@ invoiceLinesRouter.put('/:lineId', requireAuth, async (req, res, next) => {
       return res.status(404).json({ error: 'Line item not found' });
     }
 
+    // Check if the invoice is paid
+    const [invoice] = await db
+      .select()
+      .from(invoices)
+      .where(eq(invoices.id, currentLine.invoiceId))
+      .limit(1);
+
+    if (!invoice) {
+      return res.status(404).json({ error: 'Invoice not found' });
+    }
+
+    if (invoice.status === 'Paid') {
+      return res.status(409).json({
+        error: 'Cannot edit line items on paid invoices',
+      });
+    }
+
     const quantity = data.quantity ?? currentLine.quantity;
     const unitPrice = data.unitPrice ?? currentLine.unitPrice;
+    const description = data.description ?? currentLine.description;
     const amount = roundToCents(quantity * unitPrice);
+
+    // If this is a time entry line item, update the linked time entry
+    if (currentLine.type === 'time' && currentLine.linkedTimeEntryId) {
+      await db
+        .update(timeEntries)
+        .set({
+          totalHours: quantity,
+          updatedAt: getCurrentTimestamp(),
+        })
+        .where(eq(timeEntries.id, currentLine.linkedTimeEntryId));
+    }
+
+    // If this is an expense line item, update the linked expense
+    if (currentLine.type === 'expense' && currentLine.linkedExpenseId) {
+      await db
+        .update(expenses)
+        .set({
+          amount: amount,
+          description: description,
+          updatedAt: getCurrentTimestamp(),
+        })
+        .where(eq(expenses.id, currentLine.linkedExpenseId));
+    }
 
     const [updated] = await db
       .update(invoiceLineItems)
       .set({
-        description: data.description,
+        description,
         quantity,
         unitPrice,
         amount,
@@ -316,6 +374,47 @@ invoiceLinesRouter.delete('/:lineId', requireAuth, async (req, res, next) => {
 
     if (!line) {
       return res.status(404).json({ error: 'Line item not found' });
+    }
+
+    // Check if the invoice is paid
+    const [invoice] = await db
+      .select()
+      .from(invoices)
+      .where(eq(invoices.id, line.invoiceId))
+      .limit(1);
+
+    if (!invoice) {
+      return res.status(404).json({ error: 'Invoice not found' });
+    }
+
+    if (invoice.status === 'Paid') {
+      return res.status(409).json({
+        error: 'Cannot delete line items from paid invoices',
+      });
+    }
+
+    // If this is a time entry line item, unlink the time entry
+    if (line.type === 'time' && line.linkedTimeEntryId) {
+      await db
+        .update(timeEntries)
+        .set({
+          isInvoiced: false,
+          invoiceId: null,
+          updatedAt: getCurrentTimestamp(),
+        })
+        .where(eq(timeEntries.id, line.linkedTimeEntryId));
+    }
+
+    // If this is an expense line item, unlink the expense
+    if (line.type === 'expense' && line.linkedExpenseId) {
+      await db
+        .update(expenses)
+        .set({
+          isInvoiced: false,
+          invoiceId: null,
+          updatedAt: getCurrentTimestamp(),
+        })
+        .where(eq(expenses.id, line.linkedExpenseId));
     }
 
     await db.delete(invoiceLineItems).where(eq(invoiceLineItems.id, lineId));

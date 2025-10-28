@@ -391,7 +391,11 @@ export default function InvoiceDetail() {
       <Card shadow="sm" padding="lg">
         <Group justify="space-between" mb="md">
           <Title order={3}>Line Items</Title>
-          <Button leftSection={<IconPlus size={16} />} onClick={handleOpenCreateLineModal}>
+          <Button 
+            leftSection={<IconPlus size={16} />} 
+            onClick={handleOpenCreateLineModal}
+            disabled={invoice.status === 'Paid'}
+          >
             Add Line Item
           </Button>
         </Group>
@@ -429,7 +433,7 @@ export default function InvoiceDetail() {
                           variant="light"
                           color="blue"
                           onClick={() => handleOpenEditLineModal(line)}
-                          disabled={line.type !== 'manual'}
+                          disabled={invoice.status === 'Paid'}
                         >
                           <IconEdit size={16} />
                         </ActionIcon>
@@ -437,7 +441,7 @@ export default function InvoiceDetail() {
                           variant="light"
                           color="red"
                           onClick={() => handleOpenDeleteLineModal(line)}
-                          disabled={line.type !== 'manual'}
+                          disabled={invoice.status === 'Paid'}
                         >
                           <IconTrash size={16} />
                         </ActionIcon>
@@ -537,7 +541,7 @@ export default function InvoiceDetail() {
               {...lineForm.getInputProps('description')}
             />
             <NumberInput
-              label="Quantity"
+              label={lineForm.values.type === 'time' ? 'Hours' : 'Quantity'}
               placeholder="1.00"
               required
               min={0}
@@ -546,7 +550,7 @@ export default function InvoiceDetail() {
               {...lineForm.getInputProps('quantity')}
             />
             <NumberInput
-              label="Unit Price (NZD)"
+              label={lineForm.values.type === 'time' ? 'Hourly Rate (NZD)' : 'Unit Price (NZD)'}
               placeholder="0.00"
               required
               decimalScale={2}

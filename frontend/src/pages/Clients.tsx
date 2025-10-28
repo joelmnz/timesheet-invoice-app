@@ -30,11 +30,15 @@ export default function Clients() {
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [deletingClient, setDeletingClient] = useState<Client | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
-  const { data: clients, isLoading } = useQuery({
-    queryKey: ['clients', searchQuery],
-    queryFn: () => clientsApi.list(searchQuery || undefined),
+  const { data: clientsResponse, isLoading } = useQuery({
+    queryKey: ['clients', searchQuery, page, pageSize],
+    queryFn: () => clientsApi.list(searchQuery || undefined, page, pageSize),
   });
+
+  const clients = clientsResponse?.data || [];
 
   useEffect(() => {
     if (location.state?.editClientId && clients) {
@@ -178,7 +182,10 @@ export default function Clients() {
           placeholder="Search clients..."
           leftSection={<IconSearch size={16} />}
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+            setPage(1);
+          }}
           mb="md"
         />
       </ListHeader>
@@ -187,6 +194,12 @@ export default function Clients() {
         clients={clients || []}
         loading={isLoading}
         emptyState={searchQuery ? 'No clients found' : 'No clients yet. Create your first client!'}
+        pagination={clientsResponse?.pagination}
+        onPageChange={(newPage) => setPage(newPage)}
+        onPageSizeChange={(size) => {
+          setPageSize(size);
+          setPage(1);
+        }}
         onClick={(id) => navigate(`/clients/${id}`)}
         onEdit={handleOpenEditModal}
         onDelete={handleOpenDeleteModal}

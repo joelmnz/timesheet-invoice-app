@@ -41,12 +41,14 @@ export const updateProjectSchema = createProjectSchema.partial();
 
 // Time entry schemas
 export const createTimeEntrySchema = z.object({
+  projectId: z.number().int().positive().optional(),
   startAt: z.string().datetime(),
   endAt: z.string().datetime().optional(),
   note: z.string().optional(),
 });
 
 export const updateTimeEntrySchema = z.object({
+  projectId: z.number().int().positive().optional(),
   startAt: z.string().datetime().optional(),
   endAt: z.string().datetime().optional(),
   note: z.string().optional(),

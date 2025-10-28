@@ -60,10 +60,12 @@ export default function ClientDetail() {
     }
   }, [addProjectOpen, client]);
 
-  const { data: projects, isLoading: projectsLoading } = useQuery({
+  const { data: projectsResponse, isLoading: projectsLoading } = useQuery({
     queryKey: ['projects', { clientId }],
     queryFn: () => projectsApi.listByClient(clientId, 'all'),
   });
+
+  const projects = projectsResponse?.data || [];
 
   const { data: invoicesResponse, isLoading: invoicesLoading } = useQuery({
     queryKey: ['invoices', { clientId, page, pageSize }],

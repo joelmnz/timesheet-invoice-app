@@ -20,6 +20,7 @@ import {
   Card,
   Badge,
   Switch,
+  Select,
 } from '@mantine/core';
 import { DateTimePicker, DatePickerInput } from '@mantine/dates';
 import { useForm } from '@mantine/form';
@@ -38,6 +39,7 @@ import {
   timeEntriesApi,
   expensesApi,
   invoicesApi,
+  clientsApi,
 } from '../services/api';
 import type { TimeEntry, Expense, Project } from '../types';
 import { InvoiceList } from '../components/lists/InvoiceList';
@@ -75,6 +77,11 @@ export default function ProjectDetail() {
     queryFn: () => projectsApi.get(projectId),
   });
 
+  const { data: clients, isLoading: clientsLoading } = useQuery({
+    queryKey: ['clients'],
+    queryFn: () => clientsApi.list(),
+  });
+
   const { data: timeEntriesResponse, isLoading: timeEntriesLoading } = useQuery({
     queryKey: ['time-entries', projectId, timePage, timePageSize],
     queryFn: () => timeEntriesApi.list(projectId, timePage, timePageSize),
@@ -97,12 +104,14 @@ export default function ProjectDetail() {
   const projectForm = useForm({
     initialValues: {
       name: '',
+      clientId: '',
       hourlyRate: 0,
       notes: '',
       active: true,
     },
     validate: {
       name: (value) => (value.trim().length === 0 ? 'Name is required' : null),
+      clientId: (value) => (!value ? 'Client is required' : null),
       hourlyRate: (value) => (value <= 0 ? 'Hourly rate must be greater than 0' : null),
     },
   });
@@ -332,6 +341,7 @@ export default function ProjectDetail() {
 
     projectForm.setValues({
       name: project.name,
+      clientId: project.clientId.toString(),
       hourlyRate: project.hourlyRate,
       notes: project.notes ?? '',
       active: project.active,
@@ -343,6 +353,7 @@ export default function ProjectDetail() {
   const handleSubmitProject = projectForm.onSubmit((values) => {
     const payload: Partial<Project> = {
       name: values.name.trim(),
+      clientId: parseInt(values.clientId),
       hourlyRate: Number(values.hourlyRate),
       notes: values.notes.trim() ? values.notes : undefined,
       active: values.active,
@@ -490,6 +501,11 @@ export default function ProjectDetail() {
   const uninvoicedHours = timeEntries?.filter((t) => !t.isInvoiced).reduce((sum, t) => sum + t.totalHours, 0) || 0;
   const uninvoicedExpenses = expenses?.filter((e) => !e.isInvoiced && e.isBillable).reduce((sum, e) => sum + e.amount, 0) || 0;
 
+  const clientOptions = clients?.map((client) => ({
+    value: client.id.toString(),
+    label: `${client.name} (NZD ${client.defaultHourlyRate}/hr)`,
+  })) || [];
+
   return (
     <Container size="xl">
       {/* Edit Project Modal */}
@@ -506,6 +522,14 @@ export default function ProjectDetail() {
               placeholder="Project name"
               required
               {...projectForm.getInputProps('name')}
+            />
+            <Select
+              label="Client"
+              placeholder="Select a client"
+              data={clientOptions}
+              required
+              searchable
+              {...projectForm.getInputProps('clientId')}
             />
             <NumberInput
               label="Hourly Rate (NZD)"

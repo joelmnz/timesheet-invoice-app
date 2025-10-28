@@ -193,6 +193,33 @@ describe("Projects Routes", () => {
       expect(res.body.active).toBe(updates.active);
     });
 
+    test("should update project clientId", async () => {
+      // Create project with first client
+      const created = await agent.post("/api/projects").send({
+        clientId: testClientId,
+        name: "Client Change Test"
+      });
+      const projectId = created.body.id;
+
+      // Create a second client
+      const client2 = await agent.post("/api/clients").send(createTestClientData());
+      const client2Id = client2.body.id;
+
+      // Update project to use second client
+      const res = await agent.put(`/api/projects/${projectId}`).send({
+        clientId: client2Id
+      });
+
+      expect(res.status).toBe(200);
+      expect(res.body.clientId).toBe(client2Id);
+
+      // Verify the change persisted by getting the project again
+      const getRes = await agent.get(`/api/projects/${projectId}`);
+      expect(getRes.status).toBe(200);
+      expect(getRes.body.clientId).toBe(client2Id);
+      expect(getRes.body.client.id).toBe(client2Id);
+    });
+
     test("should return 404 for non-existent project", async () => {
       const res = await agent.put("/api/projects/999999").send({ name: "Test" });
 

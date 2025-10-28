@@ -33,7 +33,7 @@ jobs:
       - name: Generate test summary
         if: always()
         run: |
-          if [ ${{ job.status }} == 'success' ]; then
+          if [ "${{ job.status == 'success' }}" = "true" ]; then
             echo "## ✅ Backend Test Results - PASSED" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "All backend tests completed successfully!" >> $GITHUB_STEP_SUMMARY

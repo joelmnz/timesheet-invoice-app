@@ -61,6 +61,13 @@ export async function createTestTimeEntry(agent: SuperAgentTest, projectId: numb
   return response.body.id;
 }
 
+export async function createTestExpense(agent: SuperAgentTest, projectId: number, overrides: any = {}): Promise<number> {
+  const response = await agent
+    .post(`/api/projects/${projectId}/expenses`)
+    .send(createTestExpenseData(projectId, overrides));
+  return response.body.id;
+}
+
 export function createTestClientData(overrides: any = {}) {
   return {
     name: `Test Client ${Date.now()}`,

@@ -143,7 +143,7 @@ export default function ClientDetail() {
       // Select all projects by default
       setSelectedProjectIds(projectsWithUninvoiced.map(p => p.projectId));
     }
-  }, [invoiceModalOpen, projectsWithUninvoiced, selectedProjectIds.length]);
+  }, [invoiceModalOpen, projectsWithUninvoiced]);
 
   const handleCreateInvoice = async () => {
     if (selectedProjectIds.length === 0) {

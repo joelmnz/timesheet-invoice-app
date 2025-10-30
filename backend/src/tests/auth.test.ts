@@ -5,7 +5,7 @@ import { ensureTestSettings } from "./helpers.js";
 
 describe("Auth Routes", () => {
   let app: any;
-  let agent: request.SuperAgentTest;
+  let agent: ReturnType<typeof request.agent>;
 
   beforeAll(() => {
     ensureTestSettings();
@@ -104,7 +104,7 @@ describe("Auth Routes", () => {
 
       expect(res.status).toBe(200);
       const setCookie = res.headers['set-cookie'];
-      if (setCookie) {
+      if (setCookie && Array.isArray(setCookie)) {
         expect(setCookie.some((cookie: string) => cookie.includes('timesheet.sid'))).toBe(true);
       }
     });

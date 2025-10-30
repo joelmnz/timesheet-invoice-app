@@ -5,7 +5,7 @@ import { ensureTestSettings, createAuthenticatedAgent, createTestClientData, exp
 
 describe("Clients Routes", () => {
   let app: any;
-  let agent: request.SuperAgentTest;
+  let agent: ReturnType<typeof request.agent>;
 
   beforeAll(async () => {
     ensureTestSettings();

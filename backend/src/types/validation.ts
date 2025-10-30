@@ -76,6 +76,15 @@ export const createInvoiceSchema = z.object({
   groupByDay: z.boolean().optional().default(false),
 });
 
+// Client-level invoice schema (for creating invoices across multiple projects)
+export const createClientInvoiceSchema = z.object({
+  dateInvoiced: z.string(),
+  upToDate: z.string(),
+  notes: z.string().optional(),
+  groupByDay: z.boolean().optional().default(false),
+  projectIds: z.array(z.number().int().positive()).min(1, 'At least one project must be selected'),
+});
+
 export const updateInvoiceSchema = z.object({
   number: z.string().optional(),
   dateInvoiced: z.string().optional(),
@@ -128,6 +137,7 @@ export type StopTimerInput = z.infer<typeof stopTimerSchema>;
 export type CreateExpenseInput = z.infer<typeof createExpenseSchema>;
 export type UpdateExpenseInput = z.infer<typeof updateExpenseSchema>;
 export type CreateInvoiceInput = z.infer<typeof createInvoiceSchema>;
+export type CreateClientInvoiceInput = z.infer<typeof createClientInvoiceSchema>;
 export type UpdateInvoiceInput = z.infer<typeof updateInvoiceSchema>;
 export type CreateInvoiceLineItemInput = z.infer<typeof createInvoiceLineItemSchema>;
 export type UpdateInvoiceLineItemInput = z.infer<typeof updateInvoiceLineItemSchema>;

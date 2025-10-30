@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Container,
   Title,
@@ -19,7 +19,10 @@ import {
   NumberInput,
   Switch,
   Stack,
+  Checkbox,
 } from '@mantine/core';
+import { DatePickerInput } from '@mantine/dates';
+import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { Link } from 'react-router-dom';
 import {
@@ -27,13 +30,16 @@ import {
   IconDownload,
   IconEdit,
   IconEye,
+  IconFileInvoice,
 } from '@tabler/icons-react';
 import { clientsApi, projectsApi, invoicesApi } from '../services/api';
 import { Pagination } from '../components/common/Pagination';
+import { DateTime } from 'luxon';
 
 export default function ClientDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const clientId = parseInt(id || '0');
 
   // State for Add Project modal
@@ -44,9 +50,24 @@ export default function ClientDetail() {
   const [creating, setCreating] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
+  // State for Create Invoice modal
+  const [invoiceModalOpen, setInvoiceModalOpen] = React.useState(false);
+  const [selectedProjectIds, setSelectedProjectIds] = React.useState<number[]>([]);
+  const [creatingInvoice, setCreatingInvoice] = React.useState(false);
+
   // Pagination state for invoices
   const [page, setPage] = React.useState(1);
   const [pageSize, setPageSize] = React.useState(25);
+
+  // Form for invoice creation
+  const invoiceForm = useForm({
+    initialValues: {
+      dateInvoiced: new Date(),
+      upToDate: new Date(),
+      notes: '',
+      groupByDay: false,
+    },
+  });
 
   // Query for client
   const { data: client, isLoading: clientLoading } = useQuery({
@@ -73,6 +94,80 @@ export default function ClientDetail() {
   });
 
   const invoices = invoicesResponse?.data || [];
+
+  // Query for uninvoiced summary (only when modal is open)
+  const upToDateString = invoiceForm.values.upToDate
+    ? DateTime.fromJSDate(invoiceForm.values.upToDate).toISODate()
+    : DateTime.now().toISODate();
+
+  const { data: uninvoicedSummary, isLoading: summaryLoading } = useQuery({
+    queryKey: ['clients', clientId, 'uninvoiced-summary', upToDateString],
+    queryFn: () => clientsApi.getUninvoicedSummary(clientId, upToDateString!),
+    enabled: invoiceModalOpen,
+  });
+
+  const projectsWithUninvoiced = uninvoicedSummary?.projects || [];
+
+  // Mutation for creating client-level invoice
+  const createInvoiceMutation = useMutation({
+    mutationFn: (data: {
+      dateInvoiced: string;
+      upToDate: string;
+      notes?: string;
+      groupByDay?: boolean;
+      projectIds: number[];
+    }) => clientsApi.createInvoice(clientId, data),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['clients', clientId, 'uninvoiced-summary'] });
+      notifications.show({
+        title: 'Success',
+        message: 'Invoice created successfully',
+        color: 'green',
+      });
+      setInvoiceModalOpen(false);
+      navigate(`/invoices/${data.invoice.id}`);
+    },
+    onError: (error: Error) => {
+      notifications.show({
+        title: 'Error',
+        message: error.message,
+        color: 'red',
+      });
+    },
+  });
+
+  // Initialize selected projects when modal opens
+  React.useEffect(() => {
+    if (invoiceModalOpen && projectsWithUninvoiced.length > 0 && selectedProjectIds.length === 0) {
+      // Select all projects by default
+      setSelectedProjectIds(projectsWithUninvoiced.map(p => p.projectId));
+    }
+  }, [invoiceModalOpen, projectsWithUninvoiced, selectedProjectIds.length]);
+
+  const handleCreateInvoice = async () => {
+    if (selectedProjectIds.length === 0) {
+      notifications.show({
+        title: 'Error',
+        message: 'Please select at least one project',
+        color: 'red',
+      });
+      return;
+    }
+
+    setCreatingInvoice(true);
+    try {
+      await createInvoiceMutation.mutateAsync({
+        dateInvoiced: DateTime.fromJSDate(invoiceForm.values.dateInvoiced).toISODate()!,
+        upToDate: DateTime.fromJSDate(invoiceForm.values.upToDate).toISODate()!,
+        notes: invoiceForm.values.notes || undefined,
+        groupByDay: invoiceForm.values.groupByDay,
+        projectIds: selectedProjectIds,
+      });
+    } finally {
+      setCreatingInvoice(false);
+    }
+  };
 
   if (clientLoading) {
     return (
@@ -105,6 +200,14 @@ export default function ClientDetail() {
         <Group justify="space-between" mb="md">
           <Title order={1}>{client.name}</Title>
           <Group>
+            <Button
+              variant="light"
+              color="blue"
+              leftSection={<IconFileInvoice size={16} />}
+              onClick={() => setInvoiceModalOpen(true)}
+            >
+              Create Invoice
+            </Button>
             <Button
               variant="light"
               leftSection={<IconEdit size={16} />}
@@ -183,6 +286,154 @@ export default function ClientDetail() {
               disabled={!projectName || hourlyRate <= 0}
             >
               Create Project
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+
+      {/* Create Invoice Modal */}
+      <Modal
+        opened={invoiceModalOpen}
+        onClose={() => {
+          setInvoiceModalOpen(false);
+          setSelectedProjectIds([]);
+          invoiceForm.reset();
+        }}
+        title="Create Invoice for Client"
+        size="xl"
+        centered
+      >
+        <Stack>
+          <DatePickerInput
+            label="Invoice Date"
+            placeholder="Select date"
+            value={invoiceForm.values.dateInvoiced}
+            onChange={(val) => invoiceForm.setFieldValue('dateInvoiced', val || new Date())}
+            required
+          />
+          <DatePickerInput
+            label="Include Items Up To"
+            placeholder="Select date"
+            value={invoiceForm.values.upToDate}
+            onChange={(val) => invoiceForm.setFieldValue('upToDate', val || new Date())}
+            required
+          />
+
+          {summaryLoading ? (
+            <Center h={100}>
+              <Loader size="sm" />
+            </Center>
+          ) : projectsWithUninvoiced.length === 0 ? (
+            <Text c="dimmed" ta="center">
+              No uninvoiced items found for this client.
+            </Text>
+          ) : (
+            <>
+              <Text fw={500} size="sm">Select Projects to Include:</Text>
+              <Table striped highlightOnHover>
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th w={40}>
+                      <Checkbox
+                        checked={selectedProjectIds.length === projectsWithUninvoiced.length}
+                        indeterminate={
+                          selectedProjectIds.length > 0 &&
+                          selectedProjectIds.length < projectsWithUninvoiced.length
+                        }
+                        onChange={(e) => {
+                          if (e.currentTarget.checked) {
+                            setSelectedProjectIds(projectsWithUninvoiced.map(p => p.projectId));
+                          } else {
+                            setSelectedProjectIds([]);
+                          }
+                        }}
+                      />
+                    </Table.Th>
+                    <Table.Th>Project</Table.Th>
+                    <Table.Th ta="right">Hours</Table.Th>
+                    <Table.Th ta="right">Time Amount</Table.Th>
+                    <Table.Th ta="right">Expenses</Table.Th>
+                    <Table.Th ta="right">Total</Table.Th>
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  {projectsWithUninvoiced.map((project) => (
+                    <Table.Tr key={project.projectId}>
+                      <Table.Td>
+                        <Checkbox
+                          checked={selectedProjectIds.includes(project.projectId)}
+                          onChange={(e) => {
+                            if (e.currentTarget.checked) {
+                              setSelectedProjectIds([...selectedProjectIds, project.projectId]);
+                            } else {
+                              setSelectedProjectIds(
+                                selectedProjectIds.filter(id => id !== project.projectId)
+                              );
+                            }
+                          }}
+                        />
+                      </Table.Td>
+                      <Table.Td>{project.projectName}</Table.Td>
+                      <Table.Td ta="right">{project.uninvoicedHours.toFixed(2)}</Table.Td>
+                      <Table.Td ta="right">NZD {project.timeAmount.toFixed(2)}</Table.Td>
+                      <Table.Td ta="right">NZD {project.expenseAmount.toFixed(2)}</Table.Td>
+                      <Table.Td ta="right" fw={600}>
+                        NZD {project.totalAmount.toFixed(2)}
+                      </Table.Td>
+                    </Table.Tr>
+                  ))}
+                  <Table.Tr>
+                    <Table.Td colSpan={5} ta="right" fw={600}>
+                      Selected Total:
+                    </Table.Td>
+                    <Table.Td ta="right" fw={700}>
+                      NZD{' '}
+                      {projectsWithUninvoiced
+                        .filter(p => selectedProjectIds.includes(p.projectId))
+                        .reduce((sum, p) => sum + p.totalAmount, 0)
+                        .toFixed(2)}
+                    </Table.Td>
+                  </Table.Tr>
+                </Table.Tbody>
+              </Table>
+            </>
+          )}
+
+          <Switch
+            label="Group time entries by day"
+            checked={invoiceForm.values.groupByDay}
+            onChange={(e) =>
+              invoiceForm.setFieldValue('groupByDay', e.currentTarget.checked)
+            }
+          />
+
+          <TextInput
+            label="Notes (optional)"
+            placeholder="Add notes to the invoice"
+            value={invoiceForm.values.notes}
+            onChange={(e) => invoiceForm.setFieldValue('notes', e.currentTarget.value)}
+          />
+
+          <Group justify="flex-end">
+            <Button
+              variant="default"
+              onClick={() => {
+                setInvoiceModalOpen(false);
+                setSelectedProjectIds([]);
+                invoiceForm.reset();
+              }}
+              disabled={creatingInvoice}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="filled"
+              color="blue"
+              loading={creatingInvoice}
+              onClick={handleCreateInvoice}
+              disabled={selectedProjectIds.length === 0 || projectsWithUninvoiced.length === 0}
+            >
+              Create Invoice
             </Button>
           </Group>
         </Stack>

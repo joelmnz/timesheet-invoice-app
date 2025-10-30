@@ -88,6 +88,40 @@ export const clientsApi = {
 
   delete: (id: number) =>
     fetchApi<{ success: boolean }>(`/clients/${id}`, { method: 'DELETE' }),
+
+  getUninvoicedSummary: (id: number, upToDate?: string) => {
+    const params = new URLSearchParams();
+    if (upToDate) params.append('upToDate', upToDate);
+    return fetchApi<{
+      projects: Array<{
+        projectId: number;
+        projectName: string;
+        hourlyRate: number;
+        uninvoicedHours: number;
+        timeAmount: number;
+        expenseAmount: number;
+        totalAmount: number;
+      }>;
+    }>(`/clients/${id}/uninvoiced-summary?${params}`);
+  },
+
+  createInvoice: (
+    id: number,
+    data: {
+      dateInvoiced: string;
+      upToDate: string;
+      notes?: string;
+      groupByDay?: boolean;
+      projectIds: number[];
+    }
+  ) =>
+    fetchApi<{ invoice: Invoice; lineItems: InvoiceLineItem[] }>(
+      `/clients/${id}/invoices`,
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }
+    ),
 };
 
 // Projects API

@@ -5,7 +5,7 @@ import { ensureTestSettings, createAuthenticatedAgent, expectValidationError, ex
 
 describe("Settings Routes", () => {
   let app: any;
-  let agent: request.SuperAgentTest;
+  let agent: ReturnType<typeof request.agent>;
 
   beforeAll(async () => {
     ensureTestSettings();

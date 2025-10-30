@@ -8,7 +8,7 @@ import { isNull, sql } from "drizzle-orm";
 
 describe("Projects Routes", () => {
   let app: any;
-  let agent: request.SuperAgentTest;
+  let agent: ReturnType<typeof request.agent>;
   let testClientId: number;
 
   beforeAll(async () => {

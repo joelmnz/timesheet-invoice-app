@@ -1,4 +1,4 @@
-import type { SuperAgentTest } from 'supertest';
+import request from 'supertest';
 import { db } from '../db/index.js';
 import { settings } from '../db/schema.js';
 
@@ -27,41 +27,41 @@ export function ensureTestSettings() {
   }).run();
 }
 
-export async function createAuthenticatedAgent(agent: SuperAgentTest) {
+export async function createAuthenticatedAgent(agent: ReturnType<typeof request.agent>) {
   await agent
     .post('/api/auth/login')
     .send({ username: 'admin', password: 'admin' });
   return agent;
 }
 
-export async function loginAsTestUser(agent: SuperAgentTest) {
+export async function loginAsTestUser(agent: ReturnType<typeof request.agent>) {
   await agent
     .post('/api/auth/login')
     .send({ username: 'admin', password: 'admin' });
 }
 
-export async function createTestClient(agent: SuperAgentTest, overrides: any = {}): Promise<number> {
+export async function createTestClient(agent: ReturnType<typeof request.agent>, overrides: any = {}): Promise<number> {
   const response = await agent
     .post('/api/clients')
     .send(createTestClientData(overrides));
   return response.body.id;
 }
 
-export async function createTestProject(agent: SuperAgentTest, clientId: number, overrides: any = {}): Promise<number> {
+export async function createTestProject(agent: ReturnType<typeof request.agent>, clientId: number, overrides: any = {}): Promise<number> {
   const response = await agent
     .post('/api/projects')
     .send(createTestProjectData(clientId, overrides));
   return response.body.id;
 }
 
-export async function createTestTimeEntry(agent: SuperAgentTest, projectId: number, overrides: any = {}): Promise<number> {
+export async function createTestTimeEntry(agent: ReturnType<typeof request.agent>, projectId: number, overrides: any = {}): Promise<number> {
   const response = await agent
     .post('/api/time-entries')
     .send(createTestTimeEntryData(projectId, overrides));
   return response.body.id;
 }
 
-export async function createTestExpense(agent: SuperAgentTest, projectId: number, overrides: any = {}): Promise<number> {
+export async function createTestExpense(agent: ReturnType<typeof request.agent>, projectId: number, overrides: any = {}): Promise<number> {
   const response = await agent
     .post(`/api/projects/${projectId}/expenses`)
     .send(createTestExpenseData(projectId, overrides));

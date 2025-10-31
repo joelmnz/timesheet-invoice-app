@@ -32,6 +32,8 @@ import { DateTime } from 'luxon';
 import { ProjectList } from '../components/lists/ProjectList';
 import { EntityTable, Column } from '../components/lists/EntityTable';
 import { formatCurrency } from '../components/lists/format';
+import { useState } from 'react';
+import TimerNotesModal from '../components/TimerNotesModal';
 
 ChartJS.register(
   CategoryScale,
@@ -46,7 +48,8 @@ ChartJS.register(
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { currentTimer, startTimer } = useTimer();
+  const { currentTimer, startTimer, updateTimerNotes } = useTimer();
+  const [notesModalOpened, setNotesModalOpened] = useState(false);
 
   const { data: summary, isLoading: summaryLoading } = useQuery({
     queryKey: ['dashboard-summary'],
@@ -71,7 +74,13 @@ export default function Dashboard() {
   const projects = projectsResponse?.data || [];
 
   const handleStartTimer = async (projectId: number) => {
-    await startTimer(projectId);
+    try {
+      await startTimer(projectId);
+      setNotesModalOpened(true);
+    } catch (error) {
+      // Optionally handle error (e.g., show notification)
+      console.error('Failed to start timer:', error);
+    }
   };
 
   const outstandingInvoicesColumns: Column<{
@@ -323,6 +332,13 @@ export default function Dashboard() {
           </Card>
         </Grid.Col>
       </Grid>
+
+      <TimerNotesModal
+        opened={notesModalOpened}
+        onClose={() => setNotesModalOpened(false)}
+        currentTimer={currentTimer}
+        onSave={updateTimerNotes}
+      />
     </Container>
   );
 }

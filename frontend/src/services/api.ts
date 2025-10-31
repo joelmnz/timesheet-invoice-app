@@ -172,6 +172,12 @@ export const projectsApi = {
     }),
 
   getCurrentTimer: () => fetchApi<TimeEntry | null>('/projects/timer/current'),
+
+  updateCurrentTimerNotes: (note: string | undefined) =>
+    fetchApi<TimeEntry>('/projects/timer/current', {
+      method: 'PATCH',
+      body: JSON.stringify({ note }),
+    }),
 };
 
 // Time Entries API

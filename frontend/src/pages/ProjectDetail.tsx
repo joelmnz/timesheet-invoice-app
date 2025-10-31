@@ -32,6 +32,7 @@ import {
   IconTrash,
   IconArrowLeft,
   IconFileInvoice,
+  IconPlayerPlay,
 } from '@tabler/icons-react';
 import { DateTime } from 'luxon';
 import {
@@ -45,12 +46,15 @@ import type { TimeEntry, Expense, Project } from '../types';
 import { InvoiceList } from '../components/lists/InvoiceList';
 import { TimeEntryList } from '../components/lists/TimeEntryList';
 import { Pagination } from '../components/common/Pagination';
+import { useTimer } from '../contexts/TimerContext';
+import TimerNotesModal from '../components/TimerNotesModal';
 
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const projectId = parseInt(id || '0');
+  const { currentTimer, startTimer, updateTimerNotes } = useTimer();
 
   const [activeTab, setActiveTab] = useState<string | null>('time');
   const [timeModalOpened, { open: openTimeModal, close: closeTimeModal }] = useDisclosure(false);
@@ -59,6 +63,7 @@ export default function ProjectDetail() {
   const [deleteTimeModalOpened, { open: openDeleteTimeModal, close: closeDeleteTimeModal }] = useDisclosure(false);
   const [deleteExpenseModalOpened, { open: openDeleteExpenseModal, close: closeDeleteExpenseModal }] = useDisclosure(false);
   const [editProjectModalOpened, { open: openEditProjectModal, close: closeEditProjectModal }] = useDisclosure(false);
+  const [notesModalOpened, { open: openNotesModal, close: closeNotesModal }] = useDisclosure(false);
   
   const [editingTimeEntry, setEditingTimeEntry] = useState<TimeEntry | null>(null);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
@@ -485,6 +490,19 @@ export default function ProjectDetail() {
     createInvoiceMutation.mutate(data);
   });
 
+  const handleStartTimer = async () => {
+    try {
+      await startTimer(projectId);
+      openNotesModal();
+    } catch (error) {
+      notifications.show({
+        title: 'Error',
+        message: error instanceof Error ? error.message : 'Failed to start timer',
+        color: 'red',
+      });
+    }
+  };
+
   if (projectLoading) {
     return (
       <Center h={400}>
@@ -586,6 +604,21 @@ export default function ProjectDetail() {
             <Badge color={project.active ? 'green' : 'gray'} size="lg">
               {project.active ? 'Active' : 'Inactive'}
             </Badge>
+            {currentTimer?.projectId === projectId ? (
+              <Badge size="lg" color="red">
+                Timer Running
+              </Badge>
+            ) : (
+              <Button
+                leftSection={<IconPlayerPlay size={16} />}
+                onClick={handleStartTimer}
+                disabled={!!currentTimer || !project.active}
+                variant="filled"
+                color="green"
+              >
+                Start Timer
+              </Button>
+            )}
             <Button
               variant="light"
               leftSection={<IconEdit size={16} />}
@@ -968,6 +1001,13 @@ export default function ProjectDetail() {
           </Stack>
         </form>
       </Modal>
+
+      <TimerNotesModal
+        opened={notesModalOpened}
+        onClose={closeNotesModal}
+        currentTimer={currentTimer}
+        onSave={updateTimerNotes}
+      />
     </Container>
   );
 }

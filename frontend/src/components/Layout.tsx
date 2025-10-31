@@ -28,14 +28,16 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useTimer } from '../contexts/TimerContext';
 import { DateTime } from 'luxon';
+import TimerNotesModal from './TimerNotesModal';
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [opened, setOpened] = useState(false);
   const [timerDisplay, setTimerDisplay] = useState('');
+  const [notesModalOpened, setNotesModalOpened] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { logout } = useAuth();
-  const { currentTimer, stopTimer } = useTimer();
+  const { currentTimer, stopTimer, updateTimerNotes } = useTimer();
   const { colorScheme, toggleColorScheme } = useMantineColorScheme();
 
   const navItems = [
@@ -96,7 +98,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <Group>
             {currentTimer && (
               <Group gap="xs">
-                <Badge size="lg" variant="filled" color="red">
+                <Badge
+                  size="lg"
+                  variant="filled"
+                  color="red"
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => setNotesModalOpened(true)}
+                  title="Click to edit timer notes"
+                >
                   <Text size="sm" fw={600}>
                     {currentTimer.project?.name || 'Unknown'} • {timerDisplay}
                   </Text>
@@ -150,6 +159,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </AppShell.Navbar>
 
       <AppShell.Main>{children}</AppShell.Main>
+
+      <TimerNotesModal
+        opened={notesModalOpened}
+        onClose={() => setNotesModalOpened(false)}
+        currentTimer={currentTimer}
+        onSave={updateTimerNotes}
+      />
     </AppShell>
   );
 }

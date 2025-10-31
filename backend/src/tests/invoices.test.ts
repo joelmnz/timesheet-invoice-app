@@ -338,3 +338,142 @@ describe('Invoice Line Item Restrictions for Paid Invoices', () => {
     });
   });
 });
+
+describe('Invoice PDF Filename Generation', () => {
+  let app: any;
+  let agent: any;
+  let clientId: number;
+  let projectId: number;
+  let invoiceId: number;
+
+  beforeEach(async () => {
+    await db.delete(invoices);
+    
+    app = createApp();
+    agent = request.agent(app);
+    await loginAsTestUser(agent);
+
+    // Create test client with special characters
+    clientId = await createTestClient(agent, {
+      name: 'Acme & Co., Ltd!',
+    });
+    projectId = await createTestProject(agent, clientId);
+
+    // Add time entry to enable invoice creation
+    await createTestTimeEntry(agent, projectId, {
+      startAt: '2025-10-27T09:00:00.000Z',
+      endAt: '2025-10-27T10:00:00.000Z',
+      totalHours: 1,
+    });
+
+    // Create invoice
+    const invoiceRes = await agent
+      .post(`/api/projects/${projectId}/invoices`)
+      .send({
+        dateInvoiced: '2025-10-28',
+        upToDate: '2025-10-28',
+      });
+    invoiceId = invoiceRes.body.invoice.id;
+  });
+
+  it('should generate PDF with correct filename format: "INV-XXX - ClientName.pdf"', async () => {
+    const response = await agent
+      .get(`/api/invoices/${invoiceId}/pdf`)
+      .responseType('blob');
+
+    expect(response.status).toBe(200);
+    expect(response.headers['content-type']).toBe('application/pdf');
+    
+    // Check Content-Disposition header has correct format
+    const contentDisposition = response.headers['content-disposition'];
+    expect(contentDisposition).toContain('inline');
+    expect(contentDisposition).toContain('filename=');
+    
+    // Extract filename from header
+    const filenameMatch = contentDisposition.match(/filename="(.+?)"/);
+    expect(filenameMatch).toBeTruthy();
+    
+    const filename = filenameMatch![1];
+    
+    // Should follow format: "INV-XXX - ClientName.pdf" (invoice numbers are zero-padded to 3-4 digits)
+    expect(filename).toMatch(/^INV-\d+ - .+\.pdf$/);
+    
+    // Should contain sanitized client name (special chars removed)
+    expect(filename).toContain('Acme Co Ltd');
+    
+    // Should NOT contain underscores (old format)
+    expect(filename).not.toContain('_');
+    
+    // Should NOT contain date
+    expect(filename).not.toMatch(/\d{4}[_-]\d{2}[_-]\d{2}/);
+  });
+
+  it('should sanitize client name by removing special characters', async () => {
+    // Create client with various special characters
+    const specialClientId = await createTestClient(agent, {
+      name: 'Test@Client#123!',
+    });
+    const specialProjectId = await createTestProject(agent, specialClientId);
+    
+    await createTestTimeEntry(agent, specialProjectId, {
+      startAt: '2025-10-27T09:00:00.000Z',
+      endAt: '2025-10-27T10:00:00.000Z',
+      totalHours: 1,
+    });
+
+    const invoiceRes = await agent
+      .post(`/api/projects/${specialProjectId}/invoices`)
+      .send({
+        dateInvoiced: '2025-10-28',
+        upToDate: '2025-10-28',
+      });
+    const specialInvoiceId = invoiceRes.body.invoice.id;
+
+    const response = await agent
+      .get(`/api/invoices/${specialInvoiceId}/pdf`)
+      .responseType('blob');
+
+    const contentDisposition = response.headers['content-disposition'];
+    const filenameMatch = contentDisposition.match(/filename="(.+?)"/);
+    const filename = filenameMatch![1];
+    
+    // Special characters should be removed
+    expect(filename).toContain('TestClient123');
+    expect(filename).not.toContain('@');
+    expect(filename).not.toContain('#');
+    expect(filename).not.toContain('!');
+  });
+
+  it('should collapse multiple spaces in client name', async () => {
+    const multiSpaceClientId = await createTestClient(agent, {
+      name: 'Test   Company   Name',
+    });
+    const multiSpaceProjectId = await createTestProject(agent, multiSpaceClientId);
+    
+    await createTestTimeEntry(agent, multiSpaceProjectId, {
+      startAt: '2025-10-27T09:00:00.000Z',
+      endAt: '2025-10-27T10:00:00.000Z',
+      totalHours: 1,
+    });
+
+    const invoiceRes = await agent
+      .post(`/api/projects/${multiSpaceProjectId}/invoices`)
+      .send({
+        dateInvoiced: '2025-10-28',
+        upToDate: '2025-10-28',
+      });
+    const multiSpaceInvoiceId = invoiceRes.body.invoice.id;
+
+    const response = await agent
+      .get(`/api/invoices/${multiSpaceInvoiceId}/pdf`)
+      .responseType('blob');
+
+    const contentDisposition = response.headers['content-disposition'];
+    const filenameMatch = contentDisposition.match(/filename="(.+?)"/);
+    const filename = filenameMatch![1];
+    
+    // Multiple spaces should be collapsed to single space
+    expect(filename).toContain('Test Company Name');
+    expect(filename).not.toContain('   ');
+  });
+});

@@ -793,9 +793,9 @@ export default function ProjectDetail() {
             emptyState="No invoices yet. Create your first invoice!"
             compact
             onView={(id) => navigate(`/invoices/${id}`)}
-            onDownload={async (id, number) => {
+            onDownload={async (id, number, clientName) => {
               try {
-                await invoicesApi.downloadPdf(id, number);
+                await invoicesApi.downloadPdf(id, number, clientName);
               } catch (error) {
                 notifications.show({
                   title: 'Error',

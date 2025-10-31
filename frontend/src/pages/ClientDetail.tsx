@@ -574,7 +574,7 @@ export default function ClientDetail() {
                       color="gray"
                       onClick={async () => {
                         try {
-                          await invoicesApi.downloadPdf(invoice.id, invoice.number);
+                          await invoicesApi.downloadPdf(invoice.id, invoice.number, invoice.client?.name || 'Unknown');
                         } catch (error) {
                           notifications.show({
                             title: 'Error',

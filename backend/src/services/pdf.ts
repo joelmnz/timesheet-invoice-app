@@ -7,6 +7,7 @@ import { db } from '../db/index.js';
 import { invoices, invoiceLineItems, clients, projects, settings } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 import { JSDOM } from 'jsdom';
+import { buildInvoiceTemplateVariables, replaceTemplateVariables } from '../utils/template.js';
 
 const md = new MarkdownIt({
   html: false,
@@ -241,9 +242,26 @@ export async function generateInvoicePdf(invoiceId: number): Promise<Buffer> {
     });
   }
 
-  // Footer - Markdown rendered
+  // Footer - Markdown rendered with variable replacement
   if (settingsData.invoiceFooterMarkdown) {
-    const html = md.render(settingsData.invoiceFooterMarkdown);
+    // Build template variables from invoice data
+    const templateVariables = buildInvoiceTemplateVariables({
+      invoiceNumber: invoice.number,
+      invoiceDate: invoice.dateInvoiced,
+      clientName: client.name,
+      totalAmount: invoice.total,
+      companyName: settingsData.companyName,
+      companyAddress: settingsData.companyAddress || undefined,
+    });
+
+    // Replace variables BEFORE markdown rendering
+    const textWithVariables = replaceTemplateVariables(
+      settingsData.invoiceFooterMarkdown,
+      templateVariables
+    );
+
+    // Then render markdown to HTML and convert to PDF
+    const html = md.render(textWithVariables);
     const pdfContent = htmlToPdfmake(html);
     content.push({
       stack: [pdfContent],

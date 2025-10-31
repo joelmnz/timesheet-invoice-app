@@ -93,6 +93,8 @@ export default function Settings() {
 
     let result = text;
     Object.entries(sampleVariables).forEach(([key, value]) => {
+      // Simple string replacement for preview only - not used in actual PDF generation
+      // The backend uses proper template replacement with server-side validation
       result = result.replace(new RegExp(key.replace(/[{}]/g, '\\$&'), 'g'), value);
     });
 

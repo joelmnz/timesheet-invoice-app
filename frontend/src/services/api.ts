@@ -344,7 +344,7 @@ export const invoicesApi = {
     link.href = url;
     link.download = filename;
     
-    // Trigger download and open in new tab
+    // Trigger download
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

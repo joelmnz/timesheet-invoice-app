@@ -209,9 +209,9 @@ export default function Invoices() {
         emptyState={hasActiveFilters ? 'No invoices found matching filters' : 'No invoices yet'}
         showDueStatus={true}
         onView={(id) => navigate(`/invoices/${id}`)}
-        onDownload={async (id, number) => {
+        onDownload={async (id, number, clientName) => {
           try {
-            await invoicesApi.downloadPdf(id, number);
+            await invoicesApi.downloadPdf(id, number, clientName);
           } catch (error) {
             notifications.show({
               title: 'Error',

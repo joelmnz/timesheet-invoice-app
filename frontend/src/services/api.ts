@@ -319,7 +319,7 @@ export const invoicesApi = {
       method: 'DELETE',
     }),
 
-  downloadPdf: async (id: number, filename: string) => {
+  downloadPdf: async (id: number, invoiceNumber: string, clientName: string) => {
     const response = await fetch(`${API_BASE}/invoices/${id}/pdf`, {
       credentials: 'include',
     });
@@ -331,9 +331,26 @@ export const invoicesApi = {
     
     const blob = await response.blob();
     const url = window.URL.createObjectURL(blob);
-    window.open(url, '_blank');
     
-    // Clean up the blob URL after a short delay to allow the browser to load it
+    // Sanitize client name for filename: remove special chars, collapse spaces
+    const sanitizedClientName = clientName
+      .replace(/[^a-zA-Z0-9\s]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    const filename = `${invoiceNumber} - ${sanitizedClientName}.pdf`;
+    
+    // Create a temporary link element to download with proper filename
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.target = '_blank';
+    
+    // Trigger download and open in new tab
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Clean up the blob URL after a short delay
     setTimeout(() => window.URL.revokeObjectURL(url), 100);
   },
 };

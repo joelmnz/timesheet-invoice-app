@@ -453,10 +453,13 @@ router.get('/:id/pdf', requireAuth, async (req, res, next) => {
     // Generate PDF
     const pdfBuffer = await generateInvoicePdf(id);
 
-    // Format filename
-    const dateStr = invoice.dateInvoiced.replace(/-/g, '_');
-    const clientName = client.name.replace(/[^a-zA-Z0-9]/g, '_');
-    const filename = `${invoice.number}_${clientName}_${dateStr}.pdf`;
+    // Format filename: "INV-001 - Client Name.pdf"
+    // Remove special characters from client name, preserve spaces, collapse multiple spaces
+    const clientName = client.name
+      .replace(/[^a-zA-Z0-9\s]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    const filename = `${invoice.number} - ${clientName}.pdf`;
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename="${filename}"`);

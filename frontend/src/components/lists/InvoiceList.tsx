@@ -13,7 +13,7 @@ interface InvoiceListProps {
   emptyState?: ReactNode;
   showDueStatus?: boolean;
   onView?: (id: number) => void;
-  onDownload?: (id: number, number: string) => void;
+  onDownload?: (id: number, number: string, clientName: string) => void;
   compact?: boolean;
 }
 
@@ -121,7 +121,7 @@ export function InvoiceList({
               color="gray"
               onClick={(e) => {
                 e.stopPropagation();
-                onDownload(invoice.id, invoice.number);
+                onDownload(invoice.id, invoice.number, invoice.client?.name || 'Unknown');
               }}
             >
               <IconDownload size={16} />

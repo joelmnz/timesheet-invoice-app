@@ -58,6 +58,10 @@ export const stopTimerSchema = z.object({
   clientStopAt: z.string().datetime().optional(),
 });
 
+export const updateTimerNotesSchema = z.object({
+  note: z.string().optional(),
+});
+
 // Expense schemas
 export const createExpenseSchema = z.object({
   expenseDate: z.string(),
@@ -134,6 +138,7 @@ export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
 export type CreateTimeEntryInput = z.infer<typeof createTimeEntrySchema>;
 export type UpdateTimeEntryInput = z.infer<typeof updateTimeEntrySchema>;
 export type StopTimerInput = z.infer<typeof stopTimerSchema>;
+export type UpdateTimerNotesInput = z.infer<typeof updateTimerNotesSchema>;
 export type CreateExpenseInput = z.infer<typeof createExpenseSchema>;
 export type UpdateExpenseInput = z.infer<typeof updateExpenseSchema>;
 export type CreateInvoiceInput = z.infer<typeof createInvoiceSchema>;

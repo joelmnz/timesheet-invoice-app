@@ -406,5 +406,69 @@ describe("Projects Routes", () => {
         expectNotFound(res);
       });
     });
+
+    describe("PATCH /api/projects/timer/current", () => {
+      test("should update notes on running timer", async () => {
+        const project = await agent.post("/api/projects").send({
+          clientId: testClientId,
+          name: "Update Notes Test"
+        });
+        const projectId = project.body.id;
+
+        const startRes = await agent.post(`/api/projects/${projectId}/timer/start`);
+        expect(startRes.status).toBe(201);
+
+        const res = await agent.patch("/api/projects/timer/current").send({
+          note: "Working on feature X"
+        });
+
+        expect(res.status).toBe(200);
+        expect(res.body.note).toBe("Working on feature X");
+        expect(res.body.projectId).toBe(projectId);
+        expect(res.body.project).toBeDefined();
+        expect(res.body.client).toBeDefined();
+      });
+
+      test("should clear notes when set to undefined", async () => {
+        const project = await agent.post("/api/projects").send({
+          clientId: testClientId,
+          name: "Clear Notes Test"
+        });
+        const projectId = project.body.id;
+
+        const startRes = await agent.post(`/api/projects/${projectId}/timer/start`);
+        expect(startRes.status).toBe(201);
+
+        // First set a note
+        await agent.patch("/api/projects/timer/current").send({
+          note: "Initial note"
+        });
+
+        // Then clear it
+        const res = await agent.patch("/api/projects/timer/current").send({
+          note: undefined
+        });
+
+        expect(res.status).toBe(200);
+        expect(res.body.note).toBeNull();
+      });
+
+      test("should return 404 when no timer is running", async () => {
+        const res = await agent.patch("/api/projects/timer/current").send({
+          note: "Test note"
+        });
+
+        expectNotFound(res);
+      });
+
+      test("should require authentication", async () => {
+        const freshAgent = request.agent(app);
+        const res = await freshAgent.patch("/api/projects/timer/current").send({
+          note: "Test"
+        });
+
+        expectUnauthorized(res);
+      });
+    });
   });
 });

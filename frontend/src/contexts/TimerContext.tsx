@@ -16,6 +16,7 @@ interface TimerContextType {
   isLoading: boolean;
   startTimer: (projectId: number) => Promise<void>;
   stopTimer: (projectId: number) => Promise<void>;
+  updateTimerNotes: (note: string | undefined) => Promise<void>;
   refetch: () => void;
 }
 
@@ -163,6 +164,27 @@ export function TimerProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  const updateTimerNotesMutation = useMutation({
+    mutationFn: async (note: string | undefined) => {
+      return projectsApi.updateCurrentTimerNotes(note);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['current-timer'] });
+      notifications.show({
+        title: 'Notes Updated',
+        message: 'Timer notes have been saved',
+        color: 'blue',
+      });
+    },
+    onError: (error: Error) => {
+      notifications.show({
+        title: 'Error',
+        message: error.message,
+        color: 'red',
+      });
+    },
+  });
+
   return (
     <TimerContext.Provider
       value={{
@@ -170,6 +192,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
         isLoading,
         startTimer: startTimerMutation.mutateAsync,
         stopTimer: stopTimerMutation.mutateAsync,
+        updateTimerNotes: updateTimerNotesMutation.mutateAsync,
         refetch,
       }}
     >

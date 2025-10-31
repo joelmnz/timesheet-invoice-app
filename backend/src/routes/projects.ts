@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { db } from '../db/index.js';
 import { projects, clients, timeEntries, expenses, invoices, invoiceLineItems, settings } from '../db/schema.js';
 import { eq, and, isNull, count, or, lt, gt, ne, lte, sql, desc } from 'drizzle-orm';
-import { createProjectSchema, updateProjectSchema, stopTimerSchema, createInvoiceSchema } from '../types/validation.js';
+import { createProjectSchema, updateProjectSchema, stopTimerSchema, updateTimerNotesSchema, createInvoiceSchema } from '../types/validation.js';
 import { requireAuth } from '../middleware/auth.js';
 import { roundUpToSixMinutes, getCurrentTimestamp, calculateDueDate, formatInvoiceNumber, roundToCents } from '../utils/time.js';
 import { DateTime } from 'luxon';
@@ -205,6 +205,55 @@ router.get('/timer/current', requireAuth, async (req, res, next) => {
       ...runningTimer.entry,
       project: runningTimer.project,
       client: runningTimer.client,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// PATCH /api/projects/timer/current
+router.patch('/timer/current', requireAuth, async (req, res, next) => {
+  try {
+    const { note } = updateTimerNotesSchema.parse(req.body);
+
+    // Find the currently running timer
+    const [runningTimer] = await db
+      .select()
+      .from(timeEntries)
+      .where(isNull(timeEntries.endAt))
+      .limit(1);
+
+    if (!runningTimer) {
+      return res.status(404).json({ error: 'No running timer found' });
+    }
+
+    // Update the note field
+    const [updated] = await db
+      .update(timeEntries)
+      .set({
+        note: note || null,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(timeEntries.id, runningTimer.id))
+      .returning();
+
+    // Fetch with project and client info
+    const [result] = await db
+      .select({
+        entry: timeEntries,
+        project: projects,
+        client: clients,
+      })
+      .from(timeEntries)
+      .innerJoin(projects, eq(timeEntries.projectId, projects.id))
+      .innerJoin(clients, eq(projects.clientId, clients.id))
+      .where(eq(timeEntries.id, updated.id))
+      .limit(1);
+
+    res.json({
+      ...result.entry,
+      project: result.project,
+      client: result.client,
     });
   } catch (error) {
     next(error);

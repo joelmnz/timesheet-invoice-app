@@ -152,13 +152,48 @@ router.put('/:id', requireAuth, async (req, res, next) => {
     const id = parseInt(req.params.id);
     const data = updateInvoiceSchema.parse(req.body);
 
-    // If datePaid is being cleared (set to null), automatically set status to Unpaid
-    if (data.datePaid === null) {
-      data.status = 'Unpaid';
+    // Get current invoice to check status
+    const [currentInvoice] = await db
+      .select()
+      .from(invoices)
+      .where(eq(invoices.id, id))
+      .limit(1);
+
+    if (!currentInvoice) {
+      return res.status(404).json({ error: 'Invoice not found' });
     }
-    // If status is being set to Paid and datePaid is not provided, set it to today
-    else if (data.status === 'Paid' && data.datePaid === undefined) {
+
+    // Enforce locking rules: only allow notes, status, dateSent, and datePaid changes for non-Draft invoices
+    if (['Sent', 'Paid', 'Cancelled'].includes(currentInvoice.status)) {
+      const allowedFields = ['notes', 'status', 'dateSent', 'datePaid'];
+      const providedFields = Object.keys(data);
+      const invalidFields = providedFields.filter(f => !allowedFields.includes(f));
+      
+      if (invalidFields.length > 0) {
+        return res.status(409).json({
+          error: `Cannot modify ${invalidFields.join(', ')} for invoices with status ${currentInvoice.status}. Only notes, status, dateSent, and datePaid can be updated.`,
+        });
+      }
+    }
+
+    // Auto-set dateSent when status changes to Sent
+    if (data.status === 'Sent' && data.dateSent === undefined) {
+      data.dateSent = DateTime.now().toISODate()!;
+    }
+
+    // Auto-set datePaid when status changes to Paid
+    if (data.status === 'Paid' && data.datePaid === undefined) {
       data.datePaid = DateTime.now().toISODate()!;
+    }
+
+    // Clear datePaid if status is not Paid
+    if (data.status && data.status !== 'Paid' && data.datePaid === undefined) {
+      data.datePaid = null;
+    }
+
+    // If datePaid is being cleared (set to null), automatically set status to Draft
+    if (data.datePaid === null && !data.status) {
+      data.status = 'Draft';
     }
 
     const [updated] = await db
@@ -185,7 +220,7 @@ router.delete('/:id', requireAuth, async (req, res, next) => {
   try {
     const id = parseInt(req.params.id);
 
-    // Check if invoice is paid
+    // Check if invoice exists and get its status
     const [invoice] = await db
       .select()
       .from(invoices)
@@ -196,9 +231,9 @@ router.delete('/:id', requireAuth, async (req, res, next) => {
       return res.status(404).json({ error: 'Invoice not found' });
     }
 
-    if (invoice.status === 'Paid') {
+    if (['Sent', 'Paid', 'Cancelled'].includes(invoice.status)) {
       return res.status(409).json({
-        error: 'Cannot delete paid invoice',
+        error: `Cannot delete invoice with status ${invoice.status}. Only Draft invoices can be deleted.`,
       });
     }
 
@@ -235,7 +270,7 @@ router.post('/:id/lines', requireAuth, async (req, res, next) => {
     const invoiceId = parseInt(req.params.id);
     const data = createInvoiceLineItemSchema.parse(req.body);
 
-    // Check if invoice is paid
+    // Check if invoice exists and is editable
     const [invoice] = await db
       .select()
       .from(invoices)
@@ -246,9 +281,9 @@ router.post('/:id/lines', requireAuth, async (req, res, next) => {
       return res.status(404).json({ error: 'Invoice not found' });
     }
 
-    if (invoice.status === 'Paid') {
+    if (invoice.status !== 'Draft') {
       return res.status(409).json({
-        error: 'Cannot add line items to paid invoices',
+        error: `Cannot add line items to invoices with status ${invoice.status}. Only Draft invoices can be modified.`,
       });
     }
 
@@ -295,7 +330,7 @@ invoiceLinesRouter.put('/:lineId', requireAuth, async (req, res, next) => {
       return res.status(404).json({ error: 'Line item not found' });
     }
 
-    // Check if the invoice is paid
+    // Check if the invoice is editable
     const [invoice] = await db
       .select()
       .from(invoices)
@@ -306,9 +341,9 @@ invoiceLinesRouter.put('/:lineId', requireAuth, async (req, res, next) => {
       return res.status(404).json({ error: 'Invoice not found' });
     }
 
-    if (invoice.status === 'Paid') {
+    if (invoice.status !== 'Draft') {
       return res.status(409).json({
-        error: 'Cannot edit line items on paid invoices',
+        error: `Cannot edit line items on invoices with status ${invoice.status}. Only Draft invoices can be modified.`,
       });
     }
 
@@ -376,7 +411,7 @@ invoiceLinesRouter.delete('/:lineId', requireAuth, async (req, res, next) => {
       return res.status(404).json({ error: 'Line item not found' });
     }
 
-    // Check if the invoice is paid
+    // Check if the invoice is editable
     const [invoice] = await db
       .select()
       .from(invoices)
@@ -387,9 +422,9 @@ invoiceLinesRouter.delete('/:lineId', requireAuth, async (req, res, next) => {
       return res.status(404).json({ error: 'Invoice not found' });
     }
 
-    if (invoice.status === 'Paid') {
+    if (invoice.status !== 'Draft') {
       return res.status(409).json({
-        error: 'Cannot delete line items from paid invoices',
+        error: `Cannot delete line items from invoices with status ${invoice.status}. Only Draft invoices can be modified.`,
       });
     }
 

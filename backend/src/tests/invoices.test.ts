@@ -115,7 +115,7 @@ describe('Invoice Line Item Restrictions for Paid Invoices', () => {
         });
 
       expect(response.status).toBe(409);
-      expect(response.body.error).toBe('Cannot add line items to paid invoices');
+      expect(response.body.error).toBe('Cannot add line items to invoices with status Paid. Only Draft invoices can be modified.');
     });
   });
 
@@ -138,7 +138,7 @@ describe('Invoice Line Item Restrictions for Paid Invoices', () => {
       // Add a line to the invoice before marking it paid
       await agent
         .put(`/api/invoices/${paidInvoiceId}`)
-        .send({ status: 'Unpaid' });
+        .send({ status: 'Draft' });
       
       const paidLineRes = await agent
         .post(`/api/invoices/${paidInvoiceId}/lines`)
@@ -181,7 +181,7 @@ describe('Invoice Line Item Restrictions for Paid Invoices', () => {
         });
 
       expect(response.status).toBe(409);
-      expect(response.body.error).toBe('Cannot edit line items on paid invoices');
+      expect(response.body.error).toBe('Cannot edit line items on invoices with status Paid. Only Draft invoices can be modified.');
     });
   });
 
@@ -204,7 +204,7 @@ describe('Invoice Line Item Restrictions for Paid Invoices', () => {
       // Add a line to the invoice before marking it paid
       await agent
         .put(`/api/invoices/${paidInvoiceId}`)
-        .send({ status: 'Unpaid' });
+        .send({ status: 'Draft' });
       
       const paidLineRes = await agent
         .post(`/api/invoices/${paidInvoiceId}/lines`)
@@ -238,7 +238,7 @@ describe('Invoice Line Item Restrictions for Paid Invoices', () => {
         .delete(`/api/invoice-lines/${paidLineId}`);
 
       expect(response.status).toBe(409);
-      expect(response.body.error).toBe('Cannot delete line items from paid invoices');
+      expect(response.body.error).toBe('Cannot delete line items from invoices with status Paid. Only Draft invoices can be modified.');
     });
   });
 
@@ -281,22 +281,22 @@ describe('Invoice Line Item Restrictions for Paid Invoices', () => {
         });
     });
 
-    it('should allow editing invoice status from Paid to Unpaid', async () => {
+    it('should allow editing invoice status from Paid to Draft', async () => {
       const response = await agent
         .put(`/api/invoices/${invoiceId}`)
-        .send({ status: 'Unpaid' });
+        .send({ status: 'Draft' });
 
       expect(response.status).toBe(200);
-      expect(response.body.status).toBe('Unpaid');
+      expect(response.body.status).toBe('Draft');
     });
 
-    it('should allow full data correction cycle: Paid -> Unpaid -> Edit Line -> Paid', async () => {
-      // Step 1: Mark as Unpaid
-      const unpaidRes = await agent
+    it('should allow full data correction cycle: Paid -> Draft -> Edit Line -> Paid', async () => {
+      // Step 1: Mark as Draft
+      const draftRes = await agent
         .put(`/api/invoices/${invoiceId}`)
-        .send({ status: 'Unpaid' });
-      expect(unpaidRes.status).toBe(200);
-      expect(unpaidRes.body.status).toBe('Unpaid');
+        .send({ status: 'Draft' });
+      expect(draftRes.status).toBe(200);
+      expect(draftRes.body.status).toBe('Draft');
 
       // Step 2: Edit the line item
       const editRes = await agent

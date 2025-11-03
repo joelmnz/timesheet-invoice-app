@@ -22,8 +22,7 @@ INSERT INTO `__new_invoices`("id", "number", "client_id", "project_id", "date_in
 DROP TABLE `invoices`;--> statement-breakpoint
 ALTER TABLE `__new_invoices` RENAME TO `invoices`;--> statement-breakpoint
 PRAGMA foreign_keys=ON;--> statement-breakpoint
-UPDATE `invoices` SET `status` = 'Sent', `date_sent` = `date_invoiced` WHERE `status` = 'Unpaid';--> statement-breakpoint--> statement-breakpoint
-UPDATE `invoices` SET `status` = 'Sent', `date_sent` = `date_invoiced` WHERE `status` = 'Unpaid';--> statement-breakpoint
 CREATE UNIQUE INDEX `invoices_number_unique` ON `invoices` (`number`);--> statement-breakpoint
 CREATE INDEX `invoices_date_invoiced_idx` ON `invoices` (`date_invoiced`);--> statement-breakpoint
-CREATE INDEX `invoices_status_due_date_idx` ON `invoices` (`status`,`due_date`);
+CREATE INDEX `invoices_status_due_date_idx` ON `invoices` (`status`,`due_date`);--> statement-breakpoint
+UPDATE `invoices` SET `status` = 'Sent', `date_sent` = `date_invoiced` WHERE `status` = 'Unpaid';

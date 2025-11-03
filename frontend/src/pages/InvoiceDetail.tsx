@@ -212,12 +212,8 @@ export default function InvoiceDetail() {
       dateInvoiced: DateTime.fromJSDate(values.dateInvoiced).toISODate() || '',
       dueDate: DateTime.fromJSDate(values.dueDate).toISODate() || '',
       status: values.status,
-      dateSent: values.dateSent
-        ? DateTime.fromJSDate(values.dateSent).toISODate() || undefined
-        : null,
-      datePaid: values.datePaid
-        ? DateTime.fromJSDate(values.datePaid).toISODate() || undefined
-        : null,
+      dateSent: values.dateSent ? DateTime.fromJSDate(values.dateSent).toISODate() || null : null,
+      datePaid: values.datePaid ? DateTime.fromJSDate(values.datePaid).toISODate() || null : null,
       notes: values.notes || undefined,
     };
     updateInvoiceMutation.mutate({ id: invoiceId, data });

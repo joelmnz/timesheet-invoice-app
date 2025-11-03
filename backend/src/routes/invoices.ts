@@ -186,13 +186,14 @@ router.put('/:id', requireAuth, async (req, res, next) => {
       data.datePaid = DateTime.now().toISODate()!;
     }
 
-    // Clear datePaid if status is not Paid
-    if (data.status && data.status !== 'Paid' && data.datePaid === undefined) {
+    // Clear datePaid if status is changing to non-Paid and datePaid was not explicitly provided
+    if (data.status && data.status !== 'Paid' && !('datePaid' in data)) {
       data.datePaid = null;
     }
 
-    // If datePaid is being cleared (set to null), automatically set status to Draft
-    if (data.datePaid === null && !data.status) {
+    // If datePaid is being explicitly cleared (set to null) and no status is provided, set status to Draft
+    // This handles the data correction workflow where clearing payment info should revert to Draft
+    if ('datePaid' in data && data.datePaid === null && !data.status) {
       data.status = 'Draft';
     }
 

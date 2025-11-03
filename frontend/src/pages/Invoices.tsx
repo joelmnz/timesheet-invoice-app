@@ -95,8 +95,10 @@ export default function Invoices() {
   })) || [];
 
   const totalAmount = invoices?.reduce((sum, inv) => sum + inv.total, 0) || 0;
+  const draftAmount = invoices?.filter((inv) => inv.status === 'Draft').reduce((sum, inv) => sum + inv.total, 0) || 0;
+  const sentAmount = invoices?.filter((inv) => inv.status === 'Sent').reduce((sum, inv) => sum + inv.total, 0) || 0;
   const paidAmount = invoices?.filter((inv) => inv.status === 'Paid').reduce((sum, inv) => sum + inv.total, 0) || 0;
-  const unpaidAmount = invoices?.filter((inv) => inv.status === 'Unpaid').reduce((sum, inv) => sum + inv.total, 0) || 0;
+  const cancelledAmount = invoices?.filter((inv) => inv.status === 'Cancelled').reduce((sum, inv) => sum + inv.total, 0) || 0;
 
   return (
     <Container size="xl">
@@ -130,8 +132,10 @@ export default function Invoices() {
                 label="Status"
                 placeholder="All statuses"
                 data={[
+                  { value: 'Draft', label: 'Draft' },
+                  { value: 'Sent', label: 'Sent' },
                   { value: 'Paid', label: 'Paid' },
-                  { value: 'Unpaid', label: 'Unpaid' },
+                  { value: 'Cancelled', label: 'Cancelled' },
                 ]}
                 value={statusFilter}
                 onChange={(value) => setStatusFilter(value || '')}
@@ -189,16 +193,20 @@ export default function Invoices() {
       <Group mb="md" justify="space-between">
         <Group>
           <Card shadow="sm" padding="md">
-            <Text size="sm" c="dimmed">Total</Text>
-            <Text size="lg" fw={700}>{formatCurrency(totalAmount)}</Text>
+            <Text size="sm" c="dimmed">Draft</Text>
+            <Text size="lg" fw={700} c="gray">{formatCurrency(draftAmount)}</Text>
+          </Card>
+          <Card shadow="sm" padding="md">
+            <Text size="sm" c="dimmed">Sent</Text>
+            <Text size="lg" fw={700} c="orange">{formatCurrency(sentAmount)}</Text>
           </Card>
           <Card shadow="sm" padding="md">
             <Text size="sm" c="dimmed">Paid</Text>
             <Text size="lg" fw={700} c="green">{formatCurrency(paidAmount)}</Text>
           </Card>
           <Card shadow="sm" padding="md">
-            <Text size="sm" c="dimmed">Unpaid</Text>
-            <Text size="lg" fw={700} c="orange">{formatCurrency(unpaidAmount)}</Text>
+            <Text size="sm" c="dimmed">Cancelled</Text>
+            <Text size="lg" fw={700} c="red">{formatCurrency(cancelledAmount)}</Text>
           </Card>
         </Group>
       </Group>

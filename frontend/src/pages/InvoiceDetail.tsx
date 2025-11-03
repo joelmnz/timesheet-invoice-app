@@ -68,7 +68,8 @@ export default function InvoiceDetail() {
     initialValues: {
       dateInvoiced: new Date(),
       dueDate: new Date(),
-      status: 'Unpaid' as 'Paid' | 'Unpaid',
+      status: 'Draft' as 'Draft' | 'Sent' | 'Paid' | 'Cancelled',
+      dateSent: null as Date | null,
       datePaid: null as Date | null,
       notes: '',
     },
@@ -198,6 +199,7 @@ export default function InvoiceDetail() {
         dateInvoiced: parseDateSafely(invoice.dateInvoiced),
         dueDate: parseDateSafely(invoice.dueDate),
         status: invoice.status,
+        dateSent: invoice.dateSent ? parseDateSafely(invoice.dateSent) : null,
         datePaid: invoice.datePaid ? parseDateSafely(invoice.datePaid) : null,
         notes: invoice.notes || '',
       });
@@ -210,6 +212,9 @@ export default function InvoiceDetail() {
       dateInvoiced: DateTime.fromJSDate(values.dateInvoiced).toISODate() || '',
       dueDate: DateTime.fromJSDate(values.dueDate).toISODate() || '',
       status: values.status,
+      dateSent: values.dateSent
+        ? DateTime.fromJSDate(values.dateSent).toISODate() || undefined
+        : null,
       datePaid: values.datePaid
         ? DateTime.fromJSDate(values.datePaid).toISODate() || undefined
         : null,
@@ -262,11 +267,26 @@ export default function InvoiceDetail() {
     }
   };
 
+  const handleMarkAsSent = () => {
+    const data: Partial<Invoice> = {
+      status: 'Sent',
+      dateSent: DateTime.now().toISODate() || undefined,
+    };
+    updateInvoiceMutation.mutate({ id: invoiceId, data });
+  };
+
   const handleMarkAsPaid = () => {
     markPaidForm.setValues({
       datePaid: new Date(),
     });
     openMarkPaidModal();
+  };
+
+  const handleCancelInvoice = () => {
+    const data: Partial<Invoice> = {
+      status: 'Cancelled',
+    };
+    updateInvoiceMutation.mutate({ id: invoiceId, data });
   };
 
   const handleSubmitMarkPaid = markPaidForm.onSubmit((values) => {
@@ -316,7 +336,15 @@ export default function InvoiceDetail() {
             </Text>
           </div>
           <Group>
-            <Badge color={invoice.status === 'Paid' ? 'green' : 'orange'} size="lg">
+            <Badge 
+              color={
+                invoice.status === 'Draft' ? 'gray' :
+                invoice.status === 'Sent' ? 'orange' :
+                invoice.status === 'Paid' ? 'green' :
+                'red'
+              } 
+              size="lg"
+            >
               {invoice.status}
             </Badge>
           </Group>
@@ -333,6 +361,12 @@ export default function InvoiceDetail() {
             <Text size="sm" c="dimmed">Due Date</Text>
             <Text size="md">{invoice.dueDate}</Text>
           </div>
+          {invoice.dateSent && (
+            <div>
+              <Text size="sm" c="dimmed">Date Sent</Text>
+              <Text size="md">{invoice.dateSent}</Text>
+            </div>
+          )}
           {invoice.datePaid && (
             <div>
               <Text size="sm" c="dimmed">Date Paid</Text>
@@ -358,7 +392,16 @@ export default function InvoiceDetail() {
             <IconEdit size={16} style={{ marginRight: 8 }} />
             Edit Invoice
           </Button>
-          {invoice.status === 'Unpaid' && (
+          {invoice.status === 'Draft' && (
+            <Button
+              color="orange"
+              onClick={handleMarkAsSent}
+              loading={updateInvoiceMutation.isPending}
+            >
+              Mark as Sent
+            </Button>
+          )}
+          {(invoice.status === 'Draft' || invoice.status === 'Sent') && (
             <Button
               color="green"
               onClick={handleMarkAsPaid}
@@ -366,6 +409,16 @@ export default function InvoiceDetail() {
             >
               <IconCheck size={16} style={{ marginRight: 8 }} />
               Mark as Paid
+            </Button>
+          )}
+          {(invoice.status === 'Draft' || invoice.status === 'Sent') && (
+            <Button
+              color="red"
+              variant="light"
+              onClick={handleCancelInvoice}
+              loading={updateInvoiceMutation.isPending}
+            >
+              Cancel Invoice
             </Button>
           )}
           <Button
@@ -394,7 +447,7 @@ export default function InvoiceDetail() {
           <Button 
             leftSection={<IconPlus size={16} />} 
             onClick={handleOpenCreateLineModal}
-            disabled={invoice.status === 'Paid'}
+            disabled={invoice.status !== 'Draft'}
           >
             Add Line Item
           </Button>
@@ -433,7 +486,7 @@ export default function InvoiceDetail() {
                           variant="light"
                           color="blue"
                           onClick={() => handleOpenEditLineModal(line)}
-                          disabled={invoice.status === 'Paid'}
+                          disabled={invoice.status !== 'Draft'}
                         >
                           <IconEdit size={16} />
                         </ActionIcon>
@@ -441,7 +494,7 @@ export default function InvoiceDetail() {
                           variant="light"
                           color="red"
                           onClick={() => handleOpenDeleteLineModal(line)}
-                          disabled={invoice.status === 'Paid'}
+                          disabled={invoice.status !== 'Draft'}
                         >
                           <IconTrash size={16} />
                         </ActionIcon>
@@ -485,12 +538,21 @@ export default function InvoiceDetail() {
             <Select
               label="Status"
               data={[
-                { value: 'Unpaid', label: 'Unpaid' },
+                { value: 'Draft', label: 'Draft' },
+                { value: 'Sent', label: 'Sent' },
                 { value: 'Paid', label: 'Paid' },
+                { value: 'Cancelled', label: 'Cancelled' },
               ]}
               required
               {...invoiceForm.getInputProps('status')}
             />
+            {invoiceForm.values.status === 'Sent' && (
+              <DatePickerInput
+                label="Date Sent"
+                clearable
+                {...invoiceForm.getInputProps('dateSent')}
+              />
+            )}
             {invoiceForm.values.status === 'Paid' && (
               <DatePickerInput
                 label="Date Paid"

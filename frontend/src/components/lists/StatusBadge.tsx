@@ -3,7 +3,7 @@ import { Badge } from '@mantine/core';
 interface StatusBadgeProps {
   type: 'project' | 'invoice';
   active?: boolean;
-  status?: 'Paid' | 'Unpaid';
+  status?: 'Draft' | 'Sent' | 'Paid' | 'Cancelled';
 }
 
 export function StatusBadge({ type, active, status }: StatusBadgeProps) {
@@ -16,8 +16,14 @@ export function StatusBadge({ type, active, status }: StatusBadgeProps) {
   }
 
   if (type === 'invoice' && status) {
+    const colorMap = {
+      Draft: 'gray',
+      Sent: 'orange',
+      Paid: 'green',
+      Cancelled: 'red',
+    };
     return (
-      <Badge color={status === 'Paid' ? 'green' : 'orange'}>
+      <Badge color={colorMap[status]}>
         {status}
       </Badge>
     );

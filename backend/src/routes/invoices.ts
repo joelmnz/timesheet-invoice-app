@@ -177,12 +177,12 @@ router.put('/:id', requireAuth, async (req, res, next) => {
     }
 
     // Auto-set dateSent when status changes to Sent
-    if (data.status === 'Sent' && data.dateSent === undefined) {
+    if (data.status === 'Sent' && (data.dateSent === undefined || data.dateSent === null)) {
       data.dateSent = DateTime.now().toISODate()!;
     }
 
     // Auto-set datePaid when status changes to Paid
-    if (data.status === 'Paid' && data.datePaid === undefined) {
+    if (data.status === 'Paid' && (data.datePaid === undefined || data.datePaid === null)) {
       data.datePaid = DateTime.now().toISODate()!;
     }
 

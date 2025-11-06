@@ -3,12 +3,14 @@
 ## Build/Lint/Test Commands
 - **Backend Build**: `cd backend && bun run build` (TypeScript compilation, no linter)
 - **Frontend Build**: `cd frontend && bun run build` (Vite build, no linter)
-- **Backend Dev**: `cd backend && bun run dev` (tsx watch on localhost:8080)
+- **Backend Dev**: `cd backend && bun run dev` (bun watch on localhost:8080)
 - **Frontend Dev**: `cd frontend && bun run dev` (Vite on localhost:5173)
-- **Backend Tests**: `cd backend && bun run test` (Vitest, all tests in `src/tests/**/*.test.ts`)
-- **Single Test**: `cd backend && bun run test <filename>` or `cd frontend && bun run test <filename>`
-- **Test UI**: `cd backend && bun run test:ui` or `cd frontend && bun run test:ui`
+- **Backend Tests**: `cd backend && bun run test` (runs sequential test suite via test-sequential.sh)
+- **Single Backend Test**: `cd backend && bun test --preload ./src/tests/setup.ts src/tests/<filename>.test.ts`
+- **Single Frontend Test**: `cd frontend && bun run test <filename>`
+- **Test UI** (frontend only): `cd frontend && bun run test:ui`
 - **DB Migrations**: `cd backend && bun run db:generate && bun run db:migrate`
+- **E2E Tests**: `bun run test:e2e` (Playwright, from project root)
 
 ## Code Style
 - **Indentation**: 2 spaces (enforced by .editorconfig), LF line endings

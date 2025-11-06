@@ -354,7 +354,7 @@ router.post('/:id/invoices', requireAuth, async (req, res, next) => {
           projectId: projectIds[0], // Use first project as primary reference
           dateInvoiced,
           dueDate,
-          status: 'Unpaid',
+          status: 'Draft',
           subtotal: 0,
           total: 0,
           notes,

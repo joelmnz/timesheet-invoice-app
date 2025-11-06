@@ -70,10 +70,11 @@ export interface Invoice {
   projectId: number;
   dateInvoiced: string;
   dueDate: string;
-  status: 'Unpaid' | 'Paid';
+  status: 'Draft' | 'Sent' | 'Paid' | 'Cancelled';
   subtotal: number;
   total: number;
   notes?: string;
+  dateSent?: string;
   datePaid?: string;
   createdAt: string;
   updatedAt: string;

@@ -455,7 +455,7 @@ router.post('/:id/invoices', requireAuth, async (req, res, next) => {
           projectId,
           dateInvoiced,
           dueDate,
-          status: 'Unpaid',
+          status: 'Draft',
           subtotal: 0,
           total: 0,
           notes,

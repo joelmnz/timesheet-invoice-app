@@ -94,7 +94,8 @@ export const updateInvoiceSchema = z.object({
   dateInvoiced: z.string().optional(),
   dueDate: z.string().optional(),
   notes: z.string().optional(),
-  status: z.enum(['Unpaid', 'Paid']).optional(),
+  status: z.enum(['Draft', 'Sent', 'Paid', 'Cancelled']).optional(),
+  dateSent: z.string().optional().nullable(),
   datePaid: z.string().optional().nullable(),
 });
 

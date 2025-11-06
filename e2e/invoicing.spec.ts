@@ -81,7 +81,7 @@ test.describe('Invoicing', () => {
     await expect(page.url()).toContain('/invoices/');
     
     // Verify invoice details
-    await expect(page.getByText('Unpaid')).toBeVisible(); // Default status
+    await expect(page.getByText('Draft')).toBeVisible(); // Default status
     await expect(page.getByText('8.00')).toBeVisible(); // Hours
     await expect(page.getByText('NZD 800.00')).toBeVisible(); // Total (8 hours * $100/hr)
   });
@@ -136,7 +136,7 @@ test.describe('Invoicing', () => {
     await page.locator('[data-testid="invoice-submit-btn"]').click();
     
     // Should be on invoice detail page
-    await expect(page.getByText('Unpaid')).toBeVisible();
+    await expect(page.getByText('Draft')).toBeVisible();
     
     // Update status to Paid (this requires UI interaction on invoice detail page)
     // For now, verify the invoice was created
@@ -185,6 +185,6 @@ test.describe('Invoicing', () => {
     // Verify invoice appears in list
     await expect(page.getByText(`INV-${invoiceNumber}`, { exact: false })).toBeVisible();
     await expect(page.getByText(projectName)).toBeVisible();
-    await expect(page.getByText('Unpaid')).toBeVisible();
+    await expect(page.getByText('Draft')).toBeVisible();
   });
 });

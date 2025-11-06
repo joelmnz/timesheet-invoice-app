@@ -1,4 +1,4 @@
-import { copyFileSync, existsSync, mkdirSync, readFileSync } from 'fs';
+import { copyFileSync, existsSync } from 'fs';
 import { migrate } from 'drizzle-orm/bun-sqlite/migrator';
 import { db, sqlite } from '../db/index.js';
 import { settings } from '../db/schema.js';
@@ -34,6 +34,21 @@ export async function checkMigrationStatus(): Promise<MigrationStatus> {
         needed: true,
         reason: 'Database tables do not exist',
         tablesExist: false,
+        settingsExist: false,
+      };
+    }
+
+    // Check if Drizzle migration tracking table exists
+    const migrationTableCheck = sqlite.query(`
+      SELECT name FROM sqlite_master 
+      WHERE type='table' AND name='__drizzle_migrations'
+    `).all();
+    
+    if (migrationTableCheck.length === 0) {
+      return {
+        needed: true,
+        reason: 'Migration tracking table does not exist',
+        tablesExist: true,
         settingsExist: false,
       };
     }
@@ -96,31 +111,13 @@ export async function runMigrations(): Promise<void> {
   try {
     console.log('Running migrations...');
     
-    // Check if tables already exist
-    const tableCheck = sqlite.query(`
-      SELECT name FROM sqlite_master 
-      WHERE type='table' AND name='clients'
-    `).all();
+    // Use Drizzle's migrate function to run all pending migrations
+    // This will automatically handle the __drizzle_migrations table and run only needed migrations
+    const migrationsFolder = join(__dirname, '../../drizzle');
     
-    if (tableCheck.length === 0) {
-      // Tables don't exist, run migration SQL directly
-      console.log('No tables found, applying migration SQL...');
-      const migrationPath = join(__dirname, '../../drizzle/0000_young_madripoor.sql');
-      const migrationSQL = readFileSync(migrationPath, 'utf-8');
-      
-      // Split by statement breakpoint and execute each statement
-      const statements = migrationSQL
-        .split('--> statement-breakpoint')
-        .map(s => s.trim())
-        .filter(s => s.length > 0);
-      
-      for (const statement of statements) {
-        sqlite.exec(statement);
-      }
-      console.log('✓ Migration SQL applied successfully');
-    } else {
-      console.log('✓ Tables already exist, skipping migration');
-    }
+    await migrate(db, { migrationsFolder });
+    
+    console.log('✓ All migrations applied successfully');
 
     // Seed initial settings if not exists
     const existingSettings = await db.select().from(settings).where(eq(settings.id, 1)).limit(1);

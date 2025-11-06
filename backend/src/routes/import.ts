@@ -361,7 +361,7 @@ router.post('/invoices/confirm', requireAuth, async (req, res, next) => {
         continue; // Should not happen as we validated earlier
       }
       
-      const status = invoice.datePaid ? 'Paid' : 'Unpaid';
+      const status = invoice.datePaid ? 'Paid' : 'Draft';
       const dueDate = invoice.invoiceDate; // Use same date as invoice date for imports
       
       const [newInvoice] = await db.insert(invoicesTable).values({

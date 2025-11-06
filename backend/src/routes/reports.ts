@@ -33,7 +33,8 @@ router.get('/invoices', requireAuth, async (req, res, next) => {
       .where(
         and(
           sql`${invoices.dateInvoiced} >= ${from}`,
-          sql`${invoices.dateInvoiced} <= ${to}`
+          sql`${invoices.dateInvoiced} <= ${to}`,
+          sql`${invoices.status} != 'Cancelled'`
         )
       )
       .orderBy(invoices.dateInvoiced);
@@ -126,9 +127,10 @@ router.get('/export/:entity', requireAuth, async (req, res, next) => {
             from && to
               ? and(
                   sql`${invoices.dateInvoiced} >= ${from}`,
-                  sql`${invoices.dateInvoiced} <= ${to}`
+                  sql`${invoices.dateInvoiced} <= ${to}`,
+                  sql`${invoices.status} != 'Cancelled'`
                 )
-              : undefined
+              : sql`${invoices.status} != 'Cancelled'`
           )
           .orderBy(invoices.dateInvoiced);
 

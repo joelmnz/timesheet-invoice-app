@@ -1,5 +1,88 @@
 # Deployment Guide
 
+## Database Migrations
+
+### Automatic Migration on Startup
+
+The application automatically runs database migrations on startup:
+
+- **First Start**: Creates all database tables and seeds initial settings
+- **Subsequent Starts**: Checks for pending migrations and applies them automatically
+- **Migration Tracking**: Uses Drizzle ORM's built-in migration system with `__drizzle_migrations` table
+
+### How It Works
+
+1. **On Container Start**: The app checks if migrations are needed by examining:
+   - Whether database tables exist
+   - Whether the Drizzle migration tracking table exists
+   - Whether settings are initialized
+
+2. **Auto-Migration**: If migrations are needed, they run automatically before the server starts:
+
+   ```text
+   Database migrations needed. Running migrations...
+   ✓ All migrations applied successfully
+   ✓ Database schema is up to date
+   ```
+
+3. **Production Safety**:
+   - Migrations use transactions where possible
+   - The app will log errors but attempt to continue if migrations fail
+   - Database backups can be created via the API (`POST /api/migrations/backup`)
+
+### Manual Migration (if needed)
+
+If you need to run migrations manually:
+
+**Via UI** (after login):
+- Future feature: Migration UI panel will be available in Settings
+
+**Via API** (requires authentication):
+```bash
+# Check migration status
+curl -X GET http://localhost:8080/api/migrations/status
+
+# Run migrations
+curl -X POST http://localhost:8080/api/migrations/run \
+  -H "Content-Type: application/json" \
+  --cookie "timesheet.sid=your-session-cookie"
+
+# Create backup
+curl -X POST http://localhost:8080/api/migrations/backup \
+  -H "Content-Type: application/json" \
+  --cookie "timesheet.sid=your-session-cookie"
+```
+
+**Via bun script** (development only, not available in Docker):
+```bash
+cd backend
+bun run db:migrate
+```
+
+### Docker Considerations
+
+The Dockerfile includes everything needed for auto-migrations:
+
+1. **Migration Files**: Copied from `backend/drizzle/` folder during build
+2. **Config File**: `drizzle.config.ts` included in runtime image
+3. **Auto-Execution**: Runs on every container start via `src/index.ts`
+
+**Important**: 
+- Migration files (`backend/drizzle/*.sql`) are part of the Docker image
+- No manual intervention needed when deploying new versions with migrations
+- Migrations run BEFORE the server starts listening, ensuring schema is ready
+
+### Adding New Migrations
+
+When developing new features that require schema changes:
+
+1. **Update Schema**: Edit `backend/src/db/schema.ts`
+2. **Generate Migration**: Run `bun run db:generate` in backend folder
+3. **Review SQL**: Check generated SQL in `backend/drizzle/NNNN_*.sql`
+4. **Test Locally**: Run `bun run db:migrate` to test
+5. **Commit**: Commit both schema.ts and migration files
+6. **Deploy**: New Docker image will include migrations, applied on startup
+
 ## Session Configuration for UNRAID and Cloudflare Tunnels
 
 The app is configured to work in multiple deployment scenarios:

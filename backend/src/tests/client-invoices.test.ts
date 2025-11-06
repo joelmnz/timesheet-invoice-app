@@ -164,7 +164,7 @@ describe('Client-Level Invoice Creation', () => {
       expect(response.status).toBe(201);
       expect(response.body.invoice).toBeDefined();
       expect(response.body.invoice.clientId).toBe(clientId);
-      expect(response.body.invoice.status).toBe('Unpaid');
+      expect(response.body.invoice.status).toBe('Draft');
       expect(response.body.lineItems).toBeDefined();
       expect(response.body.lineItems.length).toBeGreaterThan(0);
 

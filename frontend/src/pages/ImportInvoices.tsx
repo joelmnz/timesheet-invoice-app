@@ -277,8 +277,8 @@ export default function ImportInvoices() {
                           <Table.Td>{invoice.description}</Table.Td>
                           <Table.Td>${invoice.amount.toFixed(2)}</Table.Td>
                           <Table.Td>
-                            <Badge color={invoice.datePaid ? 'green' : 'yellow'}>
-                              {invoice.datePaid ? `Paid (${invoice.datePaid})` : 'Unpaid'}
+                            <Badge color={invoice.datePaid ? 'green' : 'gray'}>
+                              {invoice.datePaid ? `Paid (${invoice.datePaid})` : 'Draft'}
                             </Badge>
                           </Table.Td>
                         </Table.Tr>

@@ -65,7 +65,7 @@ router.get('/summary', requireAuth, async (req, res, next) => {
       })
       .from(invoices)
       .innerJoin(clients, eq(invoices.clientId, clients.id))
-      .where(eq(invoices.status, 'Unpaid'))
+      .where(eq(invoices.status, 'Sent'))
       .orderBy(invoices.dueDate);
 
     const outstandingInvoices = outstandingInvoicesRaw.map(({ invoice, clientName }) => ({
@@ -103,7 +103,8 @@ router.get('/invoiced-by-month', requireAuth, async (req, res, next) => {
       .where(
         and(
           sql`${invoices.dateInvoiced} >= ${start}`,
-          sql`${invoices.dateInvoiced} <= ${end}`
+          sql`${invoices.dateInvoiced} <= ${end}`,
+          sql`${invoices.status} != 'Cancelled'`
         )
       )
       .groupBy(sql`strftime('%Y-%m', ${invoices.dateInvoiced})`)

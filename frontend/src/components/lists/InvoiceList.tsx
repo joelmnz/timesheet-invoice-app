@@ -66,7 +66,7 @@ export function InvoiceList({
     render: (invoice) => {
       const dueDate = DateTime.fromISO(invoice.dueDate);
       const today = DateTime.now();
-      const isOverdue = showDueStatus && invoice.status === 'Unpaid' && dueDate < today;
+      const isOverdue = showDueStatus && invoice.status === 'Sent' && dueDate < today;
 
       return (
         <>

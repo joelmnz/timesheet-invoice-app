@@ -193,7 +193,7 @@ router.put('/:id', requireAuth, async (req, res, next) => {
 
     // If datePaid is being explicitly cleared (set to null) and no status is provided, set status to Draft
     // This handles the data correction workflow where clearing payment info should revert to Draft
-    if ('datePaid' in data && data.datePaid === null && !data.status) {
+    if ('datePaid' in data && data.datePaid === null && !data.status && currentInvoice.status === 'Paid') {
       data.status = 'Draft';
     }
 

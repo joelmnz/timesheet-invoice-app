@@ -25,6 +25,7 @@ interface MigrationStatus {
 export async function checkMigrationStatus(): Promise<MigrationStatus> {
   try {
     // Try to query a table to see if schema exists
+    // Note: CORE_TABLES is a controlled constant, safe for interpolation
     const tableCheck = sqlite.query(`
       SELECT name FROM sqlite_master 
       WHERE type='table' AND name IN ('${CORE_TABLES.join("','")}')
@@ -117,6 +118,7 @@ export async function runMigrations(): Promise<void> {
     const migrationsFolder = join(__dirname, '../../drizzle');
     
     // Check if tables exist but __drizzle_migrations doesn't
+    // Note: CORE_TABLES is a controlled constant, safe for interpolation
     const tableCheck = sqlite.query(`
       SELECT name FROM sqlite_master 
       WHERE type='table' AND name IN ('${CORE_TABLES.join("','")}')

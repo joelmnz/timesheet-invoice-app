@@ -111,10 +111,51 @@ export async function runMigrations(): Promise<void> {
   try {
     console.log('Running migrations...');
     
-    // Use Drizzle's migrate function to run all pending migrations
-    // This will automatically handle the __drizzle_migrations table and run only needed migrations
     const migrationsFolder = join(__dirname, '../../drizzle');
     
+    // Check if tables exist but __drizzle_migrations doesn't
+    const tableCheck = sqlite.query(`
+      SELECT name FROM sqlite_master 
+      WHERE type='table' AND name IN ('clients', 'projects', 'time_entries', 'invoices', 'settings')
+    `).all();
+    
+    const migrationTableCheck = sqlite.query(`
+      SELECT name FROM sqlite_master 
+      WHERE type='table' AND name='__drizzle_migrations'
+    `).all();
+    
+    const tablesExist = tableCheck.length >= 5;
+    const migrationTrackingExists = migrationTableCheck.length > 0;
+    
+    // If tables exist but migration tracking doesn't, we need to initialize the tracking table
+    // and mark migration 0000 as already applied to prevent data loss
+    if (tablesExist && !migrationTrackingExists) {
+      console.log('Existing database detected without migration tracking. Initializing tracking table...');
+      
+      // Create the migration tracking table manually
+      sqlite.exec(`
+        CREATE TABLE IF NOT EXISTS __drizzle_migrations (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          hash TEXT NOT NULL,
+          created_at INTEGER
+        )
+      `);
+      
+      // Mark migration 0000 as already applied
+      // This prevents Drizzle from trying to CREATE tables that already exist
+      // The hash format is: tag name from _journal.json
+      const migration0000Hash = '0000_young_madripoor';
+      const timestamp = Date.now();
+      sqlite.exec(`
+        INSERT INTO __drizzle_migrations (hash, created_at) 
+        VALUES ('${migration0000Hash}', ${timestamp})
+      `);
+      
+      console.log('✓ Migration tracking initialized, marked migration 0000 as applied');
+    }
+    
+    // Use Drizzle's migrate function to run pending migrations
+    // This will now only run migrations after 0000 for existing databases
     await migrate(db, { migrationsFolder });
     
     console.log('✓ All migrations applied successfully');

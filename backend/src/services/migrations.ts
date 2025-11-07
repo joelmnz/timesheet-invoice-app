@@ -9,6 +9,9 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// Core tables that must exist for the app to function
+const CORE_TABLES = ['clients', 'projects', 'time_entries', 'invoices', 'settings'];
+
 interface MigrationStatus {
   needed: boolean;
   reason?: string;
@@ -22,12 +25,13 @@ interface MigrationStatus {
 export async function checkMigrationStatus(): Promise<MigrationStatus> {
   try {
     // Try to query a table to see if schema exists
+    // Note: CORE_TABLES is a controlled constant, safe for interpolation
     const tableCheck = sqlite.query(`
       SELECT name FROM sqlite_master 
-      WHERE type='table' AND name IN ('clients', 'projects', 'time_entries', 'invoices', 'settings')
+      WHERE type='table' AND name IN ('${CORE_TABLES.join("','")}')
     `).all();
     
-    const tablesExist = tableCheck.length >= 5;
+    const tablesExist = tableCheck.length >= CORE_TABLES.length;
     
     if (!tablesExist) {
       return {
@@ -111,13 +115,60 @@ export async function runMigrations(): Promise<void> {
   try {
     console.log('Running migrations...');
     
-    // Use Drizzle's migrate function to run all pending migrations
-    // This will automatically handle the __drizzle_migrations table and run only needed migrations
     const migrationsFolder = join(__dirname, '../../drizzle');
     
+    // Check if tables exist but __drizzle_migrations doesn't
+    // Note: CORE_TABLES is a controlled constant, safe for interpolation
+    const tableCheck = sqlite.query(`
+      SELECT name FROM sqlite_master 
+      WHERE type='table' AND name IN ('${CORE_TABLES.join("','")}')
+    `).all();
+    
+    const migrationTableCheck = sqlite.query(`
+      SELECT name FROM sqlite_master 
+      WHERE type='table' AND name='__drizzle_migrations'
+    `).all();
+    
+    const tablesExist = tableCheck.length >= CORE_TABLES.length;
+    const migrationTrackingExists = migrationTableCheck.length > 0;
+    
+    // If tables exist but migration tracking doesn't, we need to initialize the tracking table
+    // and mark migration 0000 as already applied to prevent data loss
+    if (tablesExist && !migrationTrackingExists) {
+      console.log('Existing database detected without migration tracking. Initializing tracking table...');
+      
+      // Create the migration tracking table manually
+      sqlite.exec(`
+        CREATE TABLE IF NOT EXISTS __drizzle_migrations (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          hash TEXT NOT NULL,
+          created_at INTEGER
+        )
+      `);
+      
+      // Mark migration 0000 as already applied
+      // This prevents Drizzle from trying to CREATE tables that already exist
+      // The hash is the tag name from drizzle/meta/_journal.json
+      const migration0000Hash = '0000_young_madripoor';
+      const timestamp = Date.now();
+      
+      // Use parameterized query to prevent SQL injection
+      const stmt = sqlite.prepare('INSERT INTO __drizzle_migrations (hash, created_at) VALUES (?, ?)');
+      stmt.run(migration0000Hash, timestamp);
+      
+      console.log('✓ Migration tracking initialized, marked migration 0000 as applied');
+      console.log('  Now applying pending migrations (0001+)...');
+    }
+    
+    // Use Drizzle's migrate function to run pending migrations
+    // This will now only run migrations after 0000 for existing databases
     await migrate(db, { migrationsFolder });
     
     console.log('✓ All migrations applied successfully');
+    
+    // Log which migrations have been applied for debugging
+    const appliedMigrations = sqlite.query('SELECT hash FROM __drizzle_migrations ORDER BY id').all() as Array<{ hash: string }>;
+    console.log(`  Applied migrations: ${appliedMigrations.map(m => m.hash).join(', ')}`);
 
     // Seed initial settings if not exists
     const existingSettings = await db.select().from(settings).where(eq(settings.id, 1)).limit(1);

@@ -13,6 +13,14 @@ const __dirname = dirname(__filename);
 // Core tables that must exist for the app to function
 const CORE_TABLES = ['clients', 'projects', 'time_entries', 'invoices', 'settings'];
 
+/**
+ * Helper function to compute SHA256 hash of a migration file
+ */
+function computeMigrationHash(migrationPath: string): string {
+  const migrationContent = readFileSync(migrationPath, 'utf-8');
+  return crypto.createHash('sha256').update(migrationContent).digest('hex');
+}
+
 interface MigrationStatus {
   needed: boolean;
   reason?: string;
@@ -74,8 +82,7 @@ export async function checkMigrationStatus(): Promise<MigrationStatus> {
         for (const entry of availableMigrations) {
           const migrationPath = join(migrationsFolder, `${entry.tag}.sql`);
           if (existsSync(migrationPath)) {
-            const migrationContent = readFileSync(migrationPath, 'utf-8');
-            const hash = crypto.createHash('sha256').update(migrationContent).digest('hex');
+            const hash = computeMigrationHash(migrationPath);
             availableHashes.add(hash);
           }
         }
@@ -93,8 +100,7 @@ export async function checkMigrationStatus(): Promise<MigrationStatus> {
           for (const entry of availableMigrations) {
             const migrationPath = join(migrationsFolder, `${entry.tag}.sql`);
             if (existsSync(migrationPath)) {
-              const migrationContent = readFileSync(migrationPath, 'utf-8');
-              const hash = crypto.createHash('sha256').update(migrationContent).digest('hex');
+              const hash = computeMigrationHash(migrationPath);
               if (pendingHashes.includes(hash)) {
                 pendingTags.push(entry.tag);
               }
@@ -207,8 +213,7 @@ export async function runMigrations(): Promise<void> {
       // This prevents Drizzle from trying to CREATE tables that already exist
       // Read migration 0000 file and compute its SHA256 hash (Drizzle uses hashes, not tags)
       const migration0000Path = join(migrationsFolder, '0000_young_madripoor.sql');
-      const migration0000Content = readFileSync(migration0000Path, 'utf-8');
-      const migration0000Hash = crypto.createHash('sha256').update(migration0000Content).digest('hex');
+      const migration0000Hash = computeMigrationHash(migration0000Path);
       const timestamp = Date.now();
       
       // Use parameterized query to prevent SQL injection

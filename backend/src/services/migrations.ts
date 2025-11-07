@@ -9,6 +9,9 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// Core tables that must exist for the app to function
+const CORE_TABLES = ['clients', 'projects', 'time_entries', 'invoices', 'settings'];
+
 interface MigrationStatus {
   needed: boolean;
   reason?: string;
@@ -24,10 +27,10 @@ export async function checkMigrationStatus(): Promise<MigrationStatus> {
     // Try to query a table to see if schema exists
     const tableCheck = sqlite.query(`
       SELECT name FROM sqlite_master 
-      WHERE type='table' AND name IN ('clients', 'projects', 'time_entries', 'invoices', 'settings')
+      WHERE type='table' AND name IN ('${CORE_TABLES.join("','")}')
     `).all();
     
-    const tablesExist = tableCheck.length >= 5;
+    const tablesExist = tableCheck.length >= CORE_TABLES.length;
     
     if (!tablesExist) {
       return {
@@ -116,7 +119,7 @@ export async function runMigrations(): Promise<void> {
     // Check if tables exist but __drizzle_migrations doesn't
     const tableCheck = sqlite.query(`
       SELECT name FROM sqlite_master 
-      WHERE type='table' AND name IN ('clients', 'projects', 'time_entries', 'invoices', 'settings')
+      WHERE type='table' AND name IN ('${CORE_TABLES.join("','")}')
     `).all();
     
     const migrationTableCheck = sqlite.query(`
@@ -124,7 +127,7 @@ export async function runMigrations(): Promise<void> {
       WHERE type='table' AND name='__drizzle_migrations'
     `).all();
     
-    const tablesExist = tableCheck.length >= 5;
+    const tablesExist = tableCheck.length >= CORE_TABLES.length;
     const migrationTrackingExists = migrationTableCheck.length > 0;
     
     // If tables exist but migration tracking doesn't, we need to initialize the tracking table
@@ -143,13 +146,13 @@ export async function runMigrations(): Promise<void> {
       
       // Mark migration 0000 as already applied
       // This prevents Drizzle from trying to CREATE tables that already exist
-      // The hash format is: tag name from _journal.json
+      // The hash is the tag name from drizzle/meta/_journal.json
       const migration0000Hash = '0000_young_madripoor';
       const timestamp = Date.now();
-      sqlite.exec(`
-        INSERT INTO __drizzle_migrations (hash, created_at) 
-        VALUES ('${migration0000Hash}', ${timestamp})
-      `);
+      
+      // Use parameterized query to prevent SQL injection
+      const stmt = sqlite.prepare('INSERT INTO __drizzle_migrations (hash, created_at) VALUES (?, ?)');
+      stmt.run(migration0000Hash, timestamp);
       
       console.log('✓ Migration tracking initialized, marked migration 0000 as applied');
     }

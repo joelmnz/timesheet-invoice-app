@@ -5,6 +5,7 @@ import { settings } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
+import crypto from 'crypto';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -66,20 +67,43 @@ export async function checkMigrationStatus(): Promise<MigrationStatus> {
         const journalContent = readFileSync(journalPath, 'utf-8');
         const journal = JSON.parse(journalContent);
         
-        // Get all migration tags from the journal
-        const availableMigrations = journal.entries?.map((entry: { tag: string }) => entry.tag) || [];
+        // Get all migration tags from the journal and compute their hashes
+        const availableMigrations = journal.entries || [];
+        const availableHashes = new Set<string>();
         
-        // Get applied migrations from the database
+        for (const entry of availableMigrations) {
+          const migrationPath = join(migrationsFolder, `${entry.tag}.sql`);
+          if (existsSync(migrationPath)) {
+            const migrationContent = readFileSync(migrationPath, 'utf-8');
+            const hash = crypto.createHash('sha256').update(migrationContent).digest('hex');
+            availableHashes.add(hash);
+          }
+        }
+        
+        // Get applied migration hashes from the database
         const appliedMigrations = sqlite.query('SELECT hash FROM __drizzle_migrations ORDER BY id').all() as Array<{ hash: string }>;
         const appliedHashes = new Set(appliedMigrations.map(m => m.hash));
         
-        // Check if there are any pending migrations
-        const pendingMigrations = availableMigrations.filter((tag: string) => !appliedHashes.has(tag));
+        // Check if there are any pending migrations (hashes in available but not in applied)
+        const pendingHashes = Array.from(availableHashes).filter(hash => !appliedHashes.has(hash));
         
-        if (pendingMigrations.length > 0) {
+        if (pendingHashes.length > 0) {
+          // Find the tag names for better error message
+          const pendingTags: string[] = [];
+          for (const entry of availableMigrations) {
+            const migrationPath = join(migrationsFolder, `${entry.tag}.sql`);
+            if (existsSync(migrationPath)) {
+              const migrationContent = readFileSync(migrationPath, 'utf-8');
+              const hash = crypto.createHash('sha256').update(migrationContent).digest('hex');
+              if (pendingHashes.includes(hash)) {
+                pendingTags.push(entry.tag);
+              }
+            }
+          }
+          
           return {
             needed: true,
-            reason: `Pending migrations detected: ${pendingMigrations.join(', ')}`,
+            reason: `Pending migrations detected: ${pendingTags.join(', ')}`,
             tablesExist: true,
             settingsExist: true,
           };
@@ -181,8 +205,10 @@ export async function runMigrations(): Promise<void> {
       
       // Mark migration 0000 as already applied
       // This prevents Drizzle from trying to CREATE tables that already exist
-      // The hash is the tag name from drizzle/meta/_journal.json
-      const migration0000Hash = '0000_young_madripoor';
+      // Read migration 0000 file and compute its SHA256 hash (Drizzle uses hashes, not tags)
+      const migration0000Path = join(migrationsFolder, '0000_young_madripoor.sql');
+      const migration0000Content = readFileSync(migration0000Path, 'utf-8');
+      const migration0000Hash = crypto.createHash('sha256').update(migration0000Content).digest('hex');
       const timestamp = Date.now();
       
       // Use parameterized query to prevent SQL injection

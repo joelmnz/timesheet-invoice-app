@@ -1,4 +1,4 @@
-import { copyFileSync, existsSync } from 'fs';
+import { copyFileSync, existsSync, readFileSync } from 'fs';
 import { migrate } from 'drizzle-orm/bun-sqlite/migrator';
 import { db, sqlite } from '../db/index.js';
 import { settings } from '../db/schema.js';
@@ -55,6 +55,39 @@ export async function checkMigrationStatus(): Promise<MigrationStatus> {
         tablesExist: true,
         settingsExist: false,
       };
+    }
+
+    // Check if there are pending migrations by comparing journal with applied migrations
+    const migrationsFolder = join(__dirname, '../../drizzle');
+    const journalPath = join(migrationsFolder, 'meta', '_journal.json');
+    
+    if (existsSync(journalPath)) {
+      try {
+        const journalContent = readFileSync(journalPath, 'utf-8');
+        const journal = JSON.parse(journalContent);
+        
+        // Get all migration tags from the journal
+        const availableMigrations = journal.entries?.map((entry: { tag: string }) => entry.tag) || [];
+        
+        // Get applied migrations from the database
+        const appliedMigrations = sqlite.query('SELECT hash FROM __drizzle_migrations ORDER BY id').all() as Array<{ hash: string }>;
+        const appliedHashes = new Set(appliedMigrations.map(m => m.hash));
+        
+        // Check if there are any pending migrations
+        const pendingMigrations = availableMigrations.filter((tag: string) => !appliedHashes.has(tag));
+        
+        if (pendingMigrations.length > 0) {
+          return {
+            needed: true,
+            reason: `Pending migrations detected: ${pendingMigrations.join(', ')}`,
+            tablesExist: true,
+            settingsExist: true,
+          };
+        }
+      } catch (error) {
+        console.warn('Failed to check for pending migrations:', error);
+        // Continue to other checks if journal reading fails
+      }
     }
 
     // Check if settings are initialized

@@ -157,6 +157,7 @@ export async function runMigrations(): Promise<void> {
       stmt.run(migration0000Hash, timestamp);
       
       console.log('✓ Migration tracking initialized, marked migration 0000 as applied');
+      console.log('  Now applying pending migrations (0001+)...');
     }
     
     // Use Drizzle's migrate function to run pending migrations
@@ -164,6 +165,10 @@ export async function runMigrations(): Promise<void> {
     await migrate(db, { migrationsFolder });
     
     console.log('✓ All migrations applied successfully');
+    
+    // Log which migrations have been applied for debugging
+    const appliedMigrations = sqlite.query('SELECT hash FROM __drizzle_migrations ORDER BY id').all() as Array<{ hash: string }>;
+    console.log(`  Applied migrations: ${appliedMigrations.map(m => m.hash).join(', ')}`);
 
     // Seed initial settings if not exists
     const existingSettings = await db.select().from(settings).where(eq(settings.id, 1)).limit(1);

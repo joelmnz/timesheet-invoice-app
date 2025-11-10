@@ -39,8 +39,8 @@ export default function Reports() {
     }
   }, [fromDate, toDate]);
 
-  const fromDateISO = fromDate ? DateTime.fromJSDate(fromDate).toISODate() : undefined;
-  const toDateISO = toDate ? DateTime.fromJSDate(toDate).toISODate() : undefined;
+  const fromDateISO = fromDate ? DateTime.fromJSDate(fromDate).toISODate() || undefined : undefined;
+  const toDateISO = toDate ? DateTime.fromJSDate(toDate).toISODate() || undefined : undefined;
 
   const { data: invoicesData, refetch: refetchInvoices } = useQuery({
     queryKey: ['reports', 'invoices', fromDateISO, toDateISO],

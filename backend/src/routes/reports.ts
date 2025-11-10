@@ -9,7 +9,7 @@ import {
 } from '../db/schema.js';
 import { eq, and, sql } from 'drizzle-orm';
 import { requireAuth } from '../middleware/auth.js';
-import { getCurrentTaxYear } from '../utils/time.js';
+import { getFinancialYearStart } from '../utils/financialYear.js';
 import { generateCSV } from '../services/csv.js';
 
 const router = Router();
@@ -17,9 +17,17 @@ const router = Router();
 // GET /api/reports/invoices
 router.get('/invoices', requireAuth, async (req, res, next) => {
   try {
-    const taxYear = getCurrentTaxYear();
-    const from = (req.query.from as string) || taxYear.start;
-    const to = (req.query.to as string) || taxYear.end;
+    const from = req.query.from as string | undefined;
+    const to = req.query.to as string | undefined;
+
+    // Build date filter conditions
+    const dateConditions = [];
+    if (from) {
+      dateConditions.push(sql`${invoices.dateInvoiced} >= ${from}`);
+    }
+    if (to) {
+      dateConditions.push(sql`${invoices.dateInvoiced} <= ${to}`);
+    }
 
     const data = await db
       .select({
@@ -32,8 +40,7 @@ router.get('/invoices', requireAuth, async (req, res, next) => {
       .innerJoin(projects, eq(invoices.projectId, projects.id))
       .where(
         and(
-          sql`${invoices.dateInvoiced} >= ${from}`,
-          sql`${invoices.dateInvoiced} <= ${to}`,
+          ...dateConditions,
           sql`${invoices.status} != 'Cancelled'`
         )
       )
@@ -61,9 +68,17 @@ router.get('/invoices', requireAuth, async (req, res, next) => {
 // GET /api/reports/income
 router.get('/income', requireAuth, async (req, res, next) => {
   try {
-    const taxYear = getCurrentTaxYear();
-    const from = (req.query.from as string) || taxYear.start;
-    const to = (req.query.to as string) || taxYear.end;
+    const from = req.query.from as string | undefined;
+    const to = req.query.to as string | undefined;
+
+    // Build date filter conditions
+    const dateConditions = [];
+    if (from) {
+      dateConditions.push(sql`${invoices.datePaid} >= ${from}`);
+    }
+    if (to) {
+      dateConditions.push(sql`${invoices.datePaid} <= ${to}`);
+    }
 
     const data = await db
       .select({
@@ -77,8 +92,7 @@ router.get('/income', requireAuth, async (req, res, next) => {
       .where(
         and(
           eq(invoices.status, 'Paid'),
-          sql`${invoices.datePaid} >= ${from}`,
-          sql`${invoices.datePaid} <= ${to}`
+          ...dateConditions
         )
       )
       .orderBy(invoices.datePaid);
@@ -114,6 +128,18 @@ router.get('/export/:entity', requireAuth, async (req, res, next) => {
 
     switch (entity) {
       case 'invoices': {
+        const from = req.query.from as string | undefined;
+        const to = req.query.to as string | undefined;
+
+        // Build date filter conditions
+        const dateConditions = [];
+        if (from) {
+          dateConditions.push(sql`${invoices.dateInvoiced} >= ${from}`);
+        }
+        if (to) {
+          dateConditions.push(sql`${invoices.dateInvoiced} <= ${to}`);
+        }
+
         const data = await db
           .select({
             invoice: invoices,
@@ -124,13 +150,10 @@ router.get('/export/:entity', requireAuth, async (req, res, next) => {
           .innerJoin(clients, eq(invoices.clientId, clients.id))
           .innerJoin(projects, eq(invoices.projectId, projects.id))
           .where(
-            from && to
-              ? and(
-                  sql`${invoices.dateInvoiced} >= ${from}`,
-                  sql`${invoices.dateInvoiced} <= ${to}`,
-                  sql`${invoices.status} != 'Cancelled'`
-                )
-              : sql`${invoices.status} != 'Cancelled'`
+            and(
+              ...dateConditions,
+              sql`${invoices.status} != 'Cancelled'`
+            )
           )
           .orderBy(invoices.dateInvoiced);
 
@@ -164,6 +187,18 @@ router.get('/export/:entity', requireAuth, async (req, res, next) => {
       }
 
       case 'time-entries': {
+        const from = req.query.from as string | undefined;
+        const to = req.query.to as string | undefined;
+
+        // Build date filter conditions
+        const dateConditions = [];
+        if (from) {
+          dateConditions.push(sql`${timeEntries.startAt} >= ${from}`);
+        }
+        if (to) {
+          dateConditions.push(sql`${timeEntries.startAt} <= ${to}`);
+        }
+
         const data = await db
           .select({
             entry: timeEntries,
@@ -173,14 +208,7 @@ router.get('/export/:entity', requireAuth, async (req, res, next) => {
           .from(timeEntries)
           .innerJoin(projects, eq(timeEntries.projectId, projects.id))
           .innerJoin(clients, eq(projects.clientId, clients.id))
-          .where(
-            from && to
-              ? and(
-                  sql`${timeEntries.startAt} >= ${from}`,
-                  sql`${timeEntries.startAt} <= ${to}`
-                )
-              : undefined
-          )
+          .where(dateConditions.length > 0 ? and(...dateConditions) : undefined)
           .orderBy(timeEntries.startAt);
 
         const headers = [
@@ -209,6 +237,18 @@ router.get('/export/:entity', requireAuth, async (req, res, next) => {
       }
 
       case 'expenses': {
+        const from = req.query.from as string | undefined;
+        const to = req.query.to as string | undefined;
+
+        // Build date filter conditions
+        const dateConditions = [];
+        if (from) {
+          dateConditions.push(sql`${expenses.expenseDate} >= ${from}`);
+        }
+        if (to) {
+          dateConditions.push(sql`${expenses.expenseDate} <= ${to}`);
+        }
+
         const data = await db
           .select({
             expense: expenses,
@@ -218,14 +258,7 @@ router.get('/export/:entity', requireAuth, async (req, res, next) => {
           .from(expenses)
           .innerJoin(projects, eq(expenses.projectId, projects.id))
           .innerJoin(clients, eq(projects.clientId, clients.id))
-          .where(
-            from && to
-              ? and(
-                  sql`${expenses.expenseDate} >= ${from}`,
-                  sql`${expenses.expenseDate} <= ${to}`
-                )
-              : undefined
-          )
+          .where(dateConditions.length > 0 ? and(...dateConditions) : undefined)
           .orderBy(expenses.expenseDate);
 
         const headers = [

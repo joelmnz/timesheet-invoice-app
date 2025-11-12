@@ -39,19 +39,43 @@ export default function Reports() {
     }
   }, [fromDate, toDate]);
 
-  const fromDateISO = fromDate ? DateTime.fromJSDate(fromDate).toISODate() || undefined : undefined;
-  const toDateISO = toDate ? DateTime.fromJSDate(toDate).toISODate() || undefined : undefined;
+  // Convert dates to ISO strings for API calls and query keys
+  const fromDateISO = fromDate 
+    ? (fromDate instanceof Date 
+        ? DateTime.fromJSDate(fromDate).toISODate() 
+        : DateTime.fromISO(fromDate as string).toISODate())
+    : null;
+  const toDateISO = toDate 
+    ? (toDate instanceof Date 
+        ? DateTime.fromJSDate(toDate).toISODate() 
+        : DateTime.fromISO(toDate as string).toISODate())
+    : null;
+
+  // Debug logging
+  useEffect(() => {
+    console.log('Date filters changed:', { fromDate, toDate, fromDateISO, toDateISO });
+  }, [fromDate, toDate, fromDateISO, toDateISO]);
 
   const { data: invoicesData, refetch: refetchInvoices } = useQuery({
     queryKey: ['reports', 'invoices', fromDateISO, toDateISO],
-    queryFn: () => reportsApi.getInvoices(fromDateISO, toDateISO),
+    queryFn: () => reportsApi.getInvoices(
+      fromDateISO ?? undefined, 
+      toDateISO ?? undefined
+    ),
     enabled: reportType === 'invoices' && !validationError,
+    staleTime: 0,
+    gcTime: 0,
   });
 
   const { data: incomeData, refetch: refetchIncome } = useQuery({
     queryKey: ['reports', 'income', fromDateISO, toDateISO],
-    queryFn: () => reportsApi.getIncome(fromDateISO, toDateISO),
+    queryFn: () => reportsApi.getIncome(
+      fromDateISO ?? undefined, 
+      toDateISO ?? undefined
+    ),
     enabled: reportType === 'income' && !validationError,
+    staleTime: 0,
+    gcTime: 0,
   });
 
   const data = reportType === 'invoices' ? invoicesData : incomeData;
@@ -72,7 +96,11 @@ export default function Reports() {
 
   const handleExportCsv = async () => {
     try {
-      await reportsApi.exportCsv('invoices', fromDateISO, toDateISO);
+      await reportsApi.exportCsv(
+        'invoices', 
+        fromDateISO ?? undefined, 
+        toDateISO ?? undefined
+      );
     } catch (error) {
       notifications.show({
         title: 'Error',

@@ -9,7 +9,6 @@ import {
 } from '../db/schema.js';
 import { eq, and, sql } from 'drizzle-orm';
 import { requireAuth } from '../middleware/auth.js';
-import { getFinancialYearStart } from '../utils/financialYear.js';
 import { generateCSV } from '../services/csv.js';
 
 const router = Router();

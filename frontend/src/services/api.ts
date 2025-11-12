@@ -23,9 +23,11 @@ async function fetchApi<T>(
     ...options,
     headers: {
       'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache',
       ...options?.headers,
     },
     credentials: 'include',
+    cache: 'no-store',
   });
 
   if (!response.ok) {

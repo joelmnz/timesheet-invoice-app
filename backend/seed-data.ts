@@ -1,6 +1,5 @@
 import { db } from './src/db/index.js';
 import { clients, projects, invoices } from './src/db/schema.js';
-import { DateTime } from 'luxon';
 
 async function seedData() {
   // Create a test client

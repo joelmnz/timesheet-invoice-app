@@ -87,3 +87,23 @@ export function getLastNMonths(n: number): { start: string; end: string } {
     end: end.toISODate()!,
   };
 }
+
+/**
+ * Aggregate and deduplicate notes from time entries
+ * @param entries - Array of time entries with optional note field
+ * @returns Comma-separated string of unique notes (case-insensitive deduplication)
+ */
+export function aggregateUniqueNotes(entries: Array<{ note?: string | null }>): string {
+  const uniqueNotes = new Map<string, string>();
+  
+  for (const entry of entries) {
+    if (entry.note && entry.note.trim()) {
+      const noteKey = entry.note.trim().toLowerCase();
+      if (!uniqueNotes.has(noteKey)) {
+        uniqueNotes.set(noteKey, entry.note.trim());
+      }
+    }
+  }
+  
+  return Array.from(uniqueNotes.values()).join(', ');
+}

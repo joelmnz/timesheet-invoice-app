@@ -18,7 +18,6 @@ async function seedData() {
   }).returning();
 
   // Create invoices with various dates
-  const tz = 'Pacific/Auckland';
   
   // Invoice from last financial year (before April 1, 2024)
   await db.insert(invoices).values({

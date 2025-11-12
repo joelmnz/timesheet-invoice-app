@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   Container,
@@ -14,36 +14,88 @@ import {
 } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
 import { notifications } from '@mantine/notifications';
-import { IconFileExport, IconCalendar } from '@tabler/icons-react';
+import { IconFileExport, IconRefresh, IconFilterOff } from '@tabler/icons-react';
 import { DateTime } from 'luxon';
 import { reportsApi } from '../services/api';
+import { getFinancialYearStart } from '../utils/financialYear';
 
 type ReportType = 'invoices' | 'income';
 
 export default function Reports() {
   const [reportType, setReportType] = useState<ReportType>('invoices');
-  const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([null, null]);
+  const [fromDate, setFromDate] = useState<Date | null>(() => {
+    const fyStart = getFinancialYearStart();
+    return DateTime.fromISO(fyStart).toJSDate();
+  });
+  const [toDate, setToDate] = useState<Date | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
-  const fromDate = dateRange[0] ? DateTime.fromJSDate(dateRange[0]).toISODate() : undefined;
-  const toDate = dateRange[1] ? DateTime.fromJSDate(dateRange[1]).toISODate() : undefined;
+  // Validate dates whenever they change
+  useEffect(() => {
+    if (fromDate && toDate && fromDate > toDate) {
+      setValidationError('From Date cannot be after To Date');
+    } else {
+      setValidationError(null);
+    }
+  }, [fromDate, toDate]);
 
-  const { data: invoicesData } = useQuery({
-    queryKey: ['reports', 'invoices', fromDate, toDate],
-    queryFn: () => reportsApi.getInvoices(fromDate, toDate),
-    enabled: reportType === 'invoices',
+  // Convert dates to ISO strings for API calls and query keys
+  const fromDateISO = fromDate 
+    ? (fromDate instanceof Date 
+        ? DateTime.fromJSDate(fromDate).toISODate() 
+        : DateTime.fromISO(fromDate as string).toISODate())
+    : null;
+  const toDateISO = toDate 
+    ? (toDate instanceof Date 
+        ? DateTime.fromJSDate(toDate).toISODate() 
+        : DateTime.fromISO(toDate as string).toISODate())
+    : null;
+
+  const { data: invoicesData, refetch: refetchInvoices } = useQuery({
+    queryKey: ['reports', 'invoices', fromDateISO, toDateISO],
+    queryFn: () => reportsApi.getInvoices(
+      fromDateISO ?? undefined, 
+      toDateISO ?? undefined
+    ),
+    enabled: reportType === 'invoices' && !validationError,
+    staleTime: 0,
+    gcTime: 0,
   });
 
-  const { data: incomeData } = useQuery({
-    queryKey: ['reports', 'income', fromDate, toDate],
-    queryFn: () => reportsApi.getIncome(fromDate, toDate),
-    enabled: reportType === 'income',
+  const { data: incomeData, refetch: refetchIncome } = useQuery({
+    queryKey: ['reports', 'income', fromDateISO, toDateISO],
+    queryFn: () => reportsApi.getIncome(
+      fromDateISO ?? undefined, 
+      toDateISO ?? undefined
+    ),
+    enabled: reportType === 'income' && !validationError,
+    staleTime: 0,
+    gcTime: 0,
   });
 
   const data = reportType === 'invoices' ? invoicesData : incomeData;
 
+  const handleRefresh = () => {
+    if (reportType === 'invoices') {
+      refetchInvoices();
+    } else {
+      refetchIncome();
+    }
+  };
+
+  const handleReset = () => {
+    const fyStart = getFinancialYearStart();
+    setFromDate(DateTime.fromISO(fyStart).toJSDate());
+    setToDate(null);
+  };
+
   const handleExportCsv = async () => {
     try {
-      await reportsApi.exportCsv('invoices', fromDate, toDate);
+      await reportsApi.exportCsv(
+        'invoices', 
+        fromDateISO ?? undefined, 
+        toDateISO ?? undefined
+      );
     } catch (error) {
       notifications.show({
         title: 'Error',
@@ -78,19 +130,45 @@ export default function Reports() {
               ]}
             />
 
-            <DatePickerInput
-              type="range"
-              label="Date Range"
-              placeholder="Pick dates range"
-              leftSection={<IconCalendar size={18} />}
-              value={dateRange}
-              onChange={setDateRange}
-              clearable
-            />
+            <Group align="flex-end">
+              <DatePickerInput
+                label="From Date"
+                placeholder="Select start date"
+                value={fromDate}
+                onChange={setFromDate}
+                clearable
+                style={{ flex: 1 }}
+                error={validationError}
+              />
+              <DatePickerInput
+                label="To Date"
+                placeholder="Select end date"
+                value={toDate}
+                onChange={setToDate}
+                clearable
+                style={{ flex: 1 }}
+                error={validationError ? ' ' : undefined}
+              />
+              <Button
+                variant="light"
+                leftSection={<IconRefresh size={16} />}
+                onClick={handleRefresh}
+                disabled={!!validationError}
+              >
+                Refresh
+              </Button>
+              <Button
+                variant="light"
+                leftSection={<IconFilterOff size={16} />}
+                onClick={handleReset}
+              >
+                Reset
+              </Button>
+            </Group>
           </Stack>
         </Paper>
 
-        {data && (
+        {data && !validationError && (
           <Paper p="md" withBorder>
             <Stack gap="md">
               <Group justify="space-between">
@@ -143,6 +221,14 @@ export default function Reports() {
                 </Text>
               )}
             </Stack>
+          </Paper>
+        )}
+
+        {validationError && (
+          <Paper p="md" withBorder>
+            <Text c="red" ta="center">
+              {validationError}
+            </Text>
           </Paper>
         )}
       </Stack>

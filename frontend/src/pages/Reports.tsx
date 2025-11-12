@@ -51,11 +51,6 @@ export default function Reports() {
         : DateTime.fromISO(toDate as string).toISODate())
     : null;
 
-  // Debug logging
-  useEffect(() => {
-    console.log('Date filters changed:', { fromDate, toDate, fromDateISO, toDateISO });
-  }, [fromDate, toDate, fromDateISO, toDateISO]);
-
   const { data: invoicesData, refetch: refetchInvoices } = useQuery({
     queryKey: ['reports', 'invoices', fromDateISO, toDateISO],
     queryFn: () => reportsApi.getInvoices(

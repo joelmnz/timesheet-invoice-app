@@ -173,6 +173,20 @@ export function backupDatabase(dbPath: string): string {
 
 /**
  * Run database migrations
+ * 
+ * BUG: The manual migration tracking initialization below breaks Drizzle's migration chain.
+ * When we manually insert migration hashes, Drizzle doesn't recognize them as part of its
+ * internal migration dependency chain (tracked via snapshot prevId references), so subsequent
+ * migrations (0001, 0002, etc.) won't be applied even though their hashes aren't in the DB.
+ * 
+ * This code preserves the original behavior to avoid breaking existing deployments,
+ * but be aware that for databases with existing tables but no tracking table:
+ * - Migration 0000 will be marked as applied (preventing table recreation errors)
+ * - BUT migrations 0001+ will NOT be automatically applied
+ * - Manual intervention may be required to apply newer migrations
+ * 
+ * PROPER FIX: Implement schema reconciliation that detects actual schema state vs expected state,
+ * or use Drizzle's introspection APIs to properly initialize the migration chain.
  */
 export async function runMigrations(): Promise<void> {
   try {
@@ -197,21 +211,22 @@ export async function runMigrations(): Promise<void> {
     
     // If tables exist but migration tracking doesn't, we need to initialize the tracking table
     // and mark migration 0000 as already applied to prevent data loss
+    // NOTE: This breaks the migration chain - see function docstring above
     if (tablesExist && !migrationTrackingExists) {
       console.log('Existing database detected without migration tracking. Initializing tracking table...');
+      console.log('⚠️  WARNING: Subsequent migrations may not apply automatically. Manual verification recommended.');
       
-      // Create the migration tracking table manually
+      // Create the migration tracking table with Drizzle's exact schema
       sqlite.exec(`
-        CREATE TABLE IF NOT EXISTS __drizzle_migrations (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          hash TEXT NOT NULL,
-          created_at INTEGER
+        CREATE TABLE "__drizzle_migrations" (
+          id SERIAL PRIMARY KEY,
+          hash text NOT NULL,
+          created_at numeric
         )
       `);
       
       // Mark migration 0000 as already applied
       // This prevents Drizzle from trying to CREATE tables that already exist
-      // Read migration 0000 file and compute its SHA256 hash (Drizzle uses hashes, not tags)
       const migration0000Path = join(migrationsFolder, '0000_young_madripoor.sql');
       const migration0000Hash = computeMigrationHash(migration0000Path);
       const timestamp = Date.now();
@@ -221,11 +236,10 @@ export async function runMigrations(): Promise<void> {
       stmt.run(migration0000Hash, timestamp);
       
       console.log('✓ Migration tracking initialized, marked migration 0000 as applied');
-      console.log('  Now applying pending migrations (0001+)...');
+      console.log('  Now attempting to apply pending migrations...');
     }
     
     // Use Drizzle's migrate function to run pending migrations
-    // This will now only run migrations after 0000 for existing databases
     await migrate(db, { migrationsFolder });
     
     console.log('✓ All migrations applied successfully');

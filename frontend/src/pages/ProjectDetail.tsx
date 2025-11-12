@@ -21,6 +21,7 @@ import {
   Badge,
   Switch,
   Select,
+  Tooltip,
 } from '@mantine/core';
 import { DateTimePicker, DatePickerInput } from '@mantine/dates';
 import { useForm } from '@mantine/form';
@@ -154,6 +155,7 @@ export default function ProjectDetail() {
       upToDate: new Date(),
       notes: '',
       groupByDay: false,
+      includeNotes: true,
     },
   });
 
@@ -295,6 +297,7 @@ export default function ProjectDetail() {
       upToDate: string;
       notes?: string;
       groupByDay?: boolean;
+      includeNotes?: boolean;
     }) => invoicesApi.create(projectId, data),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
@@ -486,6 +489,7 @@ export default function ProjectDetail() {
       upToDate: DateTime.fromJSDate(values.upToDate).toISODate() || '',
       notes: values.notes || undefined,
       groupByDay: values.groupByDay,
+      includeNotes: values.includeNotes,
     };
     createInvoiceMutation.mutate(data);
   });
@@ -990,6 +994,17 @@ export default function ProjectDetail() {
               {...invoiceForm.getInputProps('groupByDay', { type: 'checkbox' })}
               data-testid="invoice-groupby-switch"
             />
+            <Tooltip
+              label="When enabled, unique notes from applicable time entries will be appended to invoice line item descriptions"
+              multiline
+              w={300}
+            >
+              <Switch
+                label="Include Notes"
+                {...invoiceForm.getInputProps('includeNotes', { type: 'checkbox' })}
+                data-testid="invoice-include-notes-switch"
+              />
+            </Tooltip>
             <Group justify="flex-end" mt="md">
               <Button variant="default" onClick={closeInvoiceModal}>
                 Cancel

@@ -20,7 +20,8 @@ import {
   calculateDueDate, 
   formatInvoiceNumber, 
   roundToCents, 
-  getCurrentTimestamp 
+  getCurrentTimestamp,
+  aggregateUniqueNotes
 } from '../utils/time.js';
 import { DateTime } from 'luxon';
 
@@ -256,7 +257,7 @@ router.get('/:id/uninvoiced-summary', requireAuth, async (req, res, next) => {
 router.post('/:id/invoices', requireAuth, async (req, res, next) => {
   try {
     const clientId = parseInt(req.params.id);
-    const { dateInvoiced, upToDate, notes, groupByDay = false, projectIds } = 
+    const { dateInvoiced, upToDate, notes, groupByDay = false, includeNotes = true, projectIds } = 
       createClientInvoiceSchema.parse(req.body);
 
     // Verify client exists
@@ -407,12 +408,22 @@ router.post('/:id/invoices', requireAuth, async (req, res, next) => {
 
           for (const [date, { hours, entries }] of Object.entries(groupedByDay)) {
             const amount = roundToCents(hours * project.hourlyRate);
+            
+            // Build description with optional notes
+            let description = `${project.name} - Time entries for ${date}`;
+            if (includeNotes) {
+              const aggregatedNotes = aggregateUniqueNotes(entries);
+              if (aggregatedNotes) {
+                description += ` - ${aggregatedNotes}`;
+              }
+            }
+            
             const [lineItem] = await tx
               .insert(invoiceLineItems)
               .values({
                 invoiceId: newInvoice.id,
                 type: 'time',
-                description: `${project.name} - Time entries for ${date}`,
+                description,
                 quantity: hours,
                 unitPrice: project.hourlyRate,
                 amount,
@@ -438,9 +449,19 @@ router.post('/:id/invoices', requireAuth, async (req, res, next) => {
           // One line per entry
           for (const entry of projectTimeEntries) {
             const date = DateTime.fromISO(entry.startAt, { zone: 'utc' }).toISODate();
-            const description = entry.note 
-              ? `${project.name} - ${date} - ${entry.note}` 
-              : `${project.name} - Time entry - ${date}`;
+            
+            // Build description - includeNotes only affects whether the note is included when it exists
+            let description: string;
+            if (includeNotes && entry.note) {
+              description = `${project.name} - ${date} - ${entry.note}`;
+            } else if (entry.note) {
+              // If includeNotes is false, don't include the note
+              description = `${project.name} - Time entry - ${date}`;
+            } else {
+              // No note to include
+              description = `${project.name} - Time entry - ${date}`;
+            }
+            
             const amount = roundToCents(entry.totalHours * project.hourlyRate);
 
             const [lineItem] = await tx

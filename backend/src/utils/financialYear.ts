@@ -1,6 +1,6 @@
 import { DateTime } from 'luxon';
 
-const TIMEZONE = 'Pacific/Auckland';
+const TIMEZONE = process.env.TZ || 'Pacific/Auckland';
 
 /**
  * Get the start date of the current NZ financial year (April 1)

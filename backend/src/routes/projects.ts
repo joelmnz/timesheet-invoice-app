@@ -4,7 +4,7 @@ import { projects, clients, timeEntries, expenses, invoices, invoiceLineItems, s
 import { eq, and, isNull, count, or, lt, gt, ne, lte, sql, desc } from 'drizzle-orm';
 import { createProjectSchema, updateProjectSchema, stopTimerSchema, updateTimerNotesSchema, createInvoiceSchema } from '../types/validation.js';
 import { requireAuth } from '../middleware/auth.js';
-import { roundUpToSixMinutes, getCurrentTimestamp, calculateDueDate, formatInvoiceNumber, roundToCents } from '../utils/time.js';
+import { roundUpToSixMinutes, getCurrentTimestamp, calculateDueDate, formatInvoiceNumber, roundToCents, aggregateUniqueNotes } from '../utils/time.js';
 import { DateTime } from 'luxon';
 
 const router = Router();
@@ -377,7 +377,7 @@ router.post('/:id/timer/stop', requireAuth, async (req, res, next) => {
 router.post('/:id/invoices', requireAuth, async (req, res, next) => {
   try {
     const projectId = parseInt(req.params.id);
-    const { dateInvoiced, upToDate, notes, groupByDay = false } = createInvoiceSchema.parse(req.body);
+    const { dateInvoiced, upToDate, notes, groupByDay = false, includeNotes = true } = createInvoiceSchema.parse(req.body);
 
     // Get project details
     const [project] = await db
@@ -481,12 +481,22 @@ router.post('/:id/invoices', requireAuth, async (req, res, next) => {
 
         for (const [date, { hours, entries }] of Object.entries(groupedByDay)) {
           const amount = roundToCents(hours * project.hourlyRate);
+          
+          // Build description with optional notes
+          let description = `Time entries for ${date}`;
+          if (includeNotes) {
+            const aggregatedNotes = aggregateUniqueNotes(entries);
+            if (aggregatedNotes) {
+              description += ` - ${aggregatedNotes}`;
+            }
+          }
+          
           const [lineItem] = await tx
             .insert(invoiceLineItems)
             .values({
               invoiceId: newInvoice.id,
               type: 'time',
-              description: `Time entries for ${date}`,
+              description,
               quantity: hours,
               unitPrice: project.hourlyRate,
               amount,
@@ -512,9 +522,19 @@ router.post('/:id/invoices', requireAuth, async (req, res, next) => {
         // One line per entry
         for (const entry of uninvoicedTime) {
           const date = DateTime.fromISO(entry.startAt).toISODate();
-          const description = entry.note 
-            ? `${date} - ${entry.note}` 
-            : `Time entry - ${date}`;
+          
+          // Build description - includeNotes only affects whether the note is included when it exists
+          let description: string;
+          if (includeNotes && entry.note) {
+            description = `${date} - ${entry.note}`;
+          } else if (entry.note) {
+            // If includeNotes is false, don't include the note
+            description = `Time entry - ${date}`;
+          } else {
+            // No note to include
+            description = `Time entry - ${date}`;
+          }
+          
           const amount = roundToCents(entry.totalHours * project.hourlyRate);
 
           const [lineItem] = await tx

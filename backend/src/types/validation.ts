@@ -78,6 +78,7 @@ export const createInvoiceSchema = z.object({
   upToDate: z.string(),
   notes: z.string().optional(),
   groupByDay: z.boolean().optional().default(false),
+  includeNotes: z.boolean().optional().default(true),
 });
 
 // Client-level invoice schema (for creating invoices across multiple projects)
@@ -86,6 +87,7 @@ export const createClientInvoiceSchema = z.object({
   upToDate: z.string(),
   notes: z.string().optional(),
   groupByDay: z.boolean().optional().default(false),
+  includeNotes: z.boolean().optional().default(true),
   projectIds: z.array(z.number().int().positive()).min(1, 'At least one project must be selected'),
 });
 

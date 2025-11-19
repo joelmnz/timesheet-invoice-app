@@ -20,6 +20,7 @@ import {
   Switch,
   Stack,
   Checkbox,
+  Tooltip,
 } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
 import { useForm } from '@mantine/form';
@@ -66,6 +67,7 @@ export default function ClientDetail() {
       upToDate: new Date(),
       notes: '',
       groupByDay: false,
+      includeNotes: true,
     },
   });
 
@@ -115,6 +117,7 @@ export default function ClientDetail() {
       upToDate: string;
       notes?: string;
       groupByDay?: boolean;
+      includeNotes?: boolean;
       projectIds: number[];
     }) => clientsApi.createInvoice(clientId, data),
     onSuccess: (data) => {
@@ -162,6 +165,7 @@ export default function ClientDetail() {
         upToDate: DateTime.fromJSDate(invoiceForm.values.upToDate).toISODate()!,
         notes: invoiceForm.values.notes || undefined,
         groupByDay: invoiceForm.values.groupByDay,
+        includeNotes: invoiceForm.values.includeNotes,
         projectIds: selectedProjectIds,
       });
     } finally {
@@ -406,6 +410,20 @@ export default function ClientDetail() {
               invoiceForm.setFieldValue('groupByDay', e.currentTarget.checked)
             }
           />
+
+          <Tooltip
+            label="When enabled, unique notes from applicable time entries will be appended to invoice line item descriptions"
+            multiline
+            w={300}
+          >
+            <Switch
+              label="Include Notes"
+              checked={invoiceForm.values.includeNotes}
+              onChange={(e) =>
+                invoiceForm.setFieldValue('includeNotes', e.currentTarget.checked)
+              }
+            />
+          </Tooltip>
 
           <TextInput
             label="Notes (optional)"

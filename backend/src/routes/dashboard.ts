@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import { db } from '../db/index.js';
-import { 
-  timeEntries, 
-  expenses, 
-  invoices, 
-  projects, 
-  clients 
+import {
+  timeEntries,
+  expenses,
+  invoices,
+  projects,
+  clients
 } from '../db/schema.js';
 import { eq, and, sql } from 'drizzle-orm';
 import { requireAuth } from '../middleware/auth.js';
@@ -43,6 +43,7 @@ router.get('/summary', requireAuth, async (req, res, next) => {
       .select({
         projectId: expenses.projectId,
         projectName: projects.name,
+        clientId: clients.id,
         clientName: clients.name,
         totalAmount: sql<number>`SUM(${expenses.amount})`,
       })
@@ -55,7 +56,7 @@ router.get('/summary', requireAuth, async (req, res, next) => {
           eq(expenses.isBillable, true)
         )
       )
-      .groupBy(expenses.projectId, projects.name, clients.name);
+      .groupBy(expenses.projectId, projects.name, clients.id, clients.name);
 
     // Outstanding invoices
     const outstandingInvoicesRaw = await db

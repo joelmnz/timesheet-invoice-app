@@ -22,7 +22,7 @@ import { formatCurrency } from '../components/lists/format';
 
 export default function Invoices() {
   const navigate = useNavigate();
-  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<string>('Sent');
   const [clientFilter, setClientFilter] = useState<string>('');
   const [projectFilter, setProjectFilter] = useState<string>('');
   const [fromDate, setFromDate] = useState<Date | null>(null);
@@ -94,7 +94,6 @@ export default function Invoices() {
     label: `${project.name} (${project.client?.name})`,
   })) || [];
 
-  const totalAmount = invoices?.reduce((sum, inv) => sum + inv.total, 0) || 0;
   const draftAmount = invoices?.filter((inv) => inv.status === 'Draft').reduce((sum, inv) => sum + inv.total, 0) || 0;
   const sentAmount = invoices?.filter((inv) => inv.status === 'Sent').reduce((sum, inv) => sum + inv.total, 0) || 0;
   const paidAmount = invoices?.filter((inv) => inv.status === 'Paid').reduce((sum, inv) => sum + inv.total, 0) || 0;
@@ -122,73 +121,95 @@ export default function Invoices() {
             </Button>
           </Group>
         }
-      />
+      >
+        <Group mb="md">
+          <Button
+            variant={statusFilter === '' ? 'filled' : 'light'}
+            onClick={() => setStatusFilter('')}
+          >
+            All
+          </Button>
+          <Button
+            variant={statusFilter === 'Draft' ? 'filled' : 'light'}
+            onClick={() => setStatusFilter('Draft')}
+          >
+            Draft
+          </Button>
+          <Button
+            variant={statusFilter === 'Sent' ? 'filled' : 'light'}
+            onClick={() => setStatusFilter('Sent')}
+          >
+            Sent
+          </Button>
+          <Button
+            variant={statusFilter === 'Paid' ? 'filled' : 'light'}
+            onClick={() => setStatusFilter('Paid')}
+          >
+            Paid
+          </Button>
+          <Button
+            variant={statusFilter === 'Cancelled' ? 'filled' : 'light'}
+            onClick={() => setStatusFilter('Cancelled')}
+          >
+            Cancelled
+          </Button>
+        </Group>
+      </ListHeader>
 
-      {filtersExpanded && (
-        <Card shadow="sm" padding="lg" mb="xl">
-          <Stack gap="md">
-            <Group align="flex-end">
-              <Select
-                label="Status"
-                placeholder="All statuses"
-                data={[
-                  { value: 'Draft', label: 'Draft' },
-                  { value: 'Sent', label: 'Sent' },
-                  { value: 'Paid', label: 'Paid' },
-                  { value: 'Cancelled', label: 'Cancelled' },
-                ]}
-                value={statusFilter}
-                onChange={(value) => setStatusFilter(value || '')}
-                clearable
-                style={{ flex: 1 }}
-              />
-              <Select
-                label="Client"
-                placeholder="All clients"
-                data={clientOptions}
-                value={clientFilter}
-                onChange={(value) => setClientFilter(value || '')}
-                clearable
-                searchable
-                style={{ flex: 1 }}
-              />
-              <Select
-                label="Project"
-                placeholder="All projects"
-                data={projectOptions}
-                value={projectFilter}
-                onChange={(value) => setProjectFilter(value || '')}
-                clearable
-                searchable
-                style={{ flex: 1 }}
-              />
-            </Group>
-            <Group align="flex-end">
-              <DatePickerInput
-                label="From Date"
-                placeholder="Select start date"
-                value={fromDate}
-                onChange={setFromDate}
-                clearable
-                style={{ flex: 1 }}
-              />
-              <DatePickerInput
-                label="To Date"
-                placeholder="Select end date"
-                value={toDate}
-                onChange={setToDate}
-                clearable
-                style={{ flex: 1 }}
-              />
-              {hasActiveFilters && (
-                <Button variant="light" onClick={handleClearFilters}>
-                  Clear Filters
-                </Button>
-              )}
-            </Group>
-          </Stack>
-        </Card>
-      )}
+      {
+        filtersExpanded && (
+          <Card shadow="sm" padding="lg" mb="xl">
+            <Stack gap="md">
+              <Group align="flex-end">
+
+                <Select
+                  label="Client"
+                  placeholder="All clients"
+                  data={clientOptions}
+                  value={clientFilter}
+                  onChange={(value) => setClientFilter(value || '')}
+                  clearable
+                  searchable
+                  style={{ flex: 1 }}
+                />
+                <Select
+                  label="Project"
+                  placeholder="All projects"
+                  data={projectOptions}
+                  value={projectFilter}
+                  onChange={(value) => setProjectFilter(value || '')}
+                  clearable
+                  searchable
+                  style={{ flex: 1 }}
+                />
+              </Group>
+              <Group align="flex-end">
+                <DatePickerInput
+                  label="From Date"
+                  placeholder="Select start date"
+                  value={fromDate}
+                  onChange={setFromDate}
+                  clearable
+                  style={{ flex: 1 }}
+                />
+                <DatePickerInput
+                  label="To Date"
+                  placeholder="Select end date"
+                  value={toDate}
+                  onChange={setToDate}
+                  clearable
+                  style={{ flex: 1 }}
+                />
+                {hasActiveFilters && (
+                  <Button variant="light" onClick={handleClearFilters}>
+                    Clear Filters
+                  </Button>
+                )}
+              </Group>
+            </Stack>
+          </Card>
+        )
+      }
 
       <Group mb="md" justify="space-between">
         <Group>
@@ -229,16 +250,18 @@ export default function Invoices() {
           }
         }}
       />
-      {invoicesResponse && (
-        <Pagination
-          pagination={invoicesResponse.pagination}
-          onPageChange={(newPage) => setPage(newPage)}
-          onPageSizeChange={(size) => {
-            setPageSize(size);
-            setPage(1);
-          }}
-        />
-      )}
-    </Container>
+      {
+        invoicesResponse && (
+          <Pagination
+            pagination={invoicesResponse.pagination}
+            onPageChange={(newPage) => setPage(newPage)}
+            onPageSizeChange={(size) => {
+              setPageSize(size);
+              setPage(1);
+            }}
+          />
+        )
+      }
+    </Container >
   );
 }

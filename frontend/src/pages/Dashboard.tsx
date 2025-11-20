@@ -92,48 +92,48 @@ export default function Dashboard() {
     total: number;
     daysOverdue: number;
   }>[] = [
-    {
-      key: 'number',
-      title: 'Invoice #',
-      render: (invoice) => (
-        <Anchor component={Link} to={`/invoices/${invoice.id}`} fw={600}>
-          {invoice.number}
-        </Anchor>
-      ),
-    },
-    {
-      key: 'dateInvoiced',
-      title: 'Date',
-      render: (invoice) => invoice.dateInvoiced,
-    },
-    {
-      key: 'dueDate',
-      title: 'Due Date',
-      render: (invoice) => invoice.dueDate,
-    },
-    {
-      key: 'clientName',
-      title: 'Client',
-      render: (invoice: any) => invoice.clientName,
-    },
-    {
-      key: 'total',
-      title: 'Amount',
-      align: 'right' as const,
-      render: (invoice) => formatCurrency(invoice.total),
-    },
-    {
-      key: 'daysOverdue',
-      title: 'Days Overdue',
-      align: 'center' as const,
-      render: (invoice: any) =>
-        invoice.daysOverdue > 0 ? (
-          <Badge color="red">{invoice.daysOverdue}</Badge>
-        ) : (
-          <Text c="dimmed">-</Text>
+      {
+        key: 'number',
+        title: 'Invoice #',
+        render: (invoice) => (
+          <Anchor component={Link} to={`/invoices/${invoice.id}`} fw={600}>
+            {invoice.number}
+          </Anchor>
         ),
-    },
-  ];
+      },
+      {
+        key: 'dateInvoiced',
+        title: 'Date',
+        render: (invoice) => invoice.dateInvoiced,
+      },
+      {
+        key: 'dueDate',
+        title: 'Due Date',
+        render: (invoice) => invoice.dueDate,
+      },
+      {
+        key: 'clientName',
+        title: 'Client',
+        render: (invoice: any) => invoice.clientName,
+      },
+      {
+        key: 'total',
+        title: 'Amount',
+        align: 'right' as const,
+        render: (invoice) => formatCurrency(invoice.total),
+      },
+      {
+        key: 'daysOverdue',
+        title: 'Days Overdue',
+        align: 'center' as const,
+        render: (invoice: any) =>
+          invoice.daysOverdue > 0 ? (
+            <Badge color="red">{invoice.daysOverdue}</Badge>
+          ) : (
+            <Text c="dimmed">-</Text>
+          ),
+      },
+    ];
 
   if (summaryLoading || invoicedLoading || hoursLoading) {
     return (
@@ -212,7 +212,7 @@ export default function Dashboard() {
             />
           </Card>
         </Grid.Col>
-      
+
         {/* Uninvoiced Hours */}
         <Grid.Col span={{ base: 12, md: 6 }}>
           <Card shadow="sm" padding="lg">
@@ -288,8 +288,16 @@ export default function Dashboard() {
                 <Table.Tbody>
                   {summary?.uninvoicedExpensesByProject.map((row) => (
                     <Table.Tr key={row.projectId}>
-                      <Table.Td>{row.clientName}</Table.Td>
-                      <Table.Td>{row.projectName}</Table.Td>
+                      <Table.Td>
+                        <Anchor component={Link} to={`/clients/${row.clientId}`}>
+                          {row.clientName}
+                        </Anchor>
+                      </Table.Td>
+                      <Table.Td>
+                        <Anchor component={Link} to={`/projects/${row.projectId}`}>
+                          {row.projectName}
+                        </Anchor>
+                      </Table.Td>
                       <Table.Td ta="right">NZD {row.totalAmount.toFixed(2)}</Table.Td>
                     </Table.Tr>
                   ))}
@@ -309,18 +317,36 @@ export default function Dashboard() {
               rows={summary?.outstandingInvoices || []}
               emptyState="No outstanding invoices"
               getRowKey={(invoice) => invoice.id}
+              footer={
+                summary?.outstandingInvoices && summary.outstandingInvoices.length > 0 ? (
+                  <Table.Tr>
+                    <Table.Td colSpan={4} fw={700}>
+                      Total
+                    </Table.Td>
+                    <Table.Td ta="right" fw={700}>
+                      {formatCurrency(
+                        summary.outstandingInvoices.reduce(
+                          (sum, invoice) => sum + invoice.total,
+                          0
+                        )
+                      )}
+                    </Table.Td>
+                    <Table.Td />
+                  </Table.Tr>
+                ) : undefined
+              }
             />
           </Card>
         </Grid.Col>
 
         {/* Charts */}
         <Grid.Col span={{ base: 12, md: 6 }}>
-            <Card shadow="sm" padding="lg">
-              <Title order={3} mb="md">
-                Invoiced Amount (Last 12 Months)
-              </Title>
-              <Bar options={chartOptions} data={invoicedChartData} />
-            </Card>
+          <Card shadow="sm" padding="lg">
+            <Title order={3} mb="md">
+              Invoiced Amount (Last 12 Months)
+            </Title>
+            <Bar options={chartOptions} data={invoicedChartData} />
+          </Card>
         </Grid.Col>
 
         <Grid.Col span={{ base: 12, md: 6 }}>

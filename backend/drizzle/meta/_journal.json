@@ -15,6 +15,13 @@
       "when": 1762163705988,
       "tag": "0001_secret_rawhide_kid",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1763580773990,
+      "tag": "0002_whole_vertigo",
+      "breakpoints": true
     }
   ]
 }

@@ -30,6 +30,15 @@ describe("Clients Routes", () => {
       expect(res.body.updatedAt).toBeDefined();
     });
 
+    test("should create client with invoiceEmail", async () => {
+      const clientData = createTestClientData();
+      clientData.invoiceEmail = "billing@example.com";
+      const res = await agent.post("/api/clients").send(clientData);
+
+      expect(res.status).toBe(201);
+      expect(res.body.invoiceEmail).toBe("billing@example.com");
+    });
+
     test("should create client with minimal fields", async () => {
       const res = await agent.post("/api/clients").send({ name: "Minimal Client" });
 
@@ -51,7 +60,7 @@ describe("Clients Routes", () => {
     });
 
     test("should reject invalid email", async () => {
-      const res = await agent.post("/api/clients").send({ 
+      const res = await agent.post("/api/clients").send({
         name: "Test",
         email: "not-an-email"
       });
@@ -60,7 +69,7 @@ describe("Clients Routes", () => {
     });
 
     test("should accept empty email", async () => {
-      const res = await agent.post("/api/clients").send({ 
+      const res = await agent.post("/api/clients").send({
         name: "Test Empty Email",
         email: ""
       });
@@ -70,7 +79,7 @@ describe("Clients Routes", () => {
     });
 
     test("should reject negative defaultHourlyRate", async () => {
-      const res = await agent.post("/api/clients").send({ 
+      const res = await agent.post("/api/clients").send({
         name: "Test",
         defaultHourlyRate: -10
       });
@@ -79,7 +88,7 @@ describe("Clients Routes", () => {
     });
 
     test("should accept zero defaultHourlyRate", async () => {
-      const res = await agent.post("/api/clients").send({ 
+      const res = await agent.post("/api/clients").send({
         name: "Test Zero Rate",
         defaultHourlyRate: 0
       });
@@ -132,7 +141,7 @@ describe("Clients Routes", () => {
 
     test("should search by email", async () => {
       const uniqueEmail = `search${Date.now()}@test.com`;
-      await agent.post("/api/clients").send({ 
+      await agent.post("/api/clients").send({
         name: "Search Client",
         email: uniqueEmail
       });
@@ -146,7 +155,7 @@ describe("Clients Routes", () => {
 
     test("should search by contact person", async () => {
       const uniqueContact = `Contact-${Date.now()}`;
-      await agent.post("/api/clients").send({ 
+      await agent.post("/api/clients").send({
         name: "Search Client",
         contactPerson: uniqueContact
       });
@@ -212,7 +221,7 @@ describe("Clients Routes", () => {
     });
 
     test("should update partial fields", async () => {
-      const created = await agent.post("/api/clients").send({ 
+      const created = await agent.post("/api/clients").send({
         name: "Partial Update Test",
         email: "original@test.com"
       });

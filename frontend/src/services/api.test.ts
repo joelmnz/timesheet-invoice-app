@@ -105,7 +105,7 @@ describe('API Service Path Validation', () => {
     it('should call GET /api/projects', async () => {
       await projectsApi.list();
       expect(fetchMock).toHaveBeenCalledWith(
-        '/api/projects?active=all',
+        '/api/projects?active=all&page=1&page_size=25',
         expect.any(Object)
       );
     });
@@ -144,7 +144,7 @@ describe('API Service Path Validation', () => {
     it('should call GET /api/projects/:projectId/time-entries', async () => {
       await timeEntriesApi.list(1);
       expect(fetchMock).toHaveBeenCalledWith(
-        '/api/projects/1/time-entries',
+        '/api/projects/1/time-entries?page=1&page_size=25',
         expect.any(Object)
       );
     });
@@ -178,7 +178,7 @@ describe('API Service Path Validation', () => {
     it('should call GET /api/projects/:projectId/expenses', async () => {
       await expensesApi.list(1);
       expect(fetchMock).toHaveBeenCalledWith(
-        '/api/projects/1/expenses',
+        '/api/projects/1/expenses?page=1&page_size=25',
         expect.any(Object)
       );
     });

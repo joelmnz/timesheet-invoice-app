@@ -53,6 +53,11 @@ export function ClientList({
       render: (client) => client.email || '-',
     },
     {
+      key: 'invoiceEmail',
+      title: 'Invoice Email',
+      render: (client) => client.invoiceEmail || '-',
+    },
+    {
       key: 'defaultRate',
       title: 'Default Rate',
       align: 'right',

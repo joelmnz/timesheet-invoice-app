@@ -16,6 +16,7 @@ export interface Client {
   name: string;
   address?: string;
   email?: string;
+  invoiceEmail?: string;
   contactPerson?: string;
   defaultHourlyRate: number;
   notes?: string;
@@ -108,6 +109,7 @@ export interface DashboardSummary {
   uninvoicedExpensesByProject: Array<{
     projectId: number;
     projectName: string;
+    clientId: number;
     clientName: string;
     totalAmount: number;
   }>;

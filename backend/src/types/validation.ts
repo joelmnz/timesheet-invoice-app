@@ -21,6 +21,7 @@ export const createClientSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   address: z.string().optional(),
   email: z.string().email().or(z.literal('')).optional(),
+  invoiceEmail: z.string().email().or(z.literal('')).optional(),
   contactPerson: z.string().optional(),
   defaultHourlyRate: z.number().min(0).default(0),
   notes: z.string().optional(),

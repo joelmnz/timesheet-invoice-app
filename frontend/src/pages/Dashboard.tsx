@@ -298,9 +298,22 @@ export default function Dashboard() {
                           {row.projectName}
                         </Anchor>
                       </Table.Td>
-                      <Table.Td ta="right">NZD {row.totalAmount.toFixed(2)}</Table.Td>
+                      <Table.Td ta="right">{formatCurrency(row.totalAmount)}</Table.Td>
                     </Table.Tr>
                   ))}
+                  <Table.Tr>
+                    <Table.Td colSpan={2} fw={700}>
+                      Total
+                    </Table.Td>
+                    <Table.Td ta="right" fw={700}>
+                      {formatCurrency(
+                        summary?.uninvoicedExpensesByProject.reduce(
+                          (sum, row) => sum + row.totalAmount,
+                          0
+                        ) || 0
+                      )}
+                    </Table.Td>
+                  </Table.Tr>
                 </Table.Tbody>
               </Table>
             )}

@@ -121,7 +121,7 @@ export default function ProjectDetail() {
     validate: {
       name: (value) => (value.trim().length === 0 ? 'Name is required' : null),
       clientId: (value) => (!value ? 'Client is required' : null),
-      hourlyRate: (value) => (value <= 0 ? 'Hourly rate must be greater than 0' : null),
+      hourlyRate: (value) => (value < 0 ? 'Hourly rate must be negative' : null),
     },
   });
 

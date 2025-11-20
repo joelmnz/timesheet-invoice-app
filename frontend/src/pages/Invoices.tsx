@@ -262,6 +262,6 @@ export default function Invoices() {
           />
         )
       }
-    </Container >
+    </Container>
   );
 }

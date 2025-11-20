@@ -698,6 +698,6 @@ export default function InvoiceDetail() {
           </Stack>
         </form>
       </Modal>
-    </Container >
+    </Container>
   );
 }

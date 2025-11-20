@@ -20,6 +20,7 @@ export const clients = sqliteTable('clients', {
   name: text('name').notNull(),
   address: text('address'),
   email: text('email'),
+  invoiceEmail: text('invoice_email'),
   contactPerson: text('contact_person'),
   defaultHourlyRate: real('default_hourly_rate').notNull().default(0),
   notes: text('notes'),

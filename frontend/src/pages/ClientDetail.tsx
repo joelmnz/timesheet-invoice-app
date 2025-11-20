@@ -66,7 +66,7 @@ export default function ClientDetail() {
       dateInvoiced: new Date(),
       upToDate: new Date(),
       notes: '',
-      groupByDay: false,
+      groupByDay: true,
       includeNotes: true,
     },
   });
@@ -229,233 +229,233 @@ export default function ClientDetail() {
             </Button>
           </Group>
         </Group>
-      <Modal
-        opened={addProjectOpen}
-        onClose={() => setAddProjectOpen(false)}
-        title="Add New Project"
-        centered
-      >
-        <Stack>
-          <TextInput
-            label="Project Name"
-            placeholder="Enter project name"
-            value={projectName}
-            onChange={e => setProjectName(e.currentTarget.value)}
-            required
-          />
-          <NumberInput
-            label="Hourly Rate (NZD)"
-            value={hourlyRate}
-            onChange={val => setHourlyRate(Number(val))}
-            min={0}
-            required
-          />
-          <Switch
-            label="Active"
-            checked={active}
-            onChange={e => setActive(e.currentTarget.checked)}
-          />
-          {error && <Text c="red" size="sm">{error}</Text>}
-          <Group justify="flex-end">
-            <Button variant="default" onClick={() => setAddProjectOpen(false)} disabled={creating}>Cancel</Button>
-            <Button
-              variant="filled"
-              color="green"
-              loading={creating}
-              onClick={async () => {
-                setCreating(true);
-                setError(null);
-                try {
-                  // Call API to create project
-                  await projectsApi.create({
-                    clientId,
-                    name: projectName,
-                    hourlyRate,
-                    active,
-                  });
-                  setAddProjectOpen(false);
-                  setProjectName('');
-                  setHourlyRate(client?.defaultHourlyRate || 0);
-                  setActive(true);
-                  // Optionally, refetch projects list
-                  if (typeof window !== 'undefined' && window.location) {
-                    window.location.reload(); // simple way to refresh
+        <Modal
+          opened={addProjectOpen}
+          onClose={() => setAddProjectOpen(false)}
+          title="Add New Project"
+          centered
+        >
+          <Stack>
+            <TextInput
+              label="Project Name"
+              placeholder="Enter project name"
+              value={projectName}
+              onChange={e => setProjectName(e.currentTarget.value)}
+              required
+            />
+            <NumberInput
+              label="Hourly Rate (NZD)"
+              value={hourlyRate}
+              onChange={val => setHourlyRate(Number(val))}
+              min={0}
+              required
+            />
+            <Switch
+              label="Active"
+              checked={active}
+              onChange={e => setActive(e.currentTarget.checked)}
+            />
+            {error && <Text c="red" size="sm">{error}</Text>}
+            <Group justify="flex-end">
+              <Button variant="default" onClick={() => setAddProjectOpen(false)} disabled={creating}>Cancel</Button>
+              <Button
+                variant="filled"
+                color="green"
+                loading={creating}
+                onClick={async () => {
+                  setCreating(true);
+                  setError(null);
+                  try {
+                    // Call API to create project
+                    await projectsApi.create({
+                      clientId,
+                      name: projectName,
+                      hourlyRate,
+                      active,
+                    });
+                    setAddProjectOpen(false);
+                    setProjectName('');
+                    setHourlyRate(client?.defaultHourlyRate || 0);
+                    setActive(true);
+                    // Optionally, refetch projects list
+                    if (typeof window !== 'undefined' && window.location) {
+                      window.location.reload(); // simple way to refresh
+                    }
+                  } catch (err: any) {
+                    setError(err?.message || 'Failed to create project');
+                  } finally {
+                    setCreating(false);
                   }
-                } catch (err: any) {
-                  setError(err?.message || 'Failed to create project');
-                } finally {
-                  setCreating(false);
-                }
-              }}
-              disabled={!projectName || hourlyRate <= 0}
-            >
-              Create Project
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
+                }}
+                disabled={!projectName || hourlyRate <= 0}
+              >
+                Create Project
+              </Button>
+            </Group>
+          </Stack>
+        </Modal>
 
-      {/* Create Invoice Modal */}
-      <Modal
-        opened={invoiceModalOpen}
-        onClose={() => {
-          setInvoiceModalOpen(false);
-          setSelectedProjectIds([]);
-          invoiceForm.reset();
-        }}
-        title="Create Invoice for Client"
-        size="xl"
-        centered
-      >
-        <Stack>
-          <DatePickerInput
-            label="Invoice Date"
-            placeholder="Select date"
-            value={invoiceForm.values.dateInvoiced}
-            onChange={(val) => invoiceForm.setFieldValue('dateInvoiced', val || new Date())}
-            required
-          />
-          <DatePickerInput
-            label="Include Items Up To"
-            placeholder="Select date"
-            value={invoiceForm.values.upToDate}
-            onChange={(val) => invoiceForm.setFieldValue('upToDate', val || new Date())}
-            required
-          />
+        {/* Create Invoice Modal */}
+        <Modal
+          opened={invoiceModalOpen}
+          onClose={() => {
+            setInvoiceModalOpen(false);
+            setSelectedProjectIds([]);
+            invoiceForm.reset();
+          }}
+          title="Create Invoice for Client"
+          size="xl"
+          centered
+        >
+          <Stack>
+            <DatePickerInput
+              label="Invoice Date"
+              placeholder="Select date"
+              value={invoiceForm.values.dateInvoiced}
+              onChange={(val) => invoiceForm.setFieldValue('dateInvoiced', val || new Date())}
+              required
+            />
+            <DatePickerInput
+              label="Include Items Up To"
+              placeholder="Select date"
+              value={invoiceForm.values.upToDate}
+              onChange={(val) => invoiceForm.setFieldValue('upToDate', val || new Date())}
+              required
+            />
 
-          {summaryLoading ? (
-            <Center h={100}>
-              <Loader size="sm" />
-            </Center>
-          ) : projectsWithUninvoiced.length === 0 ? (
-            <Text c="dimmed" ta="center">
-              No uninvoiced items found for this client.
-            </Text>
-          ) : (
-            <>
-              <Text fw={500} size="sm">Select Projects to Include:</Text>
-              <Table striped highlightOnHover>
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th w={40}>
-                      <Checkbox
-                        checked={selectedProjectIds.length === projectsWithUninvoiced.length}
-                        indeterminate={
-                          selectedProjectIds.length > 0 &&
-                          selectedProjectIds.length < projectsWithUninvoiced.length
-                        }
-                        onChange={(e) => {
-                          if (e.currentTarget.checked) {
-                            setSelectedProjectIds(projectsWithUninvoiced.map(p => p.projectId));
-                          } else {
-                            setSelectedProjectIds([]);
-                          }
-                        }}
-                      />
-                    </Table.Th>
-                    <Table.Th>Project</Table.Th>
-                    <Table.Th ta="right">Hours</Table.Th>
-                    <Table.Th ta="right">Time Amount</Table.Th>
-                    <Table.Th ta="right">Expenses</Table.Th>
-                    <Table.Th ta="right">Total</Table.Th>
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {projectsWithUninvoiced.map((project) => (
-                    <Table.Tr key={project.projectId}>
-                      <Table.Td>
+            {summaryLoading ? (
+              <Center h={100}>
+                <Loader size="sm" />
+              </Center>
+            ) : projectsWithUninvoiced.length === 0 ? (
+              <Text c="dimmed" ta="center">
+                No uninvoiced items found for this client.
+              </Text>
+            ) : (
+              <>
+                <Text fw={500} size="sm">Select Projects to Include:</Text>
+                <Table striped highlightOnHover>
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th w={40}>
                         <Checkbox
-                          checked={selectedProjectIds.includes(project.projectId)}
+                          checked={selectedProjectIds.length === projectsWithUninvoiced.length}
+                          indeterminate={
+                            selectedProjectIds.length > 0 &&
+                            selectedProjectIds.length < projectsWithUninvoiced.length
+                          }
                           onChange={(e) => {
                             if (e.currentTarget.checked) {
-                              setSelectedProjectIds([...selectedProjectIds, project.projectId]);
+                              setSelectedProjectIds(projectsWithUninvoiced.map(p => p.projectId));
                             } else {
-                              setSelectedProjectIds(
-                                selectedProjectIds.filter(id => id !== project.projectId)
-                              );
+                              setSelectedProjectIds([]);
                             }
                           }}
                         />
+                      </Table.Th>
+                      <Table.Th>Project</Table.Th>
+                      <Table.Th ta="right">Hours</Table.Th>
+                      <Table.Th ta="right">Time Amount</Table.Th>
+                      <Table.Th ta="right">Expenses</Table.Th>
+                      <Table.Th ta="right">Total</Table.Th>
+                    </Table.Tr>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {projectsWithUninvoiced.map((project) => (
+                      <Table.Tr key={project.projectId}>
+                        <Table.Td>
+                          <Checkbox
+                            checked={selectedProjectIds.includes(project.projectId)}
+                            onChange={(e) => {
+                              if (e.currentTarget.checked) {
+                                setSelectedProjectIds([...selectedProjectIds, project.projectId]);
+                              } else {
+                                setSelectedProjectIds(
+                                  selectedProjectIds.filter(id => id !== project.projectId)
+                                );
+                              }
+                            }}
+                          />
+                        </Table.Td>
+                        <Table.Td>{project.projectName}</Table.Td>
+                        <Table.Td ta="right">{project.uninvoicedHours.toFixed(2)}</Table.Td>
+                        <Table.Td ta="right">NZD {project.timeAmount.toFixed(2)}</Table.Td>
+                        <Table.Td ta="right">NZD {project.expenseAmount.toFixed(2)}</Table.Td>
+                        <Table.Td ta="right" fw={600}>
+                          NZD {project.totalAmount.toFixed(2)}
+                        </Table.Td>
+                      </Table.Tr>
+                    ))}
+                    <Table.Tr>
+                      <Table.Td colSpan={5} ta="right" fw={600}>
+                        Selected Total:
                       </Table.Td>
-                      <Table.Td>{project.projectName}</Table.Td>
-                      <Table.Td ta="right">{project.uninvoicedHours.toFixed(2)}</Table.Td>
-                      <Table.Td ta="right">NZD {project.timeAmount.toFixed(2)}</Table.Td>
-                      <Table.Td ta="right">NZD {project.expenseAmount.toFixed(2)}</Table.Td>
-                      <Table.Td ta="right" fw={600}>
-                        NZD {project.totalAmount.toFixed(2)}
+                      <Table.Td ta="right" fw={700}>
+                        NZD{' '}
+                        {projectsWithUninvoiced
+                          .filter(p => selectedProjectIds.includes(p.projectId))
+                          .reduce((sum, p) => sum + p.totalAmount, 0)
+                          .toFixed(2)}
                       </Table.Td>
                     </Table.Tr>
-                  ))}
-                  <Table.Tr>
-                    <Table.Td colSpan={5} ta="right" fw={600}>
-                      Selected Total:
-                    </Table.Td>
-                    <Table.Td ta="right" fw={700}>
-                      NZD{' '}
-                      {projectsWithUninvoiced
-                        .filter(p => selectedProjectIds.includes(p.projectId))
-                        .reduce((sum, p) => sum + p.totalAmount, 0)
-                        .toFixed(2)}
-                    </Table.Td>
-                  </Table.Tr>
-                </Table.Tbody>
-              </Table>
-            </>
-          )}
+                  </Table.Tbody>
+                </Table>
+              </>
+            )}
 
-          <Switch
-            label="Group time entries by day"
-            checked={invoiceForm.values.groupByDay}
-            onChange={(e) =>
-              invoiceForm.setFieldValue('groupByDay', e.currentTarget.checked)
-            }
-          />
-
-          <Tooltip
-            label="When enabled, unique notes from applicable time entries will be appended to invoice line item descriptions"
-            multiline
-            w={300}
-          >
             <Switch
-              label="Include Notes"
-              checked={invoiceForm.values.includeNotes}
+              label="Group time entries by day"
+              checked={invoiceForm.values.groupByDay}
               onChange={(e) =>
-                invoiceForm.setFieldValue('includeNotes', e.currentTarget.checked)
+                invoiceForm.setFieldValue('groupByDay', e.currentTarget.checked)
               }
             />
-          </Tooltip>
 
-          <TextInput
-            label="Notes (optional)"
-            placeholder="Add notes to the invoice"
-            value={invoiceForm.values.notes}
-            onChange={(e) => invoiceForm.setFieldValue('notes', e.currentTarget.value)}
-          />
+            <Tooltip
+              label="When enabled, unique notes from applicable time entries will be appended to invoice line item descriptions"
+              multiline
+              w={300}
+            >
+              <Switch
+                label="Include Notes"
+                checked={invoiceForm.values.includeNotes}
+                onChange={(e) =>
+                  invoiceForm.setFieldValue('includeNotes', e.currentTarget.checked)
+                }
+              />
+            </Tooltip>
 
-          <Group justify="flex-end">
-            <Button
-              variant="default"
-              onClick={() => {
-                setInvoiceModalOpen(false);
-                setSelectedProjectIds([]);
-                invoiceForm.reset();
-              }}
-              disabled={creatingInvoice}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="filled"
-              color="blue"
-              loading={creatingInvoice}
-              onClick={handleCreateInvoice}
-              disabled={selectedProjectIds.length === 0 || projectsWithUninvoiced.length === 0}
-            >
-              Create Invoice
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
+            <TextInput
+              label="Notes (optional)"
+              placeholder="Add notes to the invoice"
+              value={invoiceForm.values.notes}
+              onChange={(e) => invoiceForm.setFieldValue('notes', e.currentTarget.value)}
+            />
+
+            <Group justify="flex-end">
+              <Button
+                variant="default"
+                onClick={() => {
+                  setInvoiceModalOpen(false);
+                  setSelectedProjectIds([]);
+                  invoiceForm.reset();
+                }}
+                disabled={creatingInvoice}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="filled"
+                color="blue"
+                loading={creatingInvoice}
+                onClick={handleCreateInvoice}
+                disabled={selectedProjectIds.length === 0 || projectsWithUninvoiced.length === 0}
+              >
+                Create Invoice
+              </Button>
+            </Group>
+          </Stack>
+        </Modal>
 
         <Group gap="xl">
           {client.contactPerson && (
@@ -468,6 +468,12 @@ export default function ClientDetail() {
             <div>
               <Text size="sm" c="dimmed">Email</Text>
               <Text>{client.email}</Text>
+            </div>
+          )}
+          {client.invoiceEmail && (
+            <div>
+              <Text size="sm" c="dimmed">Invoice Email</Text>
+              <Text>{client.invoiceEmail}</Text>
             </div>
           )}
           <div>
@@ -514,10 +520,10 @@ export default function ClientDetail() {
             {projects.map((project) => (
               <Table.Tr key={project.id}>
                 <Table.Td>
-  <Anchor component={Link} to={`/projects/${project.id}`} fw={600}>
-    {project.name}
-  </Anchor>
-</Table.Td>
+                  <Anchor component={Link} to={`/projects/${project.id}`} fw={600}>
+                    {project.name}
+                  </Anchor>
+                </Table.Td>
                 <Table.Td ta="right">NZD {project.hourlyRate.toFixed(2)}/hr</Table.Td>
                 <Table.Td ta="center">
                   <Badge color={project.active ? 'green' : 'gray'}>
@@ -566,10 +572,10 @@ export default function ClientDetail() {
             {invoices.map((invoice) => (
               <Table.Tr key={invoice.id}>
                 <Table.Td>
-  <Anchor component={Link} to={`/invoices/${invoice.id}`} fw={600}>
-    {invoice.number}
-  </Anchor>
-</Table.Td>
+                  <Anchor component={Link} to={`/invoices/${invoice.id}`} fw={600}>
+                    {invoice.number}
+                  </Anchor>
+                </Table.Td>
                 <Table.Td>{invoice.dateInvoiced}</Table.Td>
                 <Table.Td>{invoice.dueDate}</Table.Td>
                 <Table.Td ta="right">NZD {invoice.total.toFixed(2)}</Table.Td>

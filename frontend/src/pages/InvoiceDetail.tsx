@@ -212,8 +212,8 @@ export default function InvoiceDetail() {
       dateInvoiced: DateTime.fromJSDate(values.dateInvoiced).toISODate() || '',
       dueDate: DateTime.fromJSDate(values.dueDate).toISODate() || '',
       status: values.status,
-      dateSent: values.dateSent ? DateTime.fromJSDate(values.dateSent).toISODate() || null : null,
-      datePaid: values.datePaid ? DateTime.fromJSDate(values.datePaid).toISODate() || null : null,
+      dateSent: values.dateSent ? DateTime.fromJSDate(values.dateSent).toISODate() || undefined : undefined,
+      datePaid: values.datePaid ? DateTime.fromJSDate(values.datePaid).toISODate() || undefined : undefined,
       notes: values.notes || undefined,
     };
     updateInvoiceMutation.mutate({ id: invoiceId, data });
@@ -327,18 +327,34 @@ export default function InvoiceDetail() {
         <Group justify="space-between" mb="md">
           <div>
             <Title order={1}>Invoice {invoice.number}</Title>
-            <Text size="lg" c="dimmed" mt="xs">
+            <Text size="xl" c="dimmed">
               {invoice.client?.name} • {invoice.project?.name}
+            </Text>
+            <Text size="sm" c="dimmed" mt={4}>
+              Send to: {' '}
+              {invoice.client?.invoiceEmail ? (
+                <a href={`mailto:${invoice.client.invoiceEmail}`} style={{ color: 'inherit', textDecoration: 'underline' }}>
+                  {invoice.client.invoiceEmail}
+                </a>
+              ) : invoice.client?.email ? (
+                <a href={`mailto:${invoice.client.email}`} style={{ color: 'inherit', textDecoration: 'underline' }}>
+                  {invoice.client.email}
+                </a>
+              ) : (
+                <Text span c="red.5" fs="italic">
+                  This client has no email addresses setup
+                </Text>
+              )}
             </Text>
           </div>
           <Group>
-            <Badge 
+            <Badge
               color={
                 invoice.status === 'Draft' ? 'gray' :
-                invoice.status === 'Sent' ? 'orange' :
-                invoice.status === 'Paid' ? 'green' :
-                'red'
-              } 
+                  invoice.status === 'Sent' ? 'orange' :
+                    invoice.status === 'Paid' ? 'green' :
+                      'red'
+              }
               size="lg"
             >
               {invoice.status}
@@ -440,8 +456,8 @@ export default function InvoiceDetail() {
       <Card shadow="sm" padding="lg">
         <Group justify="space-between" mb="md">
           <Title order={3}>Line Items</Title>
-          <Button 
-            leftSection={<IconPlus size={16} />} 
+          <Button
+            leftSection={<IconPlus size={16} />}
             onClick={handleOpenCreateLineModal}
             disabled={invoice.status !== 'Draft'}
           >

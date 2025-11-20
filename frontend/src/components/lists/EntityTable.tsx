@@ -16,6 +16,7 @@ interface EntityTableProps<T> {
   emptyState?: ReactNode;
   getRowKey: (row: T) => string | number;
   onRowClick?: (row: T) => void;
+  footer?: ReactNode;
 }
 
 export function EntityTable<T>({
@@ -25,6 +26,7 @@ export function EntityTable<T>({
   emptyState,
   getRowKey,
   onRowClick,
+  footer,
 }: EntityTableProps<T>) {
   if (loading) {
     return (
@@ -68,6 +70,7 @@ export function EntityTable<T>({
           </Table.Tr>
         ))}
       </Table.Tbody>
+      {footer && <Table.Tfoot>{footer}</Table.Tfoot>}
     </Table>
   );
 }

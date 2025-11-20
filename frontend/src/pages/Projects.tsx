@@ -59,7 +59,7 @@ export default function Projects() {
     validate: {
       name: (value) => (!value ? 'Name is required' : null),
       clientId: (value) => (!value ? 'Client is required' : null),
-      hourlyRate: (value) => (value <= 0 ? 'Hourly rate must be greater than 0' : null),
+      hourlyRate: (value) => (value < 0 ? 'Hourly rate must be non-negative' : null),
     },
   });
 

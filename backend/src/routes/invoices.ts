@@ -1,27 +1,27 @@
 import { Router } from 'express';
 import { db } from '../db/index.js';
-import { 
-  invoices, 
-  invoiceLineItems, 
-  timeEntries, 
-  expenses, 
-  projects, 
-  clients, 
-  settings 
+import {
+  invoices,
+  invoiceLineItems,
+  timeEntries,
+  expenses,
+  projects,
+  clients,
+  settings
 } from '../db/schema.js';
 import { eq, and, lte, sql, count } from 'drizzle-orm';
-import { 
-  createInvoiceSchema, 
+import {
+  createInvoiceSchema,
   updateInvoiceSchema,
   createInvoiceLineItemSchema,
-  updateInvoiceLineItemSchema 
+  updateInvoiceLineItemSchema
 } from '../types/validation.js';
 import { requireAuth } from '../middleware/auth.js';
-import { 
-  calculateDueDate, 
-  formatInvoiceNumber, 
-  roundToCents, 
-  getCurrentTimestamp 
+import {
+  calculateDueDate,
+  formatInvoiceNumber,
+  roundToCents,
+  getCurrentTimestamp
 } from '../utils/time.js';
 import { generateInvoicePdf } from '../services/pdf.js';
 import { DateTime } from 'luxon';
@@ -164,11 +164,12 @@ router.put('/:id', requireAuth, async (req, res, next) => {
     }
 
     // Enforce locking rules: only allow notes, status, dateSent, and datePaid changes for non-Draft invoices
-    if (['Sent', 'Paid', 'Cancelled'].includes(currentInvoice.status)) {
+    // UNLESS we are reverting to Draft status, in which case we allow full editing (unlocking)
+    if (['Sent', 'Paid', 'Cancelled'].includes(currentInvoice.status) && data.status !== 'Draft') {
       const allowedFields = ['notes', 'status', 'dateSent', 'datePaid'];
       const providedFields = Object.keys(data);
       const invalidFields = providedFields.filter(f => !allowedFields.includes(f));
-      
+
       if (invalidFields.length > 0) {
         return res.status(409).json({
           error: `Cannot modify ${invalidFields.join(', ')} for invoices with status ${currentInvoice.status}. Only notes, status, dateSent, and datePaid can be updated.`,

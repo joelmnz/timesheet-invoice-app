@@ -65,7 +65,7 @@ export default function ProjectDetail() {
   const [deleteExpenseModalOpened, { open: openDeleteExpenseModal, close: closeDeleteExpenseModal }] = useDisclosure(false);
   const [editProjectModalOpened, { open: openEditProjectModal, close: closeEditProjectModal }] = useDisclosure(false);
   const [notesModalOpened, { open: openNotesModal, close: closeNotesModal }] = useDisclosure(false);
-  
+
   const [editingTimeEntry, setEditingTimeEntry] = useState<TimeEntry | null>(null);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [deletingTimeEntry, setDeletingTimeEntry] = useState<TimeEntry | null>(null);
@@ -121,7 +121,7 @@ export default function ProjectDetail() {
     validate: {
       name: (value) => (value.trim().length === 0 ? 'Name is required' : null),
       clientId: (value) => (!value ? 'Client is required' : null),
-      hourlyRate: (value) => (value <= 0 ? 'Hourly rate must be greater than 0' : null),
+      hourlyRate: (value) => (value < 0 ? 'Hourly rate must be negative' : null),
     },
   });
 
@@ -154,7 +154,7 @@ export default function ProjectDetail() {
       dateInvoiced: new Date(),
       upToDate: new Date(),
       notes: '',
-      groupByDay: false,
+      groupByDay: true,
       includeNotes: true,
     },
   });

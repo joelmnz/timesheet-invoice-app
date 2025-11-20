@@ -55,13 +55,14 @@ export default function Clients() {
       name: '',
       address: '',
       email: '',
+      invoiceEmail: '',
       contactPerson: '',
       defaultHourlyRate: 0,
       notes: '',
     },
     validate: {
       name: (value) => (!value ? 'Name is required' : null),
-        defaultHourlyRate: (value) => (value < 0 ? 'Hourly rate cannot be negative' : null),
+      defaultHourlyRate: (value) => (value < 0 ? 'Hourly rate cannot be negative' : null),
     },
   });
 
@@ -142,6 +143,7 @@ export default function Clients() {
       name: client.name,
       address: client.address || '',
       email: client.email || '',
+      invoiceEmail: client.invoiceEmail || '',
       contactPerson: client.contactPerson || '',
       defaultHourlyRate: client.defaultHourlyRate,
       notes: client.notes || '',
@@ -232,6 +234,14 @@ export default function Clients() {
               type="email"
               {...form.getInputProps('email')}
               data-testid="client-email-input"
+            />
+            <TextInput
+              label="Invoice Email"
+              description="Optional: Send invoices to this email instead of the primary email"
+              placeholder="accounts@example.com"
+              type="email"
+              {...form.getInputProps('invoiceEmail')}
+              data-testid="client-invoice-email-input"
             />
             <Textarea
               label="Address"

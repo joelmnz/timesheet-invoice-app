@@ -11,7 +11,8 @@ bun test --preload ./src/tests/setup.ts src/tests/clients.test.ts && \
 bun test --preload ./src/tests/setup.ts src/tests/projects.test.ts && \
 bun test --preload ./src/tests/setup.ts src/tests/import.test.ts && \
 bun test --preload ./src/tests/setup.ts src/tests/invoices.test.ts && \
-bun test --preload ./src/tests/setup.ts src/tests/client-invoices.test.ts
+bun test --preload ./src/tests/setup.ts src/tests/client-invoices.test.ts && \
+bun test src/tests/csv_security.test.ts
 
 echo ""
 echo "✓ All tests passed!"

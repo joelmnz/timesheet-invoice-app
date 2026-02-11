@@ -15,20 +15,8 @@ import InvoiceDetail from './pages/InvoiceDetail';
 import ImportInvoices from './pages/ImportInvoices';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
+import ApiDocs from './pages/ApiDocs';
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, loading } = useAuth();
-
-  if (loading) {
-    return <LoadingOverlay visible />;
-  }
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-
-  return <>{children}</>;
-}
 
 function AppRoutes() {
   const { isAuthenticated, loading } = useAuth();
@@ -61,6 +49,7 @@ function AppRoutes() {
           <Route path="/import/invoices" element={<ImportInvoices />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/settings/api-docs" element={<ApiDocs />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>

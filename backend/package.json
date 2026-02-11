@@ -43,6 +43,7 @@
     "start": "bun run dist/index.js",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "bun run src/db/migrate.ts",
+    "db:seed": "bun run seed-data.ts",
     "test": "./test-sequential.sh",
     "test:parallel": "bun test",
     "test:watch": "bun test --watch"

@@ -180,4 +180,95 @@ describe("Settings Routes", () => {
       expectUnauthorized(res);
     });
   });
+
+  describe("API Key Management", () => {
+    test("should generate and list API key with name", async () => {
+      const generateRes = await agent
+        .post("/api/settings/api-keys/generate")
+        .send({ name: "Test Key 1" });
+
+      expect(generateRes.status).toBe(201);
+      expect(generateRes.body.apiKey).toMatch(/^tsia_/);
+      expect(generateRes.body.name).toBe("Test Key 1");
+      expect(generateRes.body.warning).toBeDefined();
+
+      const listRes = await agent.get("/api/settings/api-keys");
+      expect(listRes.status).toBe(200);
+      expect(listRes.body.keys.length).toBeGreaterThan(0);
+
+      const createdKey = listRes.body.keys.find((key: any) => key.name === "Test Key 1");
+      expect(createdKey).toBeDefined();
+      expect(createdKey.keyPrefix).toBeDefined();
+      expect(createdKey.keyLastFour).toBeDefined();
+    });
+
+    test("should require name when generating API key", async () => {
+      const res = await agent.post("/api/settings/api-keys/generate").send({});
+      expect(res.status).toBe(400);
+    });
+
+    test("should reject duplicate key names", async () => {
+      await agent
+        .post("/api/settings/api-keys/generate")
+        .send({ name: "Duplicate Name Test" });
+
+      const duplicateRes = await agent
+        .post("/api/settings/api-keys/generate")
+        .send({ name: "Duplicate Name Test" });
+
+      expect(duplicateRes.status).toBe(409);
+    });
+
+    test("should support multiple active API keys", async () => {
+      const key1Res = await agent
+        .post("/api/settings/api-keys/generate")
+        .send({ name: "Multi Key A" });
+      expect(key1Res.status).toBe(201);
+
+      const key2Res = await agent
+        .post("/api/settings/api-keys/generate")
+        .send({ name: "Multi Key B" });
+      expect(key2Res.status).toBe(201);
+
+      const listRes = await agent.get("/api/settings/api-keys");
+      const keyA = listRes.body.keys.find((k: any) => k.name === "Multi Key A");
+      const keyB = listRes.body.keys.find((k: any) => k.name === "Multi Key B");
+      expect(keyA).toBeDefined();
+      expect(keyB).toBeDefined();
+    });
+
+    test("should delete API key from database", async () => {
+      const generateRes = await agent
+        .post("/api/settings/api-keys/generate")
+        .send({ name: "Delete Me Key" });
+      expect(generateRes.status).toBe(201);
+
+      const beforeDelete = await agent.get("/api/settings/api-keys");
+      const keyToDelete = beforeDelete.body.keys.find((key: any) => key.name === "Delete Me Key");
+      expect(keyToDelete).toBeDefined();
+
+      const deleteRes = await agent.delete(`/api/settings/api-keys/${keyToDelete.id}`);
+      expect(deleteRes.status).toBe(200);
+      expect(deleteRes.body.success).toBe(true);
+
+      const afterDelete = await agent.get("/api/settings/api-keys");
+      const deletedKey = afterDelete.body.keys.find((key: any) => key.name === "Delete Me Key");
+      expect(deletedKey).toBeUndefined();
+    });
+
+    test("should require authentication for API key routes", async () => {
+      const freshAgent = request.agent(app);
+      const listRes = await freshAgent.get("/api/settings/api-keys");
+      expectUnauthorized(listRes);
+
+      const generateRes = await freshAgent
+        .post("/api/settings/api-keys/generate")
+        .send({ name: "Unauth Key" });
+      expectUnauthorized(generateRes);
+
+      const deleteRes = await freshAgent.delete("/api/settings/api-keys/1");
+      expectUnauthorized(deleteRes);
+    });
+  });
+
 });

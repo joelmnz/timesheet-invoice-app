@@ -11,6 +11,8 @@ import type {
   ReportData,
   ImportPreview,
   ImportResult,
+  ApiKeyListResponse,
+  GeneratedApiKeyResponse,
 } from '../types';
 
 const API_BASE = '/api';
@@ -56,11 +58,24 @@ export const authApi = {
 // Settings API
 export const settingsApi = {
   get: () => fetchApi<Settings>('/settings'),
-  
+
   update: (data: Partial<Settings>) =>
     fetchApi<Settings>('/settings', {
       method: 'PUT',
       body: JSON.stringify(data),
+    }),
+
+  getApiKeys: () => fetchApi<ApiKeyListResponse>('/settings/api-keys'),
+
+  generateApiKey: (name: string) =>
+    fetchApi<GeneratedApiKeyResponse>('/settings/api-keys/generate', {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    }),
+
+  deleteApiKey: (id: number) =>
+    fetchApi<{ success: boolean }>(`/settings/api-keys/${id}`, {
+      method: 'DELETE',
     }),
 };
 

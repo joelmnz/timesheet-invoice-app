@@ -25,8 +25,8 @@ export default function Invoices() {
   const [statusFilter, setStatusFilter] = useState<string>('Sent');
   const [clientFilter, setClientFilter] = useState<string>('');
   const [projectFilter, setProjectFilter] = useState<string>('');
-  const [fromDate, setFromDate] = useState<Date | null>(null);
-  const [toDate, setToDate] = useState<Date | null>(null);
+  const [fromDate, setFromDate] = useState<string | null>(null);
+  const [toDate, setToDate] = useState<string | null>(null);
   const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
@@ -38,8 +38,8 @@ export default function Invoices() {
         status: statusFilter || undefined,
         clientId: clientFilter ? parseInt(clientFilter) : undefined,
         projectId: projectFilter ? parseInt(projectFilter) : undefined,
-        from: fromDate ? DateTime.fromJSDate(fromDate).toISODate() : undefined,
-        to: toDate ? DateTime.fromJSDate(toDate).toISODate() : undefined,
+        from: fromDate ? DateTime.fromISO(fromDate).toISODate() : undefined,
+        to: toDate ? DateTime.fromISO(toDate).toISODate() : undefined,
         page,
         pageSize,
       },
@@ -49,8 +49,8 @@ export default function Invoices() {
         status: statusFilter || undefined,
         clientId: clientFilter ? parseInt(clientFilter) : undefined,
         projectId: projectFilter ? parseInt(projectFilter) : undefined,
-        from: fromDate ? DateTime.fromJSDate(fromDate).toISODate() || undefined : undefined,
-        to: toDate ? DateTime.fromJSDate(toDate).toISODate() || undefined : undefined,
+        from: fromDate ? (DateTime.fromISO(fromDate).toISODate() || undefined) : undefined,
+        to: toDate ? (DateTime.fromISO(toDate).toISODate() || undefined) : undefined,
         page,
         pageSize,
       }),

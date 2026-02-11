@@ -28,7 +28,8 @@ FROM oven/bun:latest AS runtime
 
 # Create non-root user with UNRAID compatible IDs (GID 100 already exists as 'users')
 # Container runs as UID 99, GID 100 - ensure host data directory has matching ownership
-RUN adduser --system --uid 99 --ingroup users bunuser
+# Note: using useradd instead of adduser (not available in Debian 13 trixie base)
+RUN useradd --system --uid 99 --gid 100 --no-create-home bunuser
 
 ENV NODE_ENV=production
 WORKDIR /app

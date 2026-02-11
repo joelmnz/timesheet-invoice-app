@@ -97,6 +97,18 @@ export const invoices = sqliteTable('invoices', {
   statusDueDateIdx: index('invoices_status_due_date_idx').on(table.status, table.dueDate),
 }));
 
+
+// API keys table
+export const apiKeys = sqliteTable('api_keys', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull().unique(),
+  keyHash: text('key_hash').notNull().unique(),
+  keyPrefix: text('key_prefix').notNull(),
+  keyLastFour: text('key_last_four').notNull(),
+  createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+  lastUsedAt: text('last_used_at'),
+});
+
 // Invoice line items table
 export const invoiceLineItems = sqliteTable('invoice_line_items', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -135,3 +147,7 @@ export type NewInvoice = typeof invoices.$inferInsert;
 
 export type InvoiceLineItem = typeof invoiceLineItems.$inferSelect;
 export type NewInvoiceLineItem = typeof invoiceLineItems.$inferInsert;
+
+
+export type ApiKey = typeof apiKeys.$inferSelect;
+export type NewApiKey = typeof apiKeys.$inferInsert;

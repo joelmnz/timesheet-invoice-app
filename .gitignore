@@ -31,6 +31,7 @@ pnpm-debug.log*
 lerna-debug.log*
 
 # Database
+data/
 *.db
 *.db-shm
 *.db-wal

@@ -152,3 +152,10 @@ export type CreateInvoiceLineItemInput = z.infer<typeof createInvoiceLineItemSch
 export type UpdateInvoiceLineItemInput = z.infer<typeof updateInvoiceLineItemSchema>;
 export type ImportInvoiceRowInput = z.infer<typeof importInvoiceRowSchema>;
 export type ImportInvoicesInput = z.infer<typeof importInvoicesSchema>;
+
+// API key schemas
+export const generateApiKeySchema = z.object({
+  name: z.string().min(1, 'API key name is required').max(100, 'API key name must be 100 characters or less').trim(),
+});
+
+export type GenerateApiKeyInput = z.infer<typeof generateApiKeySchema>;

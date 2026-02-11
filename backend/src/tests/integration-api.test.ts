@@ -14,7 +14,7 @@ describe('Integration API Routes', () => {
     agent = request.agent(app);
     await createAuthenticatedAgent(agent);
 
-    const keyResponse = await agent.post('/api/settings/api-keys/generate').send();
+    const keyResponse = await agent.post('/api/settings/api-keys/generate').send({ name: 'Integration Test Key' });
     apiKey = keyResponse.body.apiKey;
   });
 

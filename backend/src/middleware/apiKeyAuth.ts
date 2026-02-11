@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
-import { and, eq, isNull } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { createHash, randomUUID } from 'node:crypto';
 import { db } from '../db/index.js';
 import { apiKeys } from '../db/schema.js';
@@ -41,10 +41,7 @@ export async function requireApiKey(req: Request, res: Response, next: NextFunct
       .select()
       .from(apiKeys)
       .where(
-        and(
-          eq(apiKeys.keyHash, hashedInput),
-          isNull(apiKeys.revokedAt)
-        )
+        eq(apiKeys.keyHash, hashedInput)
       )
       .limit(1);
 

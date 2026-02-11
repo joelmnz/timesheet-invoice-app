@@ -19,16 +19,15 @@ export interface ApiKeySummary {
   keyLastFour: string;
   createdAt: string;
   lastUsedAt?: string | null;
-  revokedAt?: string | null;
 }
 
 export interface ApiKeyListResponse {
   keys: ApiKeySummary[];
-  hasActiveKey: boolean;
 }
 
 export interface GeneratedApiKeyResponse {
   apiKey: string;
+  name: string;
   keyPrefix: string;
   keyLastFour: string;
   createdAt: string;

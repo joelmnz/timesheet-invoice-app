@@ -67,9 +67,10 @@ export const settingsApi = {
 
   getApiKeys: () => fetchApi<ApiKeyListResponse>('/settings/api-keys'),
 
-  generateApiKey: () =>
+  generateApiKey: (name: string) =>
     fetchApi<GeneratedApiKeyResponse>('/settings/api-keys/generate', {
       method: 'POST',
+      body: JSON.stringify({ name }),
     }),
 
   deleteApiKey: (id: number) =>

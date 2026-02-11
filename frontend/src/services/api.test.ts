@@ -66,7 +66,7 @@ describe('API Service Path Validation', () => {
     });
 
     it('should call POST /api/settings/api-keys/generate', async () => {
-      await settingsApi.generateApiKey();
+      await settingsApi.generateApiKey('My Test Key');
       expect(fetchMock).toHaveBeenCalledWith(
         '/api/settings/api-keys/generate',
         expect.objectContaining({ method: 'POST' })

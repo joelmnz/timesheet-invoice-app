@@ -1,10 +1,10 @@
 import { Router } from 'express';
-import { desc, eq, isNull } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import { apiKeys, settings } from '../db/schema.js';
 import { requireAuth } from '../middleware/auth.js';
 import { createApiKey } from '../middleware/apiKeyAuth.js';
-import { updateSettingsSchema } from '../types/validation.js';
+import { updateSettingsSchema, generateApiKeySchema } from '../types/validation.js';
 
 const router = Router();
 
@@ -63,14 +63,12 @@ router.get('/api-keys', requireAuth, async (_req, res, next) => {
         keyLastFour: apiKeys.keyLastFour,
         createdAt: apiKeys.createdAt,
         lastUsedAt: apiKeys.lastUsedAt,
-        revokedAt: apiKeys.revokedAt,
       })
       .from(apiKeys)
       .orderBy(desc(apiKeys.createdAt));
 
     return res.json({
       keys: records,
-      hasActiveKey: records.some((key) => !key.revokedAt),
     });
   } catch (error) {
     return next(error);
@@ -80,25 +78,20 @@ router.get('/api-keys', requireAuth, async (_req, res, next) => {
 // POST /api/settings/api-keys/generate
 router.post('/api-keys/generate', requireAuth, async (req, res, next) => {
   try {
+    const { name } = generateApiKeySchema.parse(req.body);
     const generated = createApiKey();
 
-    await db.transaction(async (tx) => {
-      await tx
-        .update(apiKeys)
-        .set({ revokedAt: new Date().toISOString() })
-        .where(isNull(apiKeys.revokedAt));
-
-      await tx.insert(apiKeys).values({
-        name: 'Default API Key',
-        keyHash: generated.keyHash,
-        keyPrefix: generated.keyPrefix,
-        keyLastFour: generated.keyLastFour,
-        createdAt: new Date().toISOString(),
-      });
+    await db.insert(apiKeys).values({
+      name,
+      keyHash: generated.keyHash,
+      keyPrefix: generated.keyPrefix,
+      keyLastFour: generated.keyLastFour,
+      createdAt: new Date().toISOString(),
     });
 
     return res.status(201).json({
       apiKey: generated.raw,
+      name,
       keyPrefix: generated.keyPrefix,
       keyLastFour: generated.keyLastFour,
       createdAt: new Date().toISOString(),
@@ -122,7 +115,7 @@ router.delete('/api-keys/:id', requireAuth, async (req, res, next) => {
     }
 
     const [existing] = await db
-      .select({ id: apiKeys.id, revokedAt: apiKeys.revokedAt })
+      .select({ id: apiKeys.id })
       .from(apiKeys)
       .where(eq(apiKeys.id, keyId))
       .limit(1);
@@ -131,13 +124,8 @@ router.delete('/api-keys/:id', requireAuth, async (req, res, next) => {
       return res.status(404).json({ error: 'API key not found' });
     }
 
-    if (existing.revokedAt) {
-      return res.status(400).json({ error: 'API key already revoked' });
-    }
-
     await db
-      .update(apiKeys)
-      .set({ revokedAt: new Date().toISOString() })
+      .delete(apiKeys)
       .where(eq(apiKeys.id, keyId));
 
     return res.json({ success: true });

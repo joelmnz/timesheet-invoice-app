@@ -19,7 +19,6 @@ import {
   Paper,
   Anchor,
   Table,
-  Badge,
   ActionIcon,
   Modal,
   Tabs,
@@ -37,6 +36,8 @@ import type { ApiKeySummary } from '../types';
 export default function Settings() {
   const queryClient = useQueryClient();
   const [newApiKey, setNewApiKey] = useState<string | null>(null);
+  const [newKeyName, setNewKeyName] = useState('');
+  const [newKeyNameError, setNewKeyNameError] = useState<string | null>(null);
   const [deleteModalOpened, { open: openDeleteModal, close: closeDeleteModal }] = useDisclosure(false);
   const [deletingApiKey, setDeletingApiKey] = useState<ApiKeySummary | null>(null);
 
@@ -92,19 +93,25 @@ export default function Settings() {
     mutationFn: settingsApi.generateApiKey,
     onSuccess: (data) => {
       setNewApiKey(data.apiKey);
+      setNewKeyName('');
+      setNewKeyNameError(null);
       queryClient.invalidateQueries({ queryKey: ['api-keys'] });
       notifications.show({
         title: 'API key generated',
-        message: 'Your previous active key was revoked. Save this new key now.',
+        message: `API key "${data.name}" created. Save this key now.`,
         color: 'green',
       });
     },
     onError: (error: Error) => {
-      notifications.show({
-        title: 'Error',
-        message: error.message,
-        color: 'red',
-      });
+      if (error.message.includes('UNIQUE constraint failed')) {
+        setNewKeyNameError('An API key with this name already exists');
+      } else {
+        notifications.show({
+          title: 'Error',
+          message: error.message,
+          color: 'red',
+        });
+      }
     },
   });
 
@@ -212,6 +219,16 @@ export default function Settings() {
 
   const apiKeys = apiKeyData?.keys || [];
 
+  const handleGenerateApiKey = () => {
+    const trimmedName = newKeyName.trim();
+    if (!trimmedName) {
+      setNewKeyNameError('API key name is required');
+      return;
+    }
+    setNewKeyNameError(null);
+    generateApiKeyMutation.mutate(trimmedName);
+  };
+
   return (
     <Container size="md">
       <Title order={1} mb="xl">
@@ -224,7 +241,7 @@ export default function Settings() {
             <Tabs.List>
               <Tabs.Tab value="companyInfo">Company Info</Tabs.Tab>
               <Tabs.Tab value="invoiceSettings">Invoice Settings</Tabs.Tab>
-              <Tabs.Tab value="apiKeys">API Key</Tabs.Tab>
+              <Tabs.Tab value="apiKeys">API Keys</Tabs.Tab>
             </Tabs.List>
 
             <Tabs.Panel value="companyInfo" pt="md">
@@ -352,23 +369,34 @@ export default function Settings() {
                 </Title>
                 <Stack>
                   <Text size="sm" c="dimmed">
-                    Manage API keys used by integration endpoints. Generating a new key revokes any currently active key.
+                    Manage API keys for your integrations. Each key should have a unique name to identify the app or service it belongs to.
                   </Text>
-                  <Group>
+                  <Group align="flex-end">
+                    <TextInput
+                      label="Key Name"
+                      placeholder="e.g. MyApp1"
+                      value={newKeyName}
+                      onChange={(e) => {
+                        setNewKeyName(e.currentTarget.value);
+                        setNewKeyNameError(null);
+                      }}
+                      error={newKeyNameError}
+                      style={{ flex: 1 }}
+                    />
                     <Button
                       leftSection={<IconKey size={16} />}
-                      onClick={() => generateApiKeyMutation.mutate()}
+                      onClick={handleGenerateApiKey}
                       loading={generateApiKeyMutation.isPending}
                     >
                       Generate API Key
                     </Button>
-                    <Anchor component={Link} to="/settings/api-docs">
-                      <Group gap={6}>
-                        <IconBook size={16} />
-                        <Text size="sm">View API endpoint docs</Text>
-                      </Group>
-                    </Anchor>
                   </Group>
+                  <Anchor component={Link} to="/settings/api-docs">
+                    <Group gap={6}>
+                      <IconBook size={16} />
+                      <Text size="sm">View API endpoint docs</Text>
+                    </Group>
+                  </Anchor>
 
                   {newApiKey && (
                     <Alert color="yellow" title="Store this key now">
@@ -387,7 +415,6 @@ export default function Settings() {
                       <Table.Tr>
                         <Table.Th>Name</Table.Th>
                         <Table.Th>Key</Table.Th>
-                        <Table.Th>Status</Table.Th>
                         <Table.Th>Created</Table.Th>
                         <Table.Th>Last Used</Table.Th>
                         <Table.Th ta="right">Actions</Table.Th>
@@ -396,7 +423,7 @@ export default function Settings() {
                     <Table.Tbody>
                       {apiKeys.length === 0 ? (
                         <Table.Tr>
-                          <Table.Td colSpan={6}>
+                          <Table.Td colSpan={5}>
                             <Text size="sm" c="dimmed">No API keys found.</Text>
                           </Table.Td>
                         </Table.Tr>
@@ -407,13 +434,6 @@ export default function Settings() {
                             <Table.Td>
                               <Code>{apiKey.keyPrefix}...{apiKey.keyLastFour}</Code>
                             </Table.Td>
-                            <Table.Td>
-                              {apiKey.revokedAt ? (
-                                <Badge color="gray">Revoked</Badge>
-                              ) : (
-                                <Badge color="green">Active</Badge>
-                              )}
-                            </Table.Td>
                             <Table.Td>{DateTime.fromISO(apiKey.createdAt).toFormat('dd LLL yyyy')}</Table.Td>
                             <Table.Td>
                               {apiKey.lastUsedAt
@@ -421,16 +441,14 @@ export default function Settings() {
                                 : '-'}
                             </Table.Td>
                             <Table.Td ta="right">
-                              {!apiKey.revokedAt && (
-                                <ActionIcon
-                                  color="red"
-                                  variant="subtle"
-                                  onClick={() => handleOpenDeleteModal(apiKey)}
-                                  aria-label="Delete API key"
-                                >
-                                  <IconTrash size={16} />
-                                </ActionIcon>
-                              )}
+                              <ActionIcon
+                                color="red"
+                                variant="subtle"
+                                onClick={() => handleOpenDeleteModal(apiKey)}
+                                aria-label="Delete API key"
+                              >
+                                <IconTrash size={16} />
+                              </ActionIcon>
                             </Table.Td>
                           </Table.Tr>
                         ))
@@ -464,7 +482,8 @@ export default function Settings() {
       >
         <Text mb="md">
           Are you sure you want to delete API key{' '}
-          <Code>{deletingApiKey?.keyPrefix}...{deletingApiKey?.keyLastFour}</Code>?
+          <strong>{deletingApiKey?.name}</strong>{' '}
+          (<Code>{deletingApiKey?.keyPrefix}...{deletingApiKey?.keyLastFour}</Code>)?
           This action cannot be undone.
         </Text>
         <Group justify="flex-end">

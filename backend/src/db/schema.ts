@@ -101,16 +101,13 @@ export const invoices = sqliteTable('invoices', {
 // API keys table
 export const apiKeys = sqliteTable('api_keys', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  name: text('name').notNull().default('Default API Key'),
+  name: text('name').notNull().unique(),
   keyHash: text('key_hash').notNull().unique(),
   keyPrefix: text('key_prefix').notNull(),
   keyLastFour: text('key_last_four').notNull(),
   createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
   lastUsedAt: text('last_used_at'),
-  revokedAt: text('revoked_at'),
-}, (table) => ({
-  activeIdx: index('api_keys_active_idx').on(table.revokedAt),
-}));
+});
 
 // Invoice line items table
 export const invoiceLineItems = sqliteTable('invoice_line_items', {

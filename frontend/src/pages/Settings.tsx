@@ -262,8 +262,10 @@ export default function Settings() {
                   <Divider />
                   <TextInput
                     label="Timezone"
-                    description="e.g., Pacific/Auckland, America/New_York"
+                    description="This timezone is configured on the server via the TZ environment variable and cannot be changed here."
                     placeholder="Pacific/Auckland"
+                    readOnly
+                    disabled
                     {...form.getInputProps('timezone')}
                   />
                 </Stack>

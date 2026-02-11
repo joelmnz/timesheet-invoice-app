@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 import { and, eq, isNull } from 'drizzle-orm';
-import { createHash, randomUUID, timingSafeEqual } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { db } from '../db/index.js';
 import { apiKeys } from '../db/schema.js';
 
@@ -49,16 +49,6 @@ export async function requireApiKey(req: Request, res: Response, next: NextFunct
       .limit(1);
 
     if (!record) {
-      return res.status(401).json({ error: 'Invalid API key' });
-    }
-
-    const providedBuffer = Buffer.from(hashedInput, 'utf8');
-    const storedBuffer = Buffer.from(record.keyHash, 'utf8');
-
-    if (
-      providedBuffer.length !== storedBuffer.length
-      || !timingSafeEqual(providedBuffer, storedBuffer)
-    ) {
       return res.status(401).json({ error: 'Invalid API key' });
     }
 

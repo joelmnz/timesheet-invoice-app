@@ -6,7 +6,7 @@ interface TimerNotesModalProps {
   opened: boolean;
   onClose: () => void;
   currentTimer: TimeEntry | null;
-  onSave: (note: string | undefined) => Promise<void>;
+  onSave: (note: string | undefined) => Promise<unknown>;
 }
 
 export default function TimerNotesModal({

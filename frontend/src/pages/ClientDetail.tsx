@@ -312,14 +312,14 @@ export default function ClientDetail() {
               label="Invoice Date"
               placeholder="Select date"
               value={invoiceForm.values.dateInvoiced}
-              onChange={(val) => invoiceForm.setFieldValue('dateInvoiced', val || new Date())}
+              onChange={(val) => invoiceForm.setFieldValue('dateInvoiced', val ? (typeof val === 'string' ? new Date(val) : val) : new Date())}
               required
             />
             <DatePickerInput
               label="Include Items Up To"
               placeholder="Select date"
               value={invoiceForm.values.upToDate}
-              onChange={(val) => invoiceForm.setFieldValue('upToDate', val || new Date())}
+              onChange={(val) => invoiceForm.setFieldValue('upToDate', val ? (typeof val === 'string' ? new Date(val) : val) : new Date())}
               required
             />
 

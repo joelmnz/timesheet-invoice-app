@@ -17,19 +17,6 @@ import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import ApiDocs from './pages/ApiDocs';
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, loading } = useAuth();
-
-  if (loading) {
-    return <LoadingOverlay visible />;
-  }
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-
-  return <>{children}</>;
-}
 
 function AppRoutes() {
   const { isAuthenticated, loading } = useAuth();

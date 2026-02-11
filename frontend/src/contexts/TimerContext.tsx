@@ -14,9 +14,9 @@ import {
 interface TimerContextType {
   currentTimer: TimeEntry | null;
   isLoading: boolean;
-  startTimer: (projectId: number) => Promise<void>;
-  stopTimer: (projectId: number) => Promise<void>;
-  updateTimerNotes: (note: string | undefined) => Promise<void>;
+  startTimer: (projectId: number) => Promise<TimeEntry>;
+  stopTimer: (projectId: number) => Promise<TimeEntry>;
+  updateTimerNotes: (note: string | undefined) => Promise<TimeEntry>;
   refetch: () => void;
 }
 

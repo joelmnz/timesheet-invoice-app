@@ -23,11 +23,10 @@ type ReportType = 'invoices' | 'income';
 
 export default function Reports() {
   const [reportType, setReportType] = useState<ReportType>('invoices');
-  const [fromDate, setFromDate] = useState<Date | null>(() => {
-    const fyStart = getFinancialYearStart();
-    return DateTime.fromISO(fyStart).toJSDate();
+  const [fromDate, setFromDate] = useState<string | null>(() => {
+    return getFinancialYearStart();
   });
-  const [toDate, setToDate] = useState<Date | null>(null);
+  const [toDate, setToDate] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
 
   // Validate dates whenever they change
@@ -40,21 +39,17 @@ export default function Reports() {
   }, [fromDate, toDate]);
 
   // Convert dates to ISO strings for API calls and query keys
-  const fromDateISO = fromDate 
-    ? (fromDate instanceof Date 
-        ? DateTime.fromJSDate(fromDate).toISODate() 
-        : DateTime.fromISO(fromDate as string).toISODate())
+  const fromDateISO = fromDate
+    ? DateTime.fromISO(fromDate).toISODate()
     : null;
-  const toDateISO = toDate 
-    ? (toDate instanceof Date 
-        ? DateTime.fromJSDate(toDate).toISODate() 
-        : DateTime.fromISO(toDate as string).toISODate())
+  const toDateISO = toDate
+    ? DateTime.fromISO(toDate).toISODate()
     : null;
 
   const { data: invoicesData, refetch: refetchInvoices } = useQuery({
     queryKey: ['reports', 'invoices', fromDateISO, toDateISO],
     queryFn: () => reportsApi.getInvoices(
-      fromDateISO ?? undefined, 
+      fromDateISO ?? undefined,
       toDateISO ?? undefined
     ),
     enabled: reportType === 'invoices' && !validationError,
@@ -65,7 +60,7 @@ export default function Reports() {
   const { data: incomeData, refetch: refetchIncome } = useQuery({
     queryKey: ['reports', 'income', fromDateISO, toDateISO],
     queryFn: () => reportsApi.getIncome(
-      fromDateISO ?? undefined, 
+      fromDateISO ?? undefined,
       toDateISO ?? undefined
     ),
     enabled: reportType === 'income' && !validationError,
@@ -84,16 +79,15 @@ export default function Reports() {
   };
 
   const handleReset = () => {
-    const fyStart = getFinancialYearStart();
-    setFromDate(DateTime.fromISO(fyStart).toJSDate());
+    setFromDate(getFinancialYearStart());
     setToDate(null);
   };
 
   const handleExportCsv = async () => {
     try {
       await reportsApi.exportCsv(
-        'invoices', 
-        fromDateISO ?? undefined, 
+        'invoices',
+        fromDateISO ?? undefined,
         toDateISO ?? undefined
       );
     } catch (error) {

@@ -60,6 +60,26 @@ describe('API Service Path Validation', () => {
         expect.objectContaining({ method: 'PUT' })
       );
     });
+    it('should call GET /api/settings/api-keys', async () => {
+      await settingsApi.getApiKeys();
+      expect(fetchMock).toHaveBeenCalledWith('/api/settings/api-keys', expect.any(Object));
+    });
+
+    it('should call POST /api/settings/api-keys/generate', async () => {
+      await settingsApi.generateApiKey();
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/api/settings/api-keys/generate',
+        expect.objectContaining({ method: 'POST' })
+      );
+    });
+
+    it('should call DELETE /api/settings/api-keys/:id', async () => {
+      await settingsApi.deleteApiKey(1);
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/api/settings/api-keys/1',
+        expect.objectContaining({ method: 'DELETE' })
+      );
+    });
   });
 
   describe('Clients API', () => {

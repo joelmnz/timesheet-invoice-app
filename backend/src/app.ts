@@ -15,6 +15,7 @@ import dashboardRoutes from './routes/dashboard.js';
 import reportsRoutes from './routes/reports.js';
 import importRoutes from './routes/import.js';
 import migrationsRoutes from './routes/migrations.js';
+import integrationRoutes from './routes/integration.js';
 
 import { errorHandler } from './middleware/errorHandler.js';
 import { createCorsMiddleware } from './middleware/cors.js';
@@ -101,6 +102,7 @@ export function createApp() {
   app.use('/api/export', reportsRoutes);
   app.use('/api/import', importRoutes);
   app.use('/api/migrations', migrationsRoutes);
+  app.use('/api/integration', integrationRoutes);
   app.use('/api/auth', authRoutes);
 
   // Lightweight health endpoint - only responds when database is initialized

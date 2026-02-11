@@ -11,6 +11,30 @@ export interface Settings {
   updatedAt: string;
 }
 
+
+export interface ApiKeySummary {
+  id: number;
+  name: string;
+  keyPrefix: string;
+  keyLastFour: string;
+  createdAt: string;
+  lastUsedAt?: string | null;
+  revokedAt?: string | null;
+}
+
+export interface ApiKeyListResponse {
+  keys: ApiKeySummary[];
+  hasActiveKey: boolean;
+}
+
+export interface GeneratedApiKeyResponse {
+  apiKey: string;
+  keyPrefix: string;
+  keyLastFour: string;
+  createdAt: string;
+  warning: string;
+}
+
 export interface Client {
   id: number;
   name: string;

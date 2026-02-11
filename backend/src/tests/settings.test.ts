@@ -180,4 +180,52 @@ describe("Settings Routes", () => {
       expectUnauthorized(res);
     });
   });
+
+  describe("API Key Management", () => {
+    test("should generate and list API key", async () => {
+      const generateRes = await agent.post("/api/settings/api-keys/generate");
+
+      expect(generateRes.status).toBe(201);
+      expect(generateRes.body.apiKey).toMatch(/^tsia_/);
+      expect(generateRes.body.warning).toBeDefined();
+
+      const listRes = await agent.get("/api/settings/api-keys");
+      expect(listRes.status).toBe(200);
+      expect(listRes.body.hasActiveKey).toBe(true);
+      expect(listRes.body.keys.length).toBeGreaterThan(0);
+      expect(listRes.body.keys[0].keyPrefix).toBeDefined();
+      expect(listRes.body.keys[0].keyLastFour).toBeDefined();
+      expect(listRes.body.keys[0].revokedAt).toBeNull();
+    });
+
+    test("should delete active API key", async () => {
+      const generateRes = await agent.post("/api/settings/api-keys/generate");
+      expect(generateRes.status).toBe(201);
+
+      const beforeDelete = await agent.get("/api/settings/api-keys");
+      const activeKey = beforeDelete.body.keys.find((key: any) => !key.revokedAt);
+      expect(activeKey).toBeDefined();
+
+      const deleteRes = await agent.delete(`/api/settings/api-keys/${activeKey.id}`);
+      expect(deleteRes.status).toBe(200);
+      expect(deleteRes.body.success).toBe(true);
+
+      const afterDelete = await agent.get("/api/settings/api-keys");
+      expect(afterDelete.status).toBe(200);
+      expect(afterDelete.body.hasActiveKey).toBe(false);
+    });
+
+    test("should require authentication for API key routes", async () => {
+      const freshAgent = request.agent(app);
+      const listRes = await freshAgent.get("/api/settings/api-keys");
+      expectUnauthorized(listRes);
+
+      const generateRes = await freshAgent.post("/api/settings/api-keys/generate");
+      expectUnauthorized(generateRes);
+
+      const deleteRes = await freshAgent.delete("/api/settings/api-keys/1");
+      expectUnauthorized(deleteRes);
+    });
+  });
+
 });

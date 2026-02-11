@@ -1,4 +1,4 @@
-import { Table, Center, Loader, Text, Group, ActionIcon, Badge, Select } from '@mantine/core';
+import { Table, Center, Loader, Text, Group, ActionIcon, Badge, Select, Tooltip } from '@mantine/core';
 import { IconEdit, IconTrash } from '@tabler/icons-react';
 import { DateTime } from 'luxon';
 import { Pagination } from '../common/Pagination';
@@ -135,24 +135,34 @@ export function TimeEntryList({
                   <Table.Td>
                     <Group justify="flex-end" gap="xs">
                       {onEdit && (
-                        <ActionIcon
-                          variant="light"
-                          color="blue"
-                          onClick={() => onEdit(entry)}
-                          disabled={entry.isInvoiced}
-                        >
-                          <IconEdit size={16} />
-                        </ActionIcon>
+                        <Tooltip label={entry.isInvoiced ? 'Cannot edit invoiced entry' : 'Edit time entry'}>
+                          <div style={{ display: 'inline-block' }}>
+                            <ActionIcon
+                              variant="light"
+                              color="blue"
+                              onClick={() => onEdit(entry)}
+                              disabled={entry.isInvoiced}
+                              aria-label="Edit time entry"
+                            >
+                              <IconEdit size={16} />
+                            </ActionIcon>
+                          </div>
+                        </Tooltip>
                       )}
                       {onDelete && (
-                        <ActionIcon
-                          variant="light"
-                          color="red"
-                          onClick={() => onDelete(entry)}
-                          disabled={entry.isInvoiced}
-                        >
-                          <IconTrash size={16} />
-                        </ActionIcon>
+                        <Tooltip label={entry.isInvoiced ? 'Cannot delete invoiced entry' : 'Delete time entry'}>
+                          <div style={{ display: 'inline-block' }}>
+                            <ActionIcon
+                              variant="light"
+                              color="red"
+                              onClick={() => onDelete(entry)}
+                              disabled={entry.isInvoiced}
+                              aria-label="Delete time entry"
+                            >
+                              <IconTrash size={16} />
+                            </ActionIcon>
+                          </div>
+                        </Tooltip>
                       )}
                     </Group>
                   </Table.Td>

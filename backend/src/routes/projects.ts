@@ -78,7 +78,7 @@ router.get('/', requireAuth, async (req, res, next) => {
 // GET /api/projects/:id
 router.get('/:id', requireAuth, async (req, res, next) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = Number(req.params.id);
     
     const results = await db
       .select({
@@ -128,7 +128,7 @@ router.post('/', requireAuth, async (req, res, next) => {
 // PUT /api/projects/:id
 router.put('/:id', requireAuth, async (req, res, next) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = Number(req.params.id);
     const data = updateProjectSchema.parse(req.body);
 
     const [updated] = await db
@@ -153,7 +153,7 @@ router.put('/:id', requireAuth, async (req, res, next) => {
 // DELETE /api/projects/:id
 router.delete('/:id', requireAuth, async (req, res, next) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = Number(req.params.id);
 
     // Check if project has time entries or expenses
     const [timeEntryCount] = await db
@@ -263,7 +263,7 @@ router.patch('/timer/current', requireAuth, async (req, res, next) => {
 // POST /api/projects/:id/timer/start
 router.post('/:id/timer/start', requireAuth, async (req, res, next) => {
   try {
-    const projectId = parseInt(req.params.id);
+    const projectId = Number(req.params.id);
 
     // Check if any timer is currently running
     const runningTimer = await db
@@ -302,7 +302,7 @@ router.post('/:id/timer/start', requireAuth, async (req, res, next) => {
 // POST /api/projects/:id/timer/stop
 router.post('/:id/timer/stop', requireAuth, async (req, res, next) => {
   try {
-    const projectId = parseInt(req.params.id);
+    const projectId = Number(req.params.id);
     const { clientStopAt } = stopTimerSchema.parse(req.body);
 
     // Find running timer for this project
@@ -376,7 +376,7 @@ router.post('/:id/timer/stop', requireAuth, async (req, res, next) => {
 // POST /api/projects/:id/invoices
 router.post('/:id/invoices', requireAuth, async (req, res, next) => {
   try {
-    const projectId = parseInt(req.params.id);
+    const projectId = Number(req.params.id);
     const { dateInvoiced, upToDate, notes, groupByDay = false, includeNotes = true } = createInvoiceSchema.parse(req.body);
 
     // Get project details

@@ -11,7 +11,7 @@ const router = Router();
 // GET /api/projects/:projectId/expenses
 router.get('/projects/:projectId/expenses', requireAuth, async (req, res, next) => {
   try {
-    const projectId = parseInt(req.params.projectId);
+    const projectId = Number(req.params.projectId);
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const pageSizeParam = parseInt(req.query.page_size as string) || 25;
     const pageSize = [10, 25, 50, 100].includes(pageSizeParam) ? pageSizeParam : 25;
@@ -51,7 +51,7 @@ router.get('/projects/:projectId/expenses', requireAuth, async (req, res, next) 
 // POST /api/projects/:projectId/expenses
 router.post('/projects/:projectId/expenses', requireAuth, async (req, res, next) => {
   try {
-    const projectId = parseInt(req.params.projectId);
+    const projectId = Number(req.params.projectId);
     const data = createExpenseSchema.parse(req.body);
 
     const [newExpense] = await db
@@ -77,7 +77,7 @@ router.post('/projects/:projectId/expenses', requireAuth, async (req, res, next)
 // PUT /api/expenses/:id
 router.put('/expenses/:id', requireAuth, async (req, res, next) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = Number(req.params.id);
     const data = updateExpenseSchema.parse(req.body);
 
     const [updated] = await db
@@ -102,7 +102,7 @@ router.put('/expenses/:id', requireAuth, async (req, res, next) => {
 // DELETE /api/expenses/:id
 router.delete('/expenses/:id', requireAuth, async (req, res, next) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = Number(req.params.id);
 
     // Check if expense is invoiced
     const [expense] = await db

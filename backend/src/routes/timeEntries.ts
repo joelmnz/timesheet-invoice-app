@@ -99,7 +99,7 @@ router.get('/time-entries', requireAuth, async (req, res, next) => {
 // GET /api/projects/:projectId/time-entries
 router.get('/projects/:projectId/time-entries', requireAuth, async (req, res, next) => {
   try {
-    const projectId = parseInt(req.params.projectId);
+    const projectId = Number(req.params.projectId);
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const pageSizeParam = parseInt(req.query.page_size as string) || 25;
     const pageSize = [10, 25, 50, 100].includes(pageSizeParam) ? pageSizeParam : 25;
@@ -139,7 +139,7 @@ router.get('/projects/:projectId/time-entries', requireAuth, async (req, res, ne
 // POST /api/projects/:projectId/time-entries
 router.post('/projects/:projectId/time-entries', requireAuth, async (req, res, next) => {
   try {
-    const projectId = parseInt(req.params.projectId);
+    const projectId = Number(req.params.projectId);
     const data = createTimeEntrySchema.parse(req.body);
 
     // Calculate total hours if endAt is provided
@@ -252,7 +252,7 @@ router.post('/time-entries', requireAuth, async (req, res, next) => {
 // PUT /api/time-entries/:id
 router.put('/time-entries/:id', requireAuth, async (req, res, next) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = Number(req.params.id);
     const data = updateTimeEntrySchema.parse(req.body);
 
     // Get current entry
@@ -326,7 +326,7 @@ router.put('/time-entries/:id', requireAuth, async (req, res, next) => {
 // DELETE /api/time-entries/:id
 router.delete('/time-entries/:id', requireAuth, async (req, res, next) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = Number(req.params.id);
 
     // Check if entry is invoiced
     const [entry] = await db

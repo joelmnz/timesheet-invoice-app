@@ -68,7 +68,7 @@ router.get('/', requireAuth, async (req, res, next) => {
 // GET /api/clients/:id
 router.get('/:id', requireAuth, async (req, res, next) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = Number(req.params.id);
     const [client] = await db
       .select()
       .from(clients)
@@ -108,7 +108,7 @@ router.post('/', requireAuth, async (req, res, next) => {
 // PUT /api/clients/:id
 router.put('/:id', requireAuth, async (req, res, next) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = Number(req.params.id);
     const data = updateClientSchema.parse(req.body);
 
     const [updated] = await db
@@ -133,7 +133,7 @@ router.put('/:id', requireAuth, async (req, res, next) => {
 // DELETE /api/clients/:id
 router.delete('/:id', requireAuth, async (req, res, next) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = Number(req.params.id);
 
     // Check if client has projects
     const [projectCount] = await db
@@ -159,7 +159,7 @@ router.delete('/:id', requireAuth, async (req, res, next) => {
 // GET /api/clients/:id/uninvoiced-summary
 router.get('/:id/uninvoiced-summary', requireAuth, async (req, res, next) => {
   try {
-    const clientId = parseInt(req.params.id);
+    const clientId = Number(req.params.id);
     const { upToDate } = req.query;
 
     // Verify client exists
@@ -256,7 +256,7 @@ router.get('/:id/uninvoiced-summary', requireAuth, async (req, res, next) => {
 // POST /api/clients/:id/invoices
 router.post('/:id/invoices', requireAuth, async (req, res, next) => {
   try {
-    const clientId = parseInt(req.params.id);
+    const clientId = Number(req.params.id);
     const { dateInvoiced, upToDate, notes, groupByDay = false, includeNotes = true, projectIds } = 
       createClientInvoiceSchema.parse(req.body);
 

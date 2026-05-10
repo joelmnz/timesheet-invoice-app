@@ -116,7 +116,7 @@ router.get('/', requireAuth, async (req, res, next) => {
 // GET /api/invoices/:id
 router.get('/:id', requireAuth, async (req, res, next) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = Number(req.params.id);
 
     const results = await db
       .select({
@@ -149,7 +149,7 @@ router.get('/:id', requireAuth, async (req, res, next) => {
 // PUT /api/invoices/:id
 router.put('/:id', requireAuth, async (req, res, next) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = Number(req.params.id);
     const data = updateInvoiceSchema.parse(req.body);
 
     // Get current invoice to check status
@@ -220,7 +220,7 @@ router.put('/:id', requireAuth, async (req, res, next) => {
 // DELETE /api/invoices/:id
 router.delete('/:id', requireAuth, async (req, res, next) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = Number(req.params.id);
 
     // Check if invoice exists and get its status
     const [invoice] = await db
@@ -252,7 +252,7 @@ router.delete('/:id', requireAuth, async (req, res, next) => {
 // GET /api/invoices/:id/lines
 router.get('/:id/lines', requireAuth, async (req, res, next) => {
   try {
-    const invoiceId = parseInt(req.params.id);
+    const invoiceId = Number(req.params.id);
 
     const lines = await db
       .select()
@@ -269,7 +269,7 @@ router.get('/:id/lines', requireAuth, async (req, res, next) => {
 // POST /api/invoices/:id/lines
 router.post('/:id/lines', requireAuth, async (req, res, next) => {
   try {
-    const invoiceId = parseInt(req.params.id);
+    const invoiceId = Number(req.params.id);
     const data = createInvoiceLineItemSchema.parse(req.body);
 
     // Check if invoice exists and is editable
@@ -319,7 +319,7 @@ router.post('/:id/lines', requireAuth, async (req, res, next) => {
 // PUT /api/invoice-lines/:lineId
 invoiceLinesRouter.put('/:lineId', requireAuth, async (req, res, next) => {
   try {
-    const lineId = parseInt(req.params.lineId);
+    const lineId = Number(req.params.lineId);
     const data = updateInvoiceLineItemSchema.parse(req.body);
 
     const [currentLine] = await db
@@ -401,7 +401,7 @@ invoiceLinesRouter.put('/:lineId', requireAuth, async (req, res, next) => {
 // DELETE /api/invoice-lines/:lineId
 invoiceLinesRouter.delete('/:lineId', requireAuth, async (req, res, next) => {
   try {
-    const lineId = parseInt(req.params.lineId);
+    const lineId = Number(req.params.lineId);
 
     const [line] = await db
       .select()
@@ -468,7 +468,7 @@ invoiceLinesRouter.delete('/:lineId', requireAuth, async (req, res, next) => {
 // GET /api/invoices/:id/pdf
 router.get('/:id/pdf', requireAuth, async (req, res, next) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = Number(req.params.id);
 
     // Get invoice details
     const results = await db

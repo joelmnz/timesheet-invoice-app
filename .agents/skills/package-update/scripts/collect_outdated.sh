@@ -4,7 +4,7 @@ set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 skill_dir="$(cd "${script_dir}/.." && pwd)"
-repo_root="$(cd "${skill_dir}/../.." && pwd)"
+repo_root="$(cd "${skill_dir}/../../.." && pwd)"
 
 run_outdated() {
   local package_dir="$1"

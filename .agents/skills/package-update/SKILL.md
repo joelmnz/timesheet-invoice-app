@@ -12,7 +12,7 @@ Run a report-first dependency review for Bun projects. Collect outdated packages
 ## Workflow
 
 1. Confirm this is a review-only pass.
-2. Collect outdated packages with `scripts/collect_outdated.sh` when both `backend/` and `frontend/` exist. If the repository structure differs, run `bun outdated` manually in each relevant package directory.
+2. Collect outdated packages with `.agents/skills/package-update/scripts/collect_outdated.sh` when both `backend/` and `frontend/` exist. If the repository structure differs, run `bun outdated` manually in each relevant package directory.
 3. Summarize only packages that need updates. Do not propose exact upgrade commands unless the user asks for them.
 4. Categorize every update into one of these labels:
    - `Low Risk - Safe`

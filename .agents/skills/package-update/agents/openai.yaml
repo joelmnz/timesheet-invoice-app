@@ -1,0 +1,4 @@
+interface:
+  display_name: "Package Update Review"
+  short_description: "Audit backend/frontend dependency updates"
+  default_prompt: "Use $package-update to review `bun outdated` results in `backend/` and `frontend/`, then categorize pending updates by risk without changing dependencies."

@@ -4,6 +4,7 @@ import type {
   Project,
   TimeEntry,
   Expense,
+  ExpenseListResponse,
   Invoice,
   InvoiceLineItem,
   DashboardSummary,
@@ -255,6 +256,32 @@ export const expensesApi = {
 
   create: (projectId: number, data: Partial<Expense>) =>
     fetchApi<Expense>(`/projects/${projectId}/expenses`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  listAll: (params?: {
+    query?: string;
+    projectId?: number;
+    projectFilter?: 'general';
+    from?: string;
+    to?: string;
+    page?: number;
+    pageSize?: number;
+  }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.query) searchParams.append('query', params.query);
+    if (params?.projectFilter) searchParams.set('projectId', params.projectFilter);
+    else if (params?.projectId !== undefined) searchParams.set('projectId', params.projectId.toString());
+    if (params?.from) searchParams.append('from', params.from);
+    if (params?.to) searchParams.append('to', params.to);
+    searchParams.append('page', (params?.page || 1).toString());
+    searchParams.append('page_size', (params?.pageSize || 25).toString());
+    return fetchApi<ExpenseListResponse>(`/expenses?${searchParams}`);
+  },
+
+  createGlobal: (data: Partial<Expense>) =>
+    fetchApi<Expense>('/expenses', {
       method: 'POST',
       body: JSON.stringify(data),
     }),

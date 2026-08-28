@@ -210,6 +210,35 @@ describe('API Service Path Validation', () => {
         expect.objectContaining({ method: 'POST' })
       );
     });
+
+    it('should call GET /api/expenses with global filters', async () => {
+      await expensesApi.listAll({
+        query: 'laptop',
+        projectFilter: 'general',
+        from: '2026-01-01',
+        to: '2026-01-31',
+        page: 2,
+        pageSize: 10,
+      });
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/api/expenses?query=laptop&projectId=general&from=2026-01-01&to=2026-01-31&page=2&page_size=10',
+        expect.any(Object)
+      );
+    });
+
+    it('should call POST /api/expenses for a global expense', async () => {
+      await expensesApi.createGlobal({
+        projectId: null,
+        expenseDate: '2026-08-28',
+        description: 'Laptop',
+        amount: 2000,
+        isBillable: false,
+      });
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/api/expenses',
+        expect.objectContaining({ method: 'POST' })
+      );
+    });
   });
 
   describe('Invoices API', () => {

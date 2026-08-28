@@ -104,9 +104,11 @@ export function createTestTimeEntryData(projectId: number, overrides: any = {}) 
   };
 }
 
-export function createTestExpenseData(projectId: number, overrides: any = {}) {
+// Note: projectId is intentionally omitted from the payload - the
+// project-scoped POST endpoint takes projectId from the URL and rejects a
+// body projectId (createProjectExpenseSchema is strict).
+export function createTestExpenseData(_projectId: number, overrides: any = {}) {
   return {
-    projectId,
     expenseDate: new Date().toISOString().split('T')[0],
     description: 'Test expense',
     amount: 50,

@@ -1,147 +1,123 @@
 # Agent Guidelines
 
+## Purpose
+- Root DOX rail for the monorepo.
+- Owns cross-cutting conventions, root documentation, deployment, CI, scripts, and integration boundaries between backend, frontend, and Playwright.
+
 ## Build/Lint/Test Commands
-- **Backend Build**: `cd backend && bun run build` (TypeScript compilation via `tsc`, no linter configured)
-- **Frontend Build**: `cd frontend && bun run build` (Vite production build)
-- **Frontend Type Check**: `cd frontend && npx tsc --noEmit` (type check without emitting)
-- **Backend Dev**: `cd backend && bun run dev` (bun --watch on localhost:8080)
-- **Frontend Dev**: `cd frontend && bun run dev` (Vite on localhost:5173)
-- **Backend Tests**: `cd backend && bun run test` (sequential via `test-sequential.sh`, shared DB)
-- **Single Backend Test**: `cd backend && bun test --preload ./src/tests/setup.ts src/tests/<filename>.test.ts`
-- **Single Frontend Test**: `cd frontend && bun run test <filename>`
-- **Test UI** (frontend only): `cd frontend && bun run test:ui`
-- **E2E Tests**: `bun run test:e2e` (Playwright, from project root, auto-starts servers)
+- **Dev Setup**: `bun run dev:setup` (prepares local backend env file and related defaults)
+- **Install Dependencies**: `bun run dev:install` (installs backend and frontend dependencies)
+- **Start Backend**: `bun run dev:backend` (delegates to `backend/`)
+- **Start Frontend**: `bun run dev:frontend` (delegates to `frontend/`)
+- **E2E Tests**: `bun run test:e2e`
+- **E2E UI**: `bun run test:e2e:ui`
 - **E2E Headed**: `bun run test:e2e:headed`
-- **DB Migrations**: `cd backend && bun run db:generate && bun run db:migrate`
-- **DB Seed**: `cd backend && bun run db:seed`
-- **Precommit**: `bun run precommit` (runs backend tsc, frontend tsc --noEmit, frontend vite build, Docker build)
+- **E2E Debug**: `bun run test:e2e:debug`
+- **E2E Report**: `bun run test:e2e:report`
+- **Precommit**: `bun run precommit` (backend compile, frontend type/build checks, Docker build)
 
 ## Project Structure
-- **Monorepo**: `backend/` (Express API) + `frontend/` (React SPA) + `e2e/` (Playwright)
-- **Runtime**: Bun for both backend and frontend
-- **Package Manager**: Bun (lockfile: `bun.lockb`)
-- **Backend**: Express 5 + Drizzle ORM (SQLite) + Zod validation + Luxon dates
-- **Frontend**: React 19 + Mantine 8 + React Router v7 + TanStack Query + Vitest
-- **Auth**: Session-based (express-session + connect-sqlite3), single-user via env vars
+- **Monorepo**: `backend/` (Express API), `frontend/` (React SPA), `e2e/` (Playwright)
+- **Runtime**: Bun across the workspace
+- **Package Manager**: Bun
+- **Integration Model**: backend serves the built frontend in production; Playwright exercises both applications together from root configuration
 
-## Code Style
+## Shared Code Style
+- **Formatting**: 2 spaces, LF endings, final newline required
+- **Modules**: ESM only throughout the workspace
+- **TypeScript**: strict mode stays enabled; `as any`, `@ts-ignore`, and `@ts-expect-error` are prohibited
+- **Naming**: camelCase for values/functions, PascalCase for React components and TypeScript types
+- **Scope**: package-specific implementation rules live in the nearest child contract
 
-### Formatting
-- **Indentation**: 2 spaces (enforced by `.editorconfig`), LF line endings
-- **Final newline**: Required (`.editorconfig`)
-- **No linter/formatter tool** configured (no ESLint, no Prettier)
+## Root-Owned Paths
+- Root documentation and operations: `README.md`, `DEPLOYMENT.md`, `MIGRATION_GUIDE.md`, `docker-compose.yml`, `Dockerfile`, `package.json`, `playwright.config.ts`, `scripts/`
+- Root assets and metadata: `LICENSE`, `banner.jpg`, `video-thumbnail.jpg`, `.github/`
+- Root-level reports and generated artifacts remain disposable unless the task explicitly concerns them
 
-### Imports
-- **ESM only** (`import`/`export`) throughout — both packages have `"type": "module"`
-- **Backend imports MUST use `.js` extensions** (TypeScript compiles to ESM, Node requires extensions):
-  ```typescript
-  import { db } from '../db/index.js';           // CORRECT
-  import { requireAuth } from '../middleware/auth.js'; // CORRECT
-  import { db } from '../db/index';              // WRONG - runtime error
-  ```
-- **Frontend imports do NOT need extensions** (Vite/bundler resolves them)
+---
 
-### TypeScript
-- **Strict mode** enabled in both `tsconfig.json` files
-- **Backend**: target ES2022, module ESNext, moduleResolution node, `bun-types` included
-- **Frontend**: target ES2020, moduleResolution bundler, `noUnusedLocals` + `noUnusedParameters` enabled
-- **Never suppress errors** with `as any`, `@ts-ignore`, or `@ts-expect-error`
+# DOX framework
 
-### Naming
-- **camelCase** for variables, functions, route handlers, database column aliases
-- **PascalCase** for React components, types, interfaces, Zod schema names
-- **Database columns**: snake_case in SQL, camelCase in Drizzle schema definitions
+- DOX is highly performant AGENTS.md hierarchy installed here
+- Agent must follow DOX instructions across any edits
 
-### Types
-- **Infer from Drizzle schemas** using `$inferSelect` / `$inferInsert` (never duplicate types):
-  ```typescript
-  export type Client = typeof clients.$inferSelect;
-  export type NewClient = typeof clients.$inferInsert;
-  ```
-- **Validation schemas** in `backend/src/types/validation.ts` using Zod — parse in route handlers:
-  ```typescript
-  const result = createClientSchema.parse(req.body); // Throws ZodError on failure
-  ```
-- **Frontend types** in `frontend/src/types/index.ts`, shared via `import type`
+## Core Contract
 
-### Error Handling
-- **Backend routes**: Wrap handler body in `try/catch`, pass errors to `next()`:
-  ```typescript
-  router.get('/', requireAuth, async (req, res, next) => {
-    try {
-      // ... handler logic
-      res.json(data);
-    } catch (err) { next(err); }
-  });
-  ```
-- **Centralized error handler** in `backend/src/middleware/errorHandler.ts` handles:
-  - `ZodError` → 400 with validation details
-  - `UNIQUE constraint failed` → 409
-  - Everything else → 500
-- **Never send error responses directly in routes** — always throw or `next(err)`
+- AGENTS.md files are binding work contracts for their subtrees
+- Work products, source materials, instructions, records, assets, and durable docs must stay understandable from the nearest applicable AGENTS.md plus every parent AGENTS.md above it
 
-### Date/Time
-- **Always use Luxon** (`DateTime`) for date operations, never raw `Date` for display
-- **API/DB format**: ISO 8601 TEXT strings (`YYYY-MM-DD` or full timestamp)
-- **Default timezone**: `Pacific/Auckland`, configurable via `TZ` env var
-- **Utilities**: `backend/src/utils/time.ts` — `roundUpToSixMinutes()`, `calculateDueDate()`, `getCurrentTimestamp()`
+## Read Before Editing
 
-## Database
-- **Drizzle ORM with SQLite** (via `bun:sqlite`)
-- **Schema**: `backend/src/db/schema.ts` — all tables, types, indexes, foreign keys
-- **Cascade deletes** configured: deleting client cascades to projects → time entries, expenses, invoices
-- **Migration workflow**: Edit schema → `bun run db:generate` → review SQL in `backend/drizzle/` → `bun run db:migrate`
-- **Settings**: Singleton row (`id=1`), seeded on first migration
-- **Date columns**: Stored as TEXT (ISO 8601), not INTEGER timestamps
+1. Read the root AGENTS.md
+2. Identify every file or folder you expect to touch
+3. Walk from the repository root to each target path
+4. Read every AGENTS.md found along each route
+5. If a parent AGENTS.md lists a child AGENTS.md whose scope contains the path, read that child and continue from there
+6. Use the nearest AGENTS.md as the local contract and parent docs for repo-wide rules
+7. If docs conflict, the closer doc controls local work details, but no child doc may weaken DOX
 
-## API Patterns
-- **Routes** in `backend/src/routes/`, one file per resource (clients, projects, timeEntries, etc.)
-- **Auth middleware**: `requireAuth` from `middleware/auth.ts` on all non-auth routes
-- **Pagination**: Query params `page` (1-indexed), `page_size` (10/25/50/100)
-- **Filtering**: Resource-specific query params (`status`, `clientId`, `from`, `to`)
-- **Response format**: `{ data: [...], pagination: { page, pageSize, total, totalPages } }`
-- **Service layer**: `backend/src/services/` for PDF (`pdfmake`) and CSV generation
+Do not rely on memory. Re-read the applicable DOX chain in the current session before editing.
 
-## Frontend Patterns
-- **UI library**: Mantine 8 components and hooks (`@mantine/core`, `@mantine/form`, `@mantine/dates`)
-- **Icons**: `@tabler/icons-react`
-- **Data fetching**: TanStack Query (`useQuery`, `useMutation`) with API services in `frontend/src/services/api.ts`
-- **Routing**: React Router v7 (`react-router-dom`)
-- **Auth context**: `frontend/src/contexts/AuthContext.tsx` — wraps app, provides `user`, `login()`, `logout()`
-- **Timer context**: `frontend/src/contexts/TimerContext.tsx` — offline support via IndexedDB
-- **Forms**: Mantine `useForm` hook with inline validation
+## Update After Editing
 
-## Testing
-- **Backend tests**: Vitest + Supertest, sequential execution required (shared SQLite test DB)
-  - Setup in `backend/src/tests/setup.ts` creates fresh DB, runs migrations, seeds settings
-  - Test DB path: `backend/data/test/app.test.db` (isolated from dev `app.db`)
-  - Tests: auth, settings, clients, projects, import, invoices, client-invoices
-  - Helper utilities in `backend/src/tests/helpers.ts`
-- **Frontend tests**: Vitest with jsdom environment
-- **E2E tests**: Playwright in `e2e/`, fresh DB per run (`backend/data/e2e-test.db`)
-  - Use `authenticatedPage` fixture from `e2e/fixtures/helpers.ts`
-  - Test data prefixed with `E2E-` for identification
+Every meaningful change requires a DOX pass before the task is done.
 
-## Key Files Reference
-- **Schema**: `backend/src/db/schema.ts` — all tables, types, foreign keys
-- **Validation**: `backend/src/types/validation.ts` — all Zod schemas
-- **Error handler**: `backend/src/middleware/errorHandler.ts`
-- **Auth**: `backend/src/routes/auth.ts` + `backend/src/middleware/auth.ts`
-- **API client**: `frontend/src/services/api.ts` — all frontend API calls
-- **Frontend types**: `frontend/src/types/index.ts`
-- **Invoice logic**: `backend/src/routes/invoices.ts` — complex transaction logic
-- **PDF service**: `backend/src/services/pdf.ts` — pdfmake with Markdown footer
-- **Timer offline**: `frontend/src/utils/timerDb.ts` — IndexedDB persistence
-- **Test setup**: `backend/src/tests/setup.ts`
+Update the closest owning AGENTS.md when a change affects:
 
-## Common Gotchas
-1. **Backend imports MUST use `.js` extension** even in `.ts` files — ESM requirement, will fail at runtime without it
-2. **Backend tests must run sequentially** — they share a test DB; use `bun run test` (not `bun test` directly for all)
-3. **Time entry rounding**: `roundUpToSixMinutes()` rounds to 0.1 hour increments (6-minute blocks)
-4. **Invoice number auto-increment**: Managed by `settings.nextInvoiceNumber`, updated atomically in transaction
-5. **Cascade deletes are configured** — deleting a client deletes all its projects, time entries, expenses, invoices
-6. **Session cookies**: `secure: 'auto'`, `trust proxy` enabled for Cloudflare tunnels
-7. **PDF generation**: Uses pdfmake with embedded Roboto fonts via `vfs_fonts.js`, JSDOM for Markdown rendering
-8. **Template variables** in invoice footer: `{{invoice_number}}`, `{{due_date}}`, `{{total_amount}}`, `{{client_name}}`
-9. **Frontend has `noUnusedLocals`/`noUnusedParameters`** enabled — remove unused imports/vars or build fails
-10. **Express 5** is used (not 4) — async error handling differs slightly from Express 4
+- purpose, scope, ownership, or responsibilities
+- durable structure, contracts, workflows, or operating rules
+- required inputs, outputs, permissions, constraints, side effects, or artifacts
+- user preferences about behavior, communication, process, organization, or quality
+- AGENTS.md creation, deletion, move, rename, or index contents
+
+Update parent docs when parent-level structure, ownership, workflow, or child index changes. Update child docs when parent changes alter local rules. Remove stale or contradictory text immediately. Small edits that do not change behavior or contracts may leave docs unchanged, but the DOX pass still must happen.
+
+## Hierarchy
+
+- Root AGENTS.md is the DOX rail: project-wide instructions, global preferences, durable workflow rules, and the top-level Child DOX Index
+- Child AGENTS.md files own domain-specific instructions and their own Child DOX Index
+- Each parent explains what its direct children cover and what stays owned by the parent
+- The closer a doc is to the work, the more specific and practical it must be
+
+## Child Doc Shape
+
+- Create a child AGENTS.md when a folder becomes a durable boundary with its own purpose, rules, responsibilities, workflow, materials, or quality standards
+- Work Guidance must reflect the current standards of the project or user instructions; if there are no specific standards or instructions yet, leave it empty
+- Verification must reflect an existing check; if no verification framework exists yet, leave it empty and update it when one exists
+
+Default section order:
+- Purpose
+- Ownership
+- Local Contracts
+- Work Guidance
+- Verification
+- Child DOX Index
+
+## Style
+
+- Keep docs concise, current, and operational
+- Document stable contracts, not diary entries
+- Put broad rules in parent docs and concrete details in child docs
+- Prefer direct bullets with explicit names
+- Do not duplicate rules across many files unless each scope needs a local version
+- Delete stale notes instead of explaining history
+- Trim obvious statements, repeated rules, misplaced detail, and warnings for risks that no longer exist
+
+## Closeout
+
+1. Re-check changed paths against the DOX chain
+2. Update nearest owning docs and any affected parents or children
+3. Refresh every affected Child DOX Index
+4. Remove stale or contradictory text
+5. Run existing verification when relevant
+6. Report any docs intentionally left unchanged and why
+
+## User Preferences
+
+When the user requests a durable behavior change, record it here or in the relevant child AGENTS.md
+
+## Child DOX Index
+- `backend/AGENTS.md` owns the Express API, authentication, Drizzle/SQLite schema and migrations, backend services, backend utilities, and backend tests.
+- `frontend/AGENTS.md` owns the React SPA, routing, Mantine UI, contexts, browser persistence, API client, and frontend tests.
+- `e2e/AGENTS.md` owns Playwright scenarios and fixtures; root keeps `playwright.config.ts` because it coordinates backend and frontend startup.
+- Root-owned files remain `README.md`, `DEPLOYMENT.md`, `MIGRATION_GUIDE.md`, `docker-compose.yml`, `Dockerfile`, `package.json`, `playwright.config.ts`, `scripts/`, `LICENSE`, `banner.jpg`, `video-thumbnail.jpg`, and `.github/`.

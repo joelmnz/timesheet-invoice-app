@@ -230,6 +230,7 @@ export default function ProjectDetail() {
       expensesApi.create(projectId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['expenses-all'] });
       notifications.show({
         title: 'Success',
         message: 'Expense created successfully',
@@ -252,6 +253,7 @@ export default function ProjectDetail() {
       expensesApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['expenses-all'] });
       notifications.show({
         title: 'Success',
         message: 'Expense updated successfully',
@@ -274,6 +276,7 @@ export default function ProjectDetail() {
     mutationFn: expensesApi.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['expenses-all'] });
       notifications.show({
         title: 'Success',
         message: 'Expense deleted successfully',
@@ -303,6 +306,7 @@ export default function ProjectDetail() {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.invalidateQueries({ queryKey: ['time-entries', projectId] });
       queryClient.invalidateQueries({ queryKey: ['expenses', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['expenses-all'] });
       notifications.show({
         title: 'Success',
         message: 'Invoice created successfully',

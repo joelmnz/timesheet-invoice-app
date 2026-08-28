@@ -20,7 +20,7 @@ A full-stack web application for tracking time, managing projects, generating in
 ## Project Structure
 
 ```text
-timesheet_invoice_app/
+timesheet-invoice-app/
   backend/    # Express API, database, migrations
   frontend/   # React app, UI, routing
 ```
@@ -31,46 +31,51 @@ timesheet_invoice_app/
 
 ### Prerequisites
 
-- Node.js (v18+ recommended)
 - Bun (v1+ recommended)
 
 ### 1. Clone the Repository
 
 ```bash
 git clone <repo-url>
-cd timesheet_invoice_app
+cd timesheet-invoice-app
 ```
 
-### 2. Install Dependencies
+### 2. Local Development Setup
 
-#### Backend
+Run the one-time setup command from the repo root:
 
 ```bash
-cd backend
-bun install
+bun run dev:setup
 ```
 
-#### Frontend
+This does two things:
+
+- Installs dependencies in `backend/` and `frontend/`
+- Creates `backend/.env` from `backend/.env.example` if it does not already exist
+- Moves a misplaced repo-root `.env` to `backend/.env` when local dev setup is missing
+
+After that, edit `backend/.env` and set the values you want to use locally. The default example keeps local development simple and uses `admin` / `admin` unless you change it.
+
+If you prefer to do it manually, use:
 
 ```bash
-cd ../frontend
-bun install
+bun run dev:install
+cp backend/.env.example backend/.env
 ```
 
-### 3. Database Setup (Backend)
+### 3. Environment Variables
 
-- The backend uses SQLite and Drizzle ORM.
-- To generate and migrate the database schema:
+#### Local development
+
+For local development, the backend reads environment variables from `backend/.env` because the dev server starts from the `backend/` directory.
+
+Start from the example file already in the repo:
 
 ```bash
-# From backend directory
-bun run db:generate
-bun run db:migrate
+cp backend/.env.example backend/.env
 ```
 
-### 4. Environment Variables
-
-#### Backend
+Important local variables:
 
 - `SESSION_SECRET` (required in production) - for session encryption
 - `DATABASE_PATH` (optional, defaults to `./data/app.db`)
@@ -82,7 +87,19 @@ bun run db:migrate
   - Useful in development for tools like curl and Postman
   - NOT recommended in production
 
-Create a `.env` file in `backend/` with your configuration. See `backend/.env.example` for all options.
+See `backend/.env.example` for the full list of supported backend variables.
+
+#### Docker Compose / production-style local runs
+
+If you are using `docker compose`, copy the root example file instead:
+
+```bash
+cp .env.example .env
+```
+
+That root `.env` is for Docker Compose. It is separate from `backend/.env`, which is the file used by local Bun development.
+
+If you accidentally created `.env` in the repo root while setting up local Bun development, `bun run dev:setup` will move it to `backend/.env` when `backend/.env` is missing.
 
 #### CORS Configuration Guide
 
@@ -116,26 +133,30 @@ curl -H "Origin: https://evil.com" \
      -X GET http://localhost:8080/api/settings
 ```
 
-### 5. Running the App (Development)
+### 4. Running the App (Development)
 
-#### Backend
-
-```bash
-cd backend
-bun run dev
-```
-
-#### Frontend
+Use two terminals from the repo root:
 
 ```bash
-cd frontend
-bun run dev
+bun run dev:backend
 ```
 
-- Frontend runs on [http://localhost:5173](http://localhost:5173)
-- Backend runs on [http://localhost:8080](http://localhost:8080)
+```bash
+bun run dev:frontend
+```
 
-### 6. Building for Production
+What happens on startup:
+
+- The backend starts on [http://localhost:8080](http://localhost:8080)
+- The frontend starts on [http://localhost:5173](http://localhost:5173)
+- On first backend start, database migrations run automatically and the SQLite database is created if needed
+
+Default local login, if you keep the example credentials:
+
+- Username: `admin`
+- Password: `admin`
+
+### 5. Building for Production
 
 #### Backend
 
@@ -154,7 +175,7 @@ bun run build
 
 - In production, the backend serves the built frontend from `frontend/dist`.
 
-### 7. Testing
+### 6. Testing
 
 The application has two test suites:
 
@@ -164,10 +185,10 @@ API integration tests using Vitest and Supertest (88 tests, ~42s):
 
 ```bash
 cd backend
-bun run test              # Run all tests (sequential)
-bun run test:parallel     # Run in parallel (dev/debug)
-bun run test:watch        # Run with watch mode
-bun test src/tests/auth.test.ts  # Run specific file
+bun run test                    # Run all tests (sequential)
+bun run test:parallel           # Run in parallel (dev/debug)
+bun run test:watch              # Run with watch mode
+bun test --preload ./src/tests/setup.ts src/tests/auth.test.ts
 ```
 
 **Coverage:**
@@ -212,17 +233,24 @@ bun run test:e2e:report
 
 See [`e2e/README.md`](e2e/README.md) for detailed documentation.
 
-### 8. Useful Scripts
+### 7. Useful Scripts
 
-- **Backend:**
-  - `bun run db:generate` — Generate ORM schema
-  - `bun run db:migrate` — Run migrations
+- **Repo root:**
+  - `bun run dev:setup` — Install dependencies and ensure local env lives at `backend/.env`
+  - `bun run dev:install` — Install backend and frontend dependencies
+  - `bun run dev:backend` — Start the backend dev server from the repo root
+  - `bun run dev:frontend` — Start the frontend dev server from the repo root
+  - `bun run test:e2e` — Run Playwright end-to-end tests
+
+- **Backend (`backend/`):**
   - `bun run dev` — Start dev server
   - `bun run build` — Build TypeScript
   - `bun run start` — Run built server
+  - `bun run db:generate` — Generate a Drizzle migration after schema changes
+  - `bun run db:migrate` — Apply migrations manually
 
-- **Frontend:**
-  - `bun run dev` — Start dev server
+- **Frontend (`frontend/`):**
+  - `bun run dev` — Start Vite dev server
   - `bun run build` — Build for production
 
 ---

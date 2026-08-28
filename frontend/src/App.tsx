@@ -10,6 +10,7 @@ import ClientDetail from './pages/ClientDetail';
 import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
 import TimeEntries from './pages/TimeEntries';
+import Expenses from './pages/Expenses';
 import Invoices from './pages/Invoices';
 import InvoiceDetail from './pages/InvoiceDetail';
 import ImportInvoices from './pages/ImportInvoices';
@@ -44,6 +45,7 @@ function AppRoutes() {
           <Route path="/projects" element={<Projects />} />
           <Route path="/projects/:id" element={<ProjectDetail />} />
           <Route path="/time-entries" element={<TimeEntries />} />
+          <Route path="/expenses" element={<Expenses />} />
           <Route path="/invoices" element={<Invoices />} />
           <Route path="/invoices/:id" element={<InvoiceDetail />} />
           <Route path="/import/invoices" element={<ImportInvoices />} />

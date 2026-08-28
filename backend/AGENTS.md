@@ -16,6 +16,7 @@
 - Drizzle ORM uses SQLite; persisted date columns remain ISO 8601 `TEXT` values rather than integer timestamps, and Luxon handles backend date and timezone logic.
 - The `settings` table remains a singleton row with `id=1` and is seeded as part of initial migration setup.
 - Session authentication depends on the existing cookie and proxy behavior; preserve the current `secure: 'auto'` cookie mode and trust-proxy assumptions when changing auth or deployment code.
+- Session expiration is sliding (`rolling: true` in `src/app.ts`): the cookie and store TTL refresh on every request so regular use never logs the user out; sessions only expire after 7 days of complete inactivity. Keep this behavior when touching session config.
 - Backend tests share a SQLite test database and must continue to run sequentially.
 
 ## Work Guidance

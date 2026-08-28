@@ -77,6 +77,10 @@ export function createApp() {
       }),
       secret: SESSION_SECRET,
       resave: false,
+      // Sliding expiration: refresh the session cookie on every authenticated
+      // request so regular use of the app never triggers a logout. A session
+      // still expires after 7 days of complete inactivity.
+      rolling: true,
       saveUninitialized: false,
       cookie: {
         httpOnly: true,

@@ -212,6 +212,25 @@ describe('Expenses API', () => {
     expect(listResponse.body.data[0].description).toBe('Project scoped expense');
   });
 
+  test('rejects a projectId in the body of project-scoped expense creation', async () => {
+    const agent = await createAgent();
+    const { projectId } = await createProjectWithClient(agent);
+    const otherProjectId = projectId + 999;
+
+    const response = await agent.post(`/api/projects/${projectId}/expenses`).send({
+      projectId: otherProjectId,
+      expenseDate: '2026-08-28',
+      description: 'Should be rejected',
+      amount: 10,
+    });
+
+    expect(response.status).toBe(400);
+
+    const listResponse = await agent.get(`/api/projects/${projectId}/expenses`);
+    expect(listResponse.status).toBe(200);
+    expect(listResponse.body.data).toHaveLength(0);
+  });
+
   test('includes general expenses in CSV export', async () => {
     const agent = await createAgent();
     await agent.post('/api/expenses').send({

@@ -2,7 +2,11 @@ import { Router } from 'express';
 import { db } from '../db/index.js';
 import { clients, expenses, projects } from '../db/schema.js';
 import { and, count, desc, eq, isNull, sql, sum } from 'drizzle-orm';
-import { createExpenseSchema, updateExpenseSchema } from '../types/validation.js';
+import {
+  createExpenseSchema,
+  createProjectExpenseSchema,
+  updateExpenseSchema,
+} from '../types/validation.js';
 import { requireAuth } from '../middleware/auth.js';
 import { getCurrentTimestamp } from '../utils/time.js';
 import { z } from 'zod';
@@ -176,7 +180,7 @@ router.get('/projects/:projectId/expenses', requireAuth, async (req, res, next) 
 router.post('/projects/:projectId/expenses', requireAuth, async (req, res, next) => {
   try {
     const projectId = parseInt(req.params.projectId);
-    const data = createExpenseSchema.parse(req.body);
+    const data = createProjectExpenseSchema.parse(req.body);
 
     const [newExpense] = await db
       .insert(expenses)

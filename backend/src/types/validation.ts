@@ -80,6 +80,13 @@ export const updateExpenseSchema = z.object({
   isBillable: z.boolean().optional(),
 });
 
+// Project-scoped expense creation: projectId comes exclusively from the URL
+// parameter, so a projectId in the body is rejected rather than ignored.
+export const createProjectExpenseSchema = createExpenseSchema
+  .omit({ projectId: true })
+  .strict();
+export type CreateProjectExpenseInput = z.infer<typeof createProjectExpenseSchema>;
+
 // Invoice schemas
 export const createInvoiceSchema = z.object({
   dateInvoiced: z.string(),

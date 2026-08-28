@@ -12,7 +12,7 @@ import timeEntriesRoutes from './routes/timeEntries.js';
 import expensesRoutes from './routes/expenses.js';
 import invoicesRoutes, { invoiceLinesRouter } from './routes/invoices.js';
 import dashboardRoutes from './routes/dashboard.js';
-import reportsRoutes from './routes/reports.js';
+import reportsRoutes, { exportRouter } from './routes/reports.js';
 import importRoutes from './routes/import.js';
 import migrationsRoutes from './routes/migrations.js';
 import integrationRoutes from './routes/integration.js';
@@ -103,7 +103,7 @@ export function createApp() {
   app.use('/api/dashboard', dashboardRoutes);
   app.use('/api/charts', dashboardRoutes);
   app.use('/api/reports', reportsRoutes);
-  app.use('/api/export', reportsRoutes);
+  app.use('/api/export', exportRouter);
   app.use('/api/import', importRoutes);
   app.use('/api/migrations', migrationsRoutes);
   app.use('/api/integration', integrationRoutes);

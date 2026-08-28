@@ -116,7 +116,9 @@ router.get('/income', requireAuth, async (req, res, next) => {
 });
 
 // GET /api/export/:entity
-router.get(['/export/:entity', '/:entity'], requireAuth, async (req, res, next) => {
+export const exportRouter = Router();
+
+exportRouter.get('/:entity', requireAuth, async (req, res, next) => {
   try {
     const { entity } = req.params;
     const from = req.query.from as string;

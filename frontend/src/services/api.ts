@@ -271,8 +271,8 @@ export const expensesApi = {
   }) => {
     const searchParams = new URLSearchParams();
     if (params?.query) searchParams.append('query', params.query);
-    if (params?.projectFilter) searchParams.append('projectId', params.projectFilter);
-    if (params?.projectId !== undefined) searchParams.append('projectId', params.projectId.toString());
+    if (params?.projectFilter) searchParams.set('projectId', params.projectFilter);
+    else if (params?.projectId !== undefined) searchParams.set('projectId', params.projectId.toString());
     if (params?.from) searchParams.append('from', params.from);
     if (params?.to) searchParams.append('to', params.to);
     searchParams.append('page', (params?.page || 1).toString());

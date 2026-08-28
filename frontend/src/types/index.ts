@@ -76,7 +76,7 @@ export interface TimeEntry {
 
 export interface Expense {
   id: number;
-  projectId: number;
+  projectId: number | null;
   expenseDate: string;
   description?: string;
   amount: number;
@@ -85,6 +85,8 @@ export interface Expense {
   invoiceId?: number;
   createdAt: string;
   updatedAt: string;
+  project?: Project | null;
+  client?: Client | null;
 }
 
 export interface Invoice {
@@ -198,3 +200,6 @@ export interface PaginatedResponse<T> {
   pagination: PaginationMeta;
 }
 
+export interface ExpenseListResponse extends PaginatedResponse<Expense> {
+  totalAmount: number;
+}

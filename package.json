@@ -4,6 +4,10 @@
   "description": "A full-stack web application for tracking time, managing projects, generating invoices, and reporting for freelancers and small teams.",
   "type": "module",
   "scripts": {
+    "dev:backend": "cd backend && bun run dev",
+    "dev:frontend": "cd frontend && bun run dev",
+    "dev:install": "cd backend && bun install && cd ../frontend && bun install",
+    "dev:setup": "bash ./scripts/dev-setup.sh",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",

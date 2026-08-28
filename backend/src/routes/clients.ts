@@ -377,6 +377,9 @@ router.post('/:id/invoices', requireAuth, async (req, res, next) => {
 
       // Group expenses by project
       const expensesByProject = uninvoicedExpenses.reduce((acc, expense) => {
+        if (expense.projectId === null) {
+          return acc;
+        }
         if (!acc[expense.projectId]) {
           acc[expense.projectId] = [];
         }

@@ -65,13 +65,20 @@ export const updateTimerNotesSchema = z.object({
 
 // Expense schemas
 export const createExpenseSchema = z.object({
+  projectId: z.number().int().positive().nullable().optional(),
   expenseDate: z.string(),
   description: z.string().optional(),
   amount: z.number().min(0),
   isBillable: z.boolean().default(true),
 });
 
-export const updateExpenseSchema = createExpenseSchema.partial();
+export const updateExpenseSchema = z.object({
+  projectId: z.number().int().positive().nullable().optional(),
+  expenseDate: z.string().optional(),
+  description: z.string().optional(),
+  amount: z.number().min(0).optional(),
+  isBillable: z.boolean().optional(),
+});
 
 // Invoice schemas
 export const createInvoiceSchema = z.object({

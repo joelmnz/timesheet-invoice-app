@@ -9,6 +9,7 @@ bun test --preload ./src/tests/setup.ts src/tests/auth.test.ts && \
 bun test --preload ./src/tests/setup.ts src/tests/settings.test.ts && \
 bun test --preload ./src/tests/setup.ts src/tests/clients.test.ts && \
 bun test --preload ./src/tests/setup.ts src/tests/projects.test.ts && \
+bun test --preload ./src/tests/setup.ts src/tests/expenses.test.ts && \
 bun test --preload ./src/tests/setup.ts src/tests/import.test.ts && \
 bun test --preload ./src/tests/setup.ts src/tests/invoices.test.ts && \
 bun test --preload ./src/tests/setup.ts src/tests/client-invoices.test.ts

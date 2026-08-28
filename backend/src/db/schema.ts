@@ -62,7 +62,7 @@ export const timeEntries = sqliteTable('time_entries', {
 // Expenses table
 export const expenses = sqliteTable('expenses', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  projectId: integer('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
+  projectId: integer('project_id').references(() => projects.id, { onDelete: 'cascade' }),
   expenseDate: text('expense_date').notNull(),
   description: text('description'),
   amount: real('amount').notNull(),

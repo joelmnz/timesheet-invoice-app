@@ -116,7 +116,7 @@ router.get('/income', requireAuth, async (req, res, next) => {
 });
 
 // GET /api/export/:entity
-router.get('/export/:entity', requireAuth, async (req, res, next) => {
+router.get(['/export/:entity', '/:entity'], requireAuth, async (req, res, next) => {
   try {
     const { entity } = req.params;
     const from = req.query.from as string;
@@ -255,8 +255,8 @@ router.get('/export/:entity', requireAuth, async (req, res, next) => {
             clientName: clients.name,
           })
           .from(expenses)
-          .innerJoin(projects, eq(expenses.projectId, projects.id))
-          .innerJoin(clients, eq(projects.clientId, clients.id))
+          .leftJoin(projects, eq(expenses.projectId, projects.id))
+          .leftJoin(clients, eq(projects.clientId, clients.id))
           .where(dateConditions.length > 0 ? and(...dateConditions) : undefined)
           .orderBy(expenses.expenseDate);
 
@@ -271,8 +271,8 @@ router.get('/export/:entity', requireAuth, async (req, res, next) => {
         ];
 
         const rows = data.map(({ expense, projectName, clientName }) => [
-          clientName,
-          projectName,
+          clientName || '',
+          projectName || 'General',
           expense.expenseDate,
           expense.description || '',
           expense.amount,

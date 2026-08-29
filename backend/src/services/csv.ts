@@ -1,7 +1,15 @@
 export function generateCSV(headers: string[], rows: any[][]): string {
   const escapeCsvValue = (value: any): string => {
     if (value === null || value === undefined) return '';
-    const str = String(value);
+    let str = String(value);
+
+    // Prevent CSV Injection (Formula Injection)
+    // If the value starts with =, +, -, or @, prepend a single quote
+    // so that spreadsheet software interprets it as text, not a formula.
+    if (/^[=+\-@]/.test(str)) {
+      str = `'${str}`;
+    }
+
     if (str.includes(',') || str.includes('"') || str.includes('\n')) {
       return `"${str.replace(/"/g, '""')}"`;
     }
@@ -68,4 +76,3 @@ export function parseCSV(csvContent: string): { headers: string[]; rows: string[
 
   return { headers, rows };
 }
-

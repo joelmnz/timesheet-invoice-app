@@ -103,6 +103,7 @@ export default function InvoiceDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invoices', invoiceId] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['clients'] });
       notifications.show({
         title: 'Success',
         message: 'Invoice updated successfully',
@@ -125,6 +126,7 @@ export default function InvoiceDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invoice-lines', invoiceId] });
       queryClient.invalidateQueries({ queryKey: ['invoices', invoiceId] });
+      queryClient.invalidateQueries({ queryKey: ['clients'] });
       notifications.show({
         title: 'Success',
         message: 'Line item added successfully',
@@ -148,6 +150,7 @@ export default function InvoiceDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invoice-lines', invoiceId] });
       queryClient.invalidateQueries({ queryKey: ['invoices', invoiceId] });
+      queryClient.invalidateQueries({ queryKey: ['clients'] });
       notifications.show({
         title: 'Success',
         message: 'Line item updated successfully',
@@ -171,6 +174,7 @@ export default function InvoiceDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invoice-lines', invoiceId] });
       queryClient.invalidateQueries({ queryKey: ['invoices', invoiceId] });
+      queryClient.invalidateQueries({ queryKey: ['clients'] });
       notifications.show({
         title: 'Success',
         message: 'Line item deleted successfully',

@@ -35,6 +35,7 @@ import {
 } from '@tabler/icons-react';
 import { clientsApi, projectsApi, invoicesApi } from '../services/api';
 import { Pagination } from '../components/common/Pagination';
+import { ClientInvoiceSummary } from '../components/ClientInvoiceSummary';
 import { DateTime } from 'luxon';
 
 export default function ClientDetail() {
@@ -496,6 +497,8 @@ export default function ClientDetail() {
           </div>
         )}
       </Card>
+
+      <ClientInvoiceSummary summary={client.invoiceSummary} />
 
       <Title order={2} mb="md">Projects</Title>
       {projectsLoading ? (

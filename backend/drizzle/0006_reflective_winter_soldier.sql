@@ -1,0 +1,1 @@
+CREATE INDEX `invoices_client_status_date_idx` ON `invoices` (`client_id`,`status`,`date_invoiced`,`id`);

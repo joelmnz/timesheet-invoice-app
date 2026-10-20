@@ -339,6 +339,83 @@ describe('Invoice Line Item Restrictions for Paid Invoices', () => {
   });
 });
 
+describe('Invoice detail corrections', () => {
+  const statuses = ['Draft', 'Sent', 'Paid', 'Cancelled'] as const;
+  let agent: ReturnType<typeof request.agent>;
+  let invoiceId: number;
+
+  beforeEach(async () => {
+    await db.delete(invoices);
+    agent = request.agent(createApp());
+    await loginAsTestUser(agent);
+    const clientId = await createTestClient(agent);
+    const projectId = await createTestProject(agent, clientId);
+    await createTestTimeEntry(agent, projectId, {
+      startAt: '2025-10-27T09:00:00.000Z',
+      endAt: '2025-10-27T10:00:00.000Z',
+      totalHours: 1,
+    });
+    const response = await agent.post(`/api/projects/${projectId}/invoices`).send({
+      dateInvoiced: '2025-10-28', upToDate: '2025-10-28',
+    });
+    expect(response.status).toBe(201);
+    invoiceId = response.body.invoice.id;
+  });
+
+  for (const status of statuses) {
+    for (const includeStatus of [false, true]) {
+      it(`persists every correction and clear in ${status} with status ${includeStatus ? 'unchanged' : 'omitted'}`, async () => {
+        await agent.put(`/api/invoices/${invoiceId}`).send({ status });
+        const values = {
+          number: `CORRECTED-${invoiceId}`, dateInvoiced: '2025-09-01', dueDate: '2025-09-30',
+          dateSent: '2025-09-02', datePaid: '2025-09-20', notes: 'Corrected notes',
+        };
+        const response = await agent.put(`/api/invoices/${invoiceId}`).send({
+          ...values, ...(includeStatus ? { status } : {}),
+        });
+        expect(response.status).toBe(200);
+        expect((await agent.get(`/api/invoices/${invoiceId}`)).body).toMatchObject({ ...values, status });
+        const clears = { dateSent: null, datePaid: null, notes: '' };
+        expect((await agent.put(`/api/invoices/${invoiceId}`).send({
+          ...clears, ...(includeStatus ? { status } : {}),
+        })).status).toBe(200);
+        expect((await agent.get(`/api/invoices/${invoiceId}`)).body).toMatchObject({ ...values, ...clears, status });
+      });
+    }
+    for (const nextStatus of statuses) {
+      it(`preserves omitted historical dates from ${status} to ${nextStatus}`, async () => {
+        const dates = { dateSent: '2025-09-02', datePaid: '2025-09-20' };
+        await agent.put(`/api/invoices/${invoiceId}`).send({ status, ...dates });
+        expect((await agent.put(`/api/invoices/${invoiceId}`).send({ status: nextStatus })).status).toBe(200);
+        expect((await agent.get(`/api/invoices/${invoiceId}`)).body).toMatchObject({ ...dates, status: nextStatus });
+      });
+    }
+  }
+
+  for (const [status, dateField] of [['Sent', 'dateSent'], ['Paid', 'datePaid']] as const) {
+    it(`defaults an omitted ${dateField} only on transition into ${status}`, async () => {
+      const response = await agent.put(`/api/invoices/${invoiceId}`).send({ status });
+      expect(response.status).toBe(200);
+      expect(response.body[dateField]).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      expect((await agent.get(`/api/invoices/${invoiceId}`)).body[dateField]).toBe(response.body[dateField]);
+      await agent.put(`/api/invoices/${invoiceId}`).send({ [dateField]: null });
+      await agent.put(`/api/invoices/${invoiceId}`).send({ status });
+      expect((await agent.get(`/api/invoices/${invoiceId}`)).body).toMatchObject({ status, [dateField]: null });
+    });
+
+    it(`honors explicit null ${dateField} on transition into ${status}`, async () => {
+      expect((await agent.put(`/api/invoices/${invoiceId}`).send({ status, [dateField]: null })).status).toBe(200);
+      expect((await agent.get(`/api/invoices/${invoiceId}`)).body).toMatchObject({ status, [dateField]: null });
+    });
+  }
+
+  it('retains authentication, validation, and not-found handling', async () => {
+    expect((await request(createApp()).put(`/api/invoices/${invoiceId}`).send({ notes: 'No' })).status).toBe(401);
+    expect((await agent.put(`/api/invoices/${invoiceId}`).send({ status: 'Invalid' })).status).toBe(400);
+    expect((await agent.put('/api/invoices/999999').send({ notes: 'Missing' })).status).toBe(404);
+  });
+});
+
 describe('Invoice PDF Filename Generation', () => {
   let app: any;
   let agent: any;

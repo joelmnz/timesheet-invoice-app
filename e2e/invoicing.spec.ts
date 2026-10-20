@@ -1,6 +1,73 @@
 import { test, expect } from './fixtures/helpers';
 import { generateTestId } from './fixtures/helpers';
 
+// Seed through the authenticated API so this regression is independent of invoice-generation UI.
+test.describe('Invoice detail corrections', () => {
+  for (const status of ['Draft', 'Sent', 'Paid', 'Cancelled'] as const) {
+    test(`persists corrections and explicit clears without changing ${status}`, async ({ authenticatedPage: page }) => {
+      const clientResponse = await page.request.post('/api/clients', {
+        data: { name: generateTestId('InvoiceCorrection-'), defaultHourlyRate: 100 },
+      });
+      expect(clientResponse.ok()).toBeTruthy();
+      const client = await clientResponse.json();
+      const projectResponse = await page.request.post('/api/projects', {
+        data: { name: generateTestId('InvoiceCorrection-'), clientId: client.id },
+      });
+      expect(projectResponse.ok()).toBeTruthy();
+      const project = await projectResponse.json();
+      const timeResponse = await page.request.post('/api/time-entries', {
+        data: { projectId: project.id, startAt: '2026-10-01T09:00:00.000Z', endAt: '2026-10-01T10:00:00.000Z' },
+      });
+      expect(timeResponse.ok()).toBeTruthy();
+      const invoiceResponse = await page.request.post(`/api/projects/${project.id}/invoices`, {
+        data: { dateInvoiced: '2026-10-01', upToDate: '2026-10-31' },
+      });
+      expect(invoiceResponse.ok()).toBeTruthy();
+      const { invoice } = await invoiceResponse.json();
+      const seedResponse = await page.request.put(`/api/invoices/${invoice.id}`, {
+        data: { status, dueDate: '2026-10-15', dateSent: '2026-10-02', datePaid: '2026-10-03', notes: 'Original notes' },
+      });
+      expect(seedResponse.ok()).toBeTruthy();
+      await page.goto(`/invoices/${invoice.id}`);
+      await page.getByRole('button', { name: 'Edit Invoice', exact: true }).click();
+      const dialog = page.getByRole('dialog', { name: 'Edit Invoice' });
+      const fields = ['Invoice Date', 'Due Date', 'Date Sent', 'Date Paid'];
+      for (const [index, field] of fields.entries()) {
+        await expect(dialog.getByLabel(field, { exact: true })).toBeVisible();
+        await expect(dialog.getByLabel(field, { exact: true })).toBeEnabled();
+        await dialog.getByLabel(field, { exact: true }).click();
+        await page.getByRole('button', { name: `${index + 5} October 2026`, exact: true }).click();
+      }
+      await expect(dialog.getByLabel('Status', { exact: true })).toBeEnabled();
+      await expect(dialog.getByLabel('Status', { exact: true })).toHaveValue(status);
+      await dialog.getByLabel('Notes', { exact: true }).fill('Corrected notes');
+      await dialog.getByRole('button', { name: 'Update', exact: true }).click();
+      await expect(dialog).not.toBeVisible();
+      await page.reload();
+      await page.getByRole('button', { name: 'Edit Invoice', exact: true }).click();
+      for (const [index, field] of fields.entries()) {
+        await expect(dialog.getByLabel(field, { exact: true })).toHaveText(`October ${index + 5}, 2026`);
+      }
+      await expect(dialog.getByLabel('Status', { exact: true })).toHaveValue(status);
+      await expect(dialog.getByLabel('Notes', { exact: true })).toHaveValue('Corrected notes');
+      for (const field of ['Date Sent', 'Date Paid']) {
+        await dialog.locator('.mantine-DatePickerInput-root').filter({ has: dialog.getByLabel(field, { exact: true }) }).getByRole('button').last().click();
+      }
+      await dialog.getByLabel('Notes', { exact: true }).fill('');
+      await dialog.getByRole('button', { name: 'Update', exact: true }).click();
+      await expect(dialog).not.toBeVisible();
+      await page.reload();
+      await page.getByRole('button', { name: 'Edit Invoice', exact: true }).click();
+      await expect(dialog.getByLabel('Status', { exact: true })).toHaveValue(status);
+      await expect(dialog.getByLabel('Date Sent', { exact: true })).toHaveText('');
+      await expect(dialog.getByLabel('Date Paid', { exact: true })).toHaveText('');
+      await expect(dialog.getByLabel('Notes', { exact: true })).toHaveValue('');
+      await expect(dialog.getByLabel('Invoice Date', { exact: true })).toHaveText('October 5, 2026');
+      await expect(dialog.getByLabel('Due Date', { exact: true })).toHaveText('October 6, 2026');
+    });
+  }
+});
+
 test.describe('Invoicing', () => {
   let clientName: string;
   let projectName: string;

@@ -5,8 +5,11 @@
 - Owns cross-cutting conventions, root documentation, deployment, CI, scripts, and integration boundaries between backend, frontend, and Playwright.
 
 ## Build/Lint/Test Commands
-- **Dev Setup**: `bun run dev:setup` (prepares local backend env file and related defaults)
-- **Install Dependencies**: `bun run dev:install` (installs backend and frontend dependencies)
+- **Dev Setup**: `bash scripts/dev-setup.sh` (Bun-free entry point; `bun run dev:setup` remains supported)
+- **Setup Contract**: Reuse PATH or user-local Bun, otherwise bootstrap stable Bun via Node/npm into `$HOME/.bun`; install root/backend/frontend dependencies; preserve backend env, otherwise move root env or copy the backend example. Do not start servers, generate migrations, or alter shell profiles.
+- **Optional Browser Setup**: `bash scripts/dev-setup.sh --with-e2e` additionally provisions Playwright Chromium/system dependencies and may require administrator privileges; ordinary setup never provisions OS packages.
+- **Setup Regression Tests**: `bash scripts/dev-setup.test.sh` or `bun run test:setup` (isolated fixtures, no network or runtime install)
+- **Install Dependencies**: `bun run dev:install` (installs root, backend, and frontend dependencies only)
 - **Start Backend**: `bun run dev:backend` (delegates to `backend/`)
 - **Start Frontend**: `bun run dev:frontend` (delegates to `frontend/`)
 - **E2E Tests**: `bun run test:e2e`

@@ -31,7 +31,8 @@ timesheet-invoice-app/
 
 ### Prerequisites
 
-- Bun (v1+ recommended)
+- Bash and either Bun or Node.js with npm (setup installs stable Bun if missing)
+- Network access for runtime/dependency downloads; ordinary setup needs no sudo, unzip, or Docker
 
 ### 1. Clone the Repository
 
@@ -42,17 +43,22 @@ cd timesheet-invoice-app
 
 ### 2. Local Development Setup
 
-Run the one-time setup command from the repo root:
+Run from the repo root (also works before Bun is installed):
 
 ```bash
-bun run dev:setup
+bash scripts/dev-setup.sh
+# If setup uses or installs user-local Bun, expose it to subsequent shell commands:
+export PATH="$HOME/.bun/bin:$PATH"
 ```
 
-This does two things:
+With Bun already on PATH, `bun run dev:setup` remains equivalent. Setup:
 
-- Installs dependencies in `backend/` and `frontend/`
-- Creates `backend/.env` from `backend/.env.example` if it does not already exist
-- Moves a misplaced repo-root `.env` to `backend/.env` when local dev setup is missing
+- Reuses Bun from PATH or `$HOME/.bun/bin/bun`, otherwise installs it using npm into `$HOME/.bun` without changing shell profiles
+- Installs dependencies in the root, `backend/`, and `frontend/`
+- Preserves existing `backend/.env` byte-for-byte (and leaves root `.env` untouched when both exist)
+- Otherwise moves a repo-root `.env` to `backend/.env`, or copies `backend/.env.example` if neither exists
+
+Reruns are supported. Ordinary setup does not start servers, generate migrations, or install browsers/system packages.
 
 After that, edit `backend/.env` and set the values you want to use locally. The default example keeps local development simple and uses `admin` / `admin` unless you change it.
 
@@ -202,11 +208,15 @@ See [`backend/src/tests/BACKEND_TESTS.md`](backend/src/tests/BACKEND_TESTS.md) f
 
 #### End-to-End (E2E) Tests
 
-Full application flow tests using Playwright:
+Full application flow tests using Playwright. Opt-in setup downloads Chromium and installs its system dependencies; the latter may require administrator privileges:
 
 ```bash
-# Install Playwright browsers (first time only)
-bunx playwright install chromium
+bash scripts/dev-setup.sh --with-e2e
+```
+
+If system package installation is restricted, ask a host administrator to supply Playwright's system dependencies, then run `bunx playwright install chromium` to download the browser separately. A successful ordinary setup does not imply browser readiness.
+
+```bash
 
 # Run E2E tests (from project root)
 bun run test:e2e
@@ -237,7 +247,8 @@ See [`e2e/README.md`](e2e/README.md) for detailed documentation.
 
 - **Repo root:**
   - `bun run dev:setup` — Install dependencies and ensure local env lives at `backend/.env`
-  - `bun run dev:install` — Install backend and frontend dependencies
+  - `bun run dev:install` — Install root, backend, and frontend dependencies without bootstrapping Bun or changing env files
+  - `bun run test:setup` — Run isolated setup regression tests (also available as `bash scripts/dev-setup.test.sh` without Bun)
   - `bun run dev:backend` — Start the backend dev server from the repo root
   - `bun run dev:frontend` — Start the frontend dev server from the repo root
   - `bun run test:e2e` — Run Playwright end-to-end tests

@@ -12,6 +12,7 @@
 - Frontend remains strict TypeScript with bundler-based module resolution and enforced unused-local and unused-parameter checks.
 - Use the existing React 19, React Router v7, Mantine 8, and TanStack Query patterns before adding new state or data-fetching approaches.
 - API access continues through frontend service modules rather than scattering fetch logic across components.
+- Invoice edit payloads and date controls share `src/utils/invoiceUpdate.ts`: include Invoice Date and Due Date only when the persisted or selected status is Draft; non-Draft edits retain only allowed fields without weakening API locks.
 - Authentication state stays in `src/contexts/AuthContext.tsx`; timer persistence and reconnect behavior stay in `src/contexts/TimerContext.tsx` and related utilities.
 - Keep frontend types in the existing package type modules and share them via `import type` where appropriate.
 

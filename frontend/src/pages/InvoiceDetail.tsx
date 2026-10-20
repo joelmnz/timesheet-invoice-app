@@ -35,6 +35,7 @@ import {
 import { DateTime } from 'luxon';
 import { invoicesApi } from '../services/api';
 import type { Invoice, InvoiceLineItem } from '../types';
+import { buildInvoiceUpdate, canEditInvoiceDates } from '../utils/invoiceUpdate';
 
 export default function InvoiceDetail() {
   const { id } = useParams<{ id: string }>();
@@ -208,14 +209,8 @@ export default function InvoiceDetail() {
   };
 
   const handleSubmitInvoice = invoiceForm.onSubmit((values) => {
-    const data: Partial<Invoice> = {
-      dateInvoiced: DateTime.fromJSDate(values.dateInvoiced).toISODate() || '',
-      dueDate: DateTime.fromJSDate(values.dueDate).toISODate() || '',
-      status: values.status,
-      dateSent: values.dateSent ? DateTime.fromJSDate(values.dateSent).toISODate() || undefined : undefined,
-      datePaid: values.datePaid ? DateTime.fromJSDate(values.datePaid).toISODate() || undefined : undefined,
-      notes: values.notes || undefined,
-    };
+    if (!invoice) return;
+    const data = buildInvoiceUpdate(invoice.status, values);
     updateInvoiceMutation.mutate({ id: invoiceId, data });
   });
 
@@ -540,11 +535,13 @@ export default function InvoiceDetail() {
             <DatePickerInput
               label="Invoice Date"
               required
+              disabled={!canEditInvoiceDates(invoice.status, invoiceForm.values.status)}
               {...invoiceForm.getInputProps('dateInvoiced')}
             />
             <DatePickerInput
               label="Due Date"
               required
+              disabled={!canEditInvoiceDates(invoice.status, invoiceForm.values.status)}
               {...invoiceForm.getInputProps('dueDate')}
             />
             <Select

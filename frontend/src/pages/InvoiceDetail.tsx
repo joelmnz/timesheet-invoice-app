@@ -35,7 +35,7 @@ import {
 import { DateTime } from 'luxon';
 import { invoicesApi } from '../services/api';
 import type { Invoice, InvoiceLineItem } from '../types';
-import { buildInvoiceUpdate, canEditInvoiceDates } from '../utils/invoiceUpdate';
+import { buildInvoiceUpdate } from '../utils/invoiceUpdate';
 
 export default function InvoiceDetail() {
   const { id } = useParams<{ id: string }>();
@@ -67,11 +67,11 @@ export default function InvoiceDetail() {
 
   const invoiceForm = useForm({
     initialValues: {
-      dateInvoiced: new Date(),
-      dueDate: new Date(),
+      dateInvoiced: DateTime.now().toISODate()!,
+      dueDate: DateTime.now().toISODate()!,
       status: 'Draft' as 'Draft' | 'Sent' | 'Paid' | 'Cancelled',
-      dateSent: null as Date | null,
-      datePaid: null as Date | null,
+      dateSent: null as string | null,
+      datePaid: null as string | null,
       notes: '',
     },
   });
@@ -190,18 +190,12 @@ export default function InvoiceDetail() {
 
   const handleOpenInvoiceModal = () => {
     if (invoice) {
-      // Helper function to safely parse date strings, falling back to current date if invalid
-      const parseDateSafely = (dateStr: string): Date => {
-        const parsed = new Date(dateStr);
-        return isNaN(parsed.getTime()) ? new Date() : parsed;
-      };
-
       invoiceForm.setValues({
-        dateInvoiced: parseDateSafely(invoice.dateInvoiced),
-        dueDate: parseDateSafely(invoice.dueDate),
+        dateInvoiced: invoice.dateInvoiced,
+        dueDate: invoice.dueDate,
         status: invoice.status,
-        dateSent: invoice.dateSent ? parseDateSafely(invoice.dateSent) : null,
-        datePaid: invoice.datePaid ? parseDateSafely(invoice.datePaid) : null,
+        dateSent: invoice.dateSent ?? null,
+        datePaid: invoice.datePaid ?? null,
         notes: invoice.notes || '',
       });
       openInvoiceModal();
@@ -210,7 +204,7 @@ export default function InvoiceDetail() {
 
   const handleSubmitInvoice = invoiceForm.onSubmit((values) => {
     if (!invoice) return;
-    const data = buildInvoiceUpdate(invoice.status, values);
+    const data = buildInvoiceUpdate(values);
     updateInvoiceMutation.mutate({ id: invoiceId, data });
   });
 
@@ -535,13 +529,11 @@ export default function InvoiceDetail() {
             <DatePickerInput
               label="Invoice Date"
               required
-              disabled={!canEditInvoiceDates(invoice.status, invoiceForm.values.status)}
               {...invoiceForm.getInputProps('dateInvoiced')}
             />
             <DatePickerInput
               label="Due Date"
               required
-              disabled={!canEditInvoiceDates(invoice.status, invoiceForm.values.status)}
               {...invoiceForm.getInputProps('dueDate')}
             />
             <Select
@@ -555,20 +547,16 @@ export default function InvoiceDetail() {
               required
               {...invoiceForm.getInputProps('status')}
             />
-            {invoiceForm.values.status === 'Sent' && (
-              <DatePickerInput
-                label="Date Sent"
-                clearable
-                {...invoiceForm.getInputProps('dateSent')}
-              />
-            )}
-            {invoiceForm.values.status === 'Paid' && (
-              <DatePickerInput
-                label="Date Paid"
-                clearable
-                {...invoiceForm.getInputProps('datePaid')}
-              />
-            )}
+            <DatePickerInput
+              label="Date Sent"
+              clearable
+              {...invoiceForm.getInputProps('dateSent')}
+            />
+            <DatePickerInput
+              label="Date Paid"
+              clearable
+              {...invoiceForm.getInputProps('datePaid')}
+            />
             <Textarea
               label="Notes"
               placeholder="Additional notes"

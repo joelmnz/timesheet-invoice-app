@@ -163,39 +163,13 @@ router.put('/:id', requireAuth, async (req, res, next) => {
       return res.status(404).json({ error: 'Invoice not found' });
     }
 
-    // Enforce locking rules: only allow notes, status, dateSent, and datePaid changes for non-Draft invoices
-    // UNLESS we are reverting to Draft status, in which case we allow full editing (unlocking)
-    if (['Sent', 'Paid', 'Cancelled'].includes(currentInvoice.status) && data.status !== 'Draft') {
-      const allowedFields = ['notes', 'status', 'dateSent', 'datePaid'];
-      const providedFields = Object.keys(data);
-      const invalidFields = providedFields.filter(f => !allowedFields.includes(f));
-
-      if (invalidFields.length > 0) {
-        return res.status(409).json({
-          error: `Cannot modify ${invalidFields.join(', ')} for invoices with status ${currentInvoice.status}. Only notes, status, dateSent, and datePaid can be updated.`,
-        });
-      }
-    }
-
-    // Auto-set dateSent when status changes to Sent
-    if (data.status === 'Sent' && (data.dateSent === undefined || data.dateSent === null)) {
+    // Default dates only for a transition with neither an explicit nor an existing date.
+    if (data.status === 'Sent' && currentInvoice.status !== 'Sent' && data.dateSent === undefined && !currentInvoice.dateSent) {
       data.dateSent = DateTime.now().toISODate()!;
     }
 
-    // Auto-set datePaid when status changes to Paid
-    if (data.status === 'Paid' && (data.datePaid === undefined || data.datePaid === null)) {
+    if (data.status === 'Paid' && currentInvoice.status !== 'Paid' && data.datePaid === undefined && !currentInvoice.datePaid) {
       data.datePaid = DateTime.now().toISODate()!;
-    }
-
-    // Clear datePaid if status is changing to non-Paid and datePaid was not explicitly provided
-    if (data.status && data.status !== 'Paid' && !('datePaid' in data)) {
-      data.datePaid = null;
-    }
-
-    // If datePaid is being explicitly cleared (set to null) and no status is provided, set status to Draft
-    // This handles the data correction workflow where clearing payment info should revert to Draft
-    if ('datePaid' in data && data.datePaid === null && !data.status && currentInvoice.status === 'Paid') {
-      data.status = 'Draft';
     }
 
     const [updated] = await db

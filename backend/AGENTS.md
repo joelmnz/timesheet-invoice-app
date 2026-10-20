@@ -18,6 +18,7 @@
 - Session authentication depends on the existing cookie and proxy behavior; preserve the current `secure: 'auto'` cookie mode and trust-proxy assumptions when changing auth or deployment code.
 - Session expiration is sliding (`rolling: true` in `src/app.ts`): the cookie and store TTL refresh on every request so regular use never logs the user out; sessions only expire after 7 days of complete inactivity. Keep this behavior when touching session config.
 - Backend tests share a SQLite test database and must continue to run sequentially.
+- Invoice detail PUT accepts all schema-supported fields in every status. Explicit values (including nullable date clears and empty notes) win; omitted fields retain stored values. Sent/Paid dates default only on an actual transition when both the request and stored invoice lack the date. Date corrections never change status; line-item and deletion locks remain separate.
 
 ## Work Guidance
 - Runtime is Bun with strict TypeScript and ESM modules.

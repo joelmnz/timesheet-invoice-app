@@ -100,8 +100,8 @@ export interface Invoice {
   subtotal: number;
   total: number;
   notes?: string;
-  dateSent?: string;
-  datePaid?: string;
+  dateSent?: string | null;
+  datePaid?: string | null;
   createdAt: string;
   updatedAt: string;
   client?: Client;

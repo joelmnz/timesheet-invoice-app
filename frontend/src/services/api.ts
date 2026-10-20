@@ -1,6 +1,7 @@
 import type {
   Settings,
   Client,
+  ClientDetail,
   Project,
   TimeEntry,
   Expense,
@@ -90,7 +91,7 @@ export const clientsApi = {
     return fetchApi<import('../types').PaginatedResponse<Client>>(`/clients?${params}`);
   },
 
-  get: (id: number) => fetchApi<Client>(`/clients/${id}`),
+  get: (id: number) => fetchApi<ClientDetail>(`/clients/${id}`),
 
   create: (data: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) =>
     fetchApi<Client>('/clients', {

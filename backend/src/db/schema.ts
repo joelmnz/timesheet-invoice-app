@@ -95,6 +95,7 @@ export const invoices = sqliteTable('invoices', {
 }, (table) => ({
   dateInvoicedIdx: index('invoices_date_invoiced_idx').on(table.dateInvoiced),
   statusDueDateIdx: index('invoices_status_due_date_idx').on(table.status, table.dueDate),
+  clientStatusDateIdx: index('invoices_client_status_date_idx').on(table.clientId, table.status, table.dateInvoiced, table.id),
 }));
 
 

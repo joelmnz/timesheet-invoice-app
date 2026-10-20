@@ -47,6 +47,18 @@ export interface Client {
   updatedAt: string;
 }
 
+export interface ClientInvoiceSummary {
+  invoiceCount: number;
+  avgDaysToPay: number | null;
+  avgOverdue: number | null;
+  total: number;
+  invoiceAverage: number;
+}
+
+export interface ClientDetail extends Client {
+  invoiceSummary: ClientInvoiceSummary | null;
+}
+
 export interface Project {
   id: number;
   clientId: number;

@@ -24,6 +24,7 @@ import {
   aggregateUniqueNotes
 } from '../utils/time.js';
 import { DateTime } from 'luxon';
+import { getClientInvoiceSummary, type ClientInvoiceSummary } from '../services/clientInvoiceSummary.js';
 
 const router = Router();
 
@@ -79,7 +80,13 @@ router.get('/:id', requireAuth, async (req, res, next) => {
       return res.status(404).json({ error: 'Client not found' });
     }
 
-    res.json(client);
+    let invoiceSummary: ClientInvoiceSummary | null = null;
+    try {
+      invoiceSummary = await getClientInvoiceSummary(id);
+    } catch (error) {
+      console.error('Failed to calculate client invoice summary', { clientId: id, error });
+    }
+    res.json({ ...client, invoiceSummary });
   } catch (error) {
     next(error);
   }

@@ -12,6 +12,7 @@
 - Frontend remains strict TypeScript with bundler-based module resolution and enforced unused-local and unused-parameter checks.
 - Use the existing React 19, React Router v7, Mantine 8, and TanStack Query patterns before adding new state or data-fetching approaches.
 - API access continues through frontend service modules rather than scattering fetch logic across components.
+- Client Payment History renders the server-provided summary, not paginated invoice-list calculations. Explain that Total 12m means the latest 12 paid invoices, retain signed overdue values, and distinguish unavailable metrics from zero. Invoice edits invalidate client queries to keep payment summaries fresh.
 - Edit Invoice exposes every field in every status. Payloads use `src/utils/invoiceUpdate.ts` and Mantine date-only strings: always include Invoice Date and Due Date, send cleared Date Sent/Date Paid as explicit null and cleared Notes as an empty string, and never infer status from dates. Line-item and deletion restrictions remain separate.
 - Authentication state stays in `src/contexts/AuthContext.tsx`; timer persistence and reconnect behavior stay in `src/contexts/TimerContext.tsx` and related utilities.
 - Keep frontend types in the existing package type modules and share them via `import type` where appropriate.

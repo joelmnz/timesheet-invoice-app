@@ -47,5 +47,8 @@
     "test": "./test-sequential.sh",
     "test:parallel": "bun test",
     "test:watch": "bun test --watch"
+  },
+  "overrides": {
+    "vite": "7.3.8"
   }
 }
